@@ -4,16 +4,24 @@
 <meta charset="utf-8">
 <meta content="Common,Latin" name="scripts">
 <meta content="initial-scale=1.0" name="viewport">
-<title>TODO - Your title</title>
+<title>Optimistic DNS</title>
 <meta content="Your Name Here" name="author">
 <meta content="
-       TODO Abstract 
+       DNS lookups introduce user-visible latency, particularly when cached
+records have expired and must be refreshed from the network.  This
+document describes Optimistic DNS, a client-side stub resolver mechanism
+that immediately returns expired cached DNS records to applications while
+simultaneously refreshing them with a network query.  The application
+receives a usable answer in microseconds rather than milliseconds, and
+receives an updated answer shortly thereafter if the data has changed. 
+       Optimistic DNS is complementary to RFC 8767, which addresses serving
+stale data at recursive resolvers.  This document focuses exclusively on
+client-side stub resolver behavior, including explicit signaling between
+the stub resolver and applications about answer freshness. 
     " name="description">
 <meta content="xml2rfc 3.32.0" name="generator">
-<meta content="next generation" name="keyword">
-<meta content="unicorn" name="keyword">
-<meta content="sparkling distributed ledger" name="keyword">
-<meta content="draft-todo-yourname-protocol-latest" name="ietf.draft">
+<meta content="DNS, caching, latency, stub resolver" name="keyword">
+<meta content="draft-gakiwate-dnsop-optimistic-dns-latest" name="ietf.draft">
 <!-- Generator version information:
   xml2rfc 3.32.0
     Python 3.12.12
@@ -1046,7 +1054,7 @@ svg :is([fill="white"], [fill^="#fff"]) {
 <table class="ears">
 <thead><tr>
 <td class="left">Internet-Draft</td>
-<td class="center">TODO - Abbreviation</td>
+<td class="center">Optimistic DNS</td>
 <td class="right">April 2026</td>
 </tr></thead>
 <tfoot><tr>
@@ -1059,30 +1067,40 @@ svg :is([fill="white"], [fill^="#fff"]) {
 <div id="internal-metadata" class="document-information">
 <dl id="identifiers">
 <dt class="label-workgroup">Workgroup:</dt>
-<dd class="workgroup">WG Working Group</dd>
+<dd class="workgroup">Domain Name System Operations</dd>
 <dt class="label-internet-draft">Internet-Draft:</dt>
-<dd class="internet-draft">draft-todo-yourname-protocol-latest</dd>
+<dd class="internet-draft">draft-gakiwate-dnsop-optimistic-dns-latest</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
 <time datetime="2026-04-08" class="published">8 April 2026</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
-<dd class="intended-status">Informational</dd>
+<dd class="intended-status">Standards Track</dd>
 <dt class="label-expires">Expires:</dt>
 <dd class="expires"><time datetime="2026-10-10">10 October 2026</time></dd>
 <dt class="label-authors">Author:</dt>
 <dd class="authors">
 <div class="author">
       <div class="author-name">Y. N. Here</div>
-<div class="org">Your Organization Here</div>
+<div class="org">Apple Inc</div>
 </div>
 </dd>
 </dl>
 </div>
-<h1 id="title">TODO - Your title</h1>
+<h1 id="title">Optimistic DNS</h1>
 <section id="section-abstract">
       <h2 id="abstract"><a href="#abstract" class="selfRef">Abstract</a></h2>
-<p id="section-abstract-1">TODO Abstract<a href="#section-abstract-1" class="pilcrow">¶</a></p>
+<p id="section-abstract-1">DNS lookups introduce user-visible latency, particularly when cached
+records have expired and must be refreshed from the network.  This
+document describes Optimistic DNS, a client-side stub resolver mechanism
+that immediately returns expired cached DNS records to applications while
+simultaneously refreshing them with a network query.  The application
+receives a usable answer in microseconds rather than milliseconds, and
+receives an updated answer shortly thereafter if the data has changed.<a href="#section-abstract-1" class="pilcrow">¶</a></p>
+<p id="section-abstract-2">Optimistic DNS is complementary to RFC 8767, which addresses serving
+stale data at recursive resolvers.  This document focuses exclusively on
+client-side stub resolver behavior, including explicit signaling between
+the stub resolver and applications about answer freshness.<a href="#section-abstract-2" class="pilcrow">¶</a></p>
 </section>
 <section class="note rfcEditorRemove" id="section-note.1">
       <h2 id="name-about-this-document">
@@ -1090,14 +1108,15 @@ svg :is([fill="white"], [fill^="#fff"]) {
       </h2>
 <p id="section-note.1-1">This note is to be removed before publishing as an RFC.<a href="#section-note.1-1" class="pilcrow">¶</a></p>
 <p id="section-note.1-2">
-        The latest revision of this draft can be found at <span><a href="https://example.com/LATEST">https://example.com/LATEST</a></span>.
-        Status information for this document may be found at <span><a href="https://datatracker.ietf.org/doc/draft-todo-yourname-protocol/">https://datatracker.ietf.org/doc/draft-todo-yourname-protocol/</a></span>.<a href="#section-note.1-2" class="pilcrow">¶</a></p>
+        The latest revision of this draft can be found at <span><a href="https://gakiwate.github.io/draft-gakiwate-dnsop-optimistic-dns/draft-gakiwate-dnsop-optimistic-dns.html">https://gakiwate.github.io/draft-gakiwate-dnsop-optimistic-dns/draft-gakiwate-dnsop-optimistic-dns.html</a></span>.
+        Status information for this document may be found at <span><a href="https://datatracker.ietf.org/doc/draft-gakiwate-dnsop-optimistic-dns/">https://datatracker.ietf.org/doc/draft-gakiwate-dnsop-optimistic-dns/</a></span>.<a href="#section-note.1-2" class="pilcrow">¶</a></p>
 <p id="section-note.1-3">
         Discussion of this document takes place on the
-        WG Working Group mailing list (<span><a href="mailto:WG@example.com">mailto:WG@example.com</a></span>),
-        which is archived at <span><a href="https://example.com/WG">https://example.com/WG</a></span>.<a href="#section-note.1-3" class="pilcrow">¶</a></p>
+        Domain Name System Operations Working Group mailing list (<span><a href="mailto:dnsop@ietf.org">mailto:dnsop@ietf.org</a></span>),
+        which is archived at <span><a href="https://mailarchive.ietf.org/arch/browse/dnsop/">https://mailarchive.ietf.org/arch/browse/dnsop/</a></span>.
+        Subscribe at <span><a href="https://www.ietf.org/mailman/listinfo/dnsop/">https://www.ietf.org/mailman/listinfo/dnsop/</a></span>.<a href="#section-note.1-3" class="pilcrow">¶</a></p>
 <p id="section-note.1-4">Source for this draft and an issue tracker can be found at
-        <span><a href="https://github.com/USER/REPO">https://github.com/USER/REPO</a></span>.<a href="#section-note.1-4" class="pilcrow">¶</a></p>
+        <span><a href="https://github.com/gakiwate/draft-gakiwate-dnsop-optimistic-dns">https://github.com/gakiwate/draft-gakiwate-dnsop-optimistic-dns</a></span>.<a href="#section-note.1-4" class="pilcrow">¶</a></p>
 </section>
 <div id="status-of-memo">
 <section id="section-boilerplate.1">
@@ -1154,19 +1173,79 @@ svg :is([fill="white"], [fill^="#fff"]) {
             <p id="section-toc.1-1.2.1" class="keepWithNext"><a href="#section-2" class="auto internal xref">2</a>.  <a href="#name-conventions-and-definitions" class="internal xref">Conventions and Definitions</a></p>
 </li>
           <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.3">
-            <p id="section-toc.1-1.3.1" class="keepWithNext"><a href="#section-3" class="auto internal xref">3</a>.  <a href="#name-security-considerations" class="internal xref">Security Considerations</a></p>
+            <p id="section-toc.1-1.3.1" class="keepWithNext"><a href="#section-3" class="auto internal xref">3</a>.  <a href="#name-problem-statement" class="internal xref">Problem Statement</a></p>
 </li>
           <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.4">
-            <p id="section-toc.1-1.4.1"><a href="#section-4" class="auto internal xref">4</a>.  <a href="#name-iana-considerations" class="internal xref">IANA Considerations</a></p>
+            <p id="section-toc.1-1.4.1"><a href="#section-4" class="auto internal xref">4</a>.  <a href="#name-ttl-stretching" class="internal xref">TTL Stretching</a></p>
 </li>
           <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.5">
-            <p id="section-toc.1-1.5.1"><a href="#section-5" class="auto internal xref">5</a>.  <a href="#name-normative-references" class="internal xref">Normative References</a></p>
+            <p id="section-toc.1-1.5.1"><a href="#section-5" class="auto internal xref">5</a>.  <a href="#name-optimistic-dns-overview" class="internal xref">Optimistic DNS Overview</a></p>
 </li>
           <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6">
-            <p id="section-toc.1-1.6.1"><a href="#appendix-A" class="auto internal xref"></a><a href="#name-acknowledgments" class="internal xref">Acknowledgments</a></p>
+            <p id="section-toc.1-1.6.1"><a href="#section-6" class="auto internal xref">6</a>.  <a href="#name-detailed-mechanism" class="internal xref">Detailed Mechanism</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6.2.1">
+                <p id="section-toc.1-1.6.2.1.1"><a href="#section-6.1" class="auto internal xref">6.1</a>.  <a href="#name-query-initiation" class="internal xref">Query Initiation</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6.2.2">
+                <p id="section-toc.1-1.6.2.2.1"><a href="#section-6.2" class="auto internal xref">6.2</a>.  <a href="#name-cache-lookup-with-expired-r" class="internal xref">Cache Lookup with Expired Records</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6.2.3">
+                <p id="section-toc.1-1.6.2.3.1"><a href="#section-6.3" class="auto internal xref">6.3</a>.  <a href="#name-parallel-network-query" class="internal xref">Parallel Network Query</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6.2.4">
+                <p id="section-toc.1-1.6.2.4.1"><a href="#section-6.4" class="auto internal xref">6.4</a>.  <a href="#name-record-immortalization" class="internal xref">Record Immortalization</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6.2.5">
+                <p id="section-toc.1-1.6.2.5.1"><a href="#section-6.5" class="auto internal xref">6.5</a>.  <a href="#name-policy-transition" class="internal xref">Policy Transition</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.6.2.6">
+                <p id="section-toc.1-1.6.2.6.1"><a href="#section-6.6" class="auto internal xref">6.6</a>.  <a href="#name-cname-handling" class="internal xref">CNAME Handling</a></p>
+</li>
+            </ul>
 </li>
           <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7">
-            <p id="section-toc.1-1.7.1"><a href="#appendix-B" class="auto internal xref"></a><a href="#name-authors-address" class="internal xref">Author's Address</a></p>
+            <p id="section-toc.1-1.7.1"><a href="#section-7" class="auto internal xref">7</a>.  <a href="#name-signaling" class="internal xref">Signaling</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.1">
+                <p id="section-toc.1-1.7.2.1.1"><a href="#section-7.1" class="auto internal xref">7.1</a>.  <a href="#name-query-flags" class="internal xref">Query Flags</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.2">
+                <p id="section-toc.1-1.7.2.2.1"><a href="#section-7.2" class="auto internal xref">7.2</a>.  <a href="#name-response-flags" class="internal xref">Response Flags</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8">
+            <p id="section-toc.1-1.8.1"><a href="#section-8" class="auto internal xref">8</a>.  <a href="#name-interaction-with-other-dns-" class="internal xref">Interaction with Other DNS Features</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8.2.1">
+                <p id="section-toc.1-1.8.2.1.1"><a href="#section-8.1" class="auto internal xref">8.1</a>.  <a href="#name-dnssec" class="internal xref">DNSSEC</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8.2.2">
+                <p id="section-toc.1-1.8.2.2.1"><a href="#section-8.2" class="auto internal xref">8.2</a>.  <a href="#name-encrypted-dns-transports" class="internal xref">Encrypted DNS Transports</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8.2.3">
+                <p id="section-toc.1-1.8.2.3.1"><a href="#section-8.3" class="auto internal xref">8.3</a>.  <a href="#name-search-domains" class="internal xref">Search Domains</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8.2.4">
+                <p id="section-toc.1-1.8.2.4.1"><a href="#section-8.4" class="auto internal xref">8.4</a>.  <a href="#name-relationship-to-rfc-8767" class="internal xref">Relationship to RFC 8767</a></p>
+</li>
+            </ul>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.9">
+            <p id="section-toc.1-1.9.1"><a href="#section-9" class="auto internal xref">9</a>.  <a href="#name-security-considerations" class="internal xref">Security Considerations</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.10">
+            <p id="section-toc.1-1.10.1"><a href="#section-10" class="auto internal xref">10</a>. <a href="#name-iana-considerations" class="internal xref">IANA Considerations</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.11">
+            <p id="section-toc.1-1.11.1"><a href="#section-11" class="auto internal xref">11</a>. <a href="#name-normative-references" class="internal xref">Normative References</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.12">
+            <p id="section-toc.1-1.12.1"><a href="#appendix-A" class="auto internal xref"></a><a href="#name-acknowledgments" class="internal xref">Acknowledgments</a></p>
+</li>
+          <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.13">
+            <p id="section-toc.1-1.13.1"><a href="#appendix-B" class="auto internal xref"></a><a href="#name-authors-address" class="internal xref">Author's Address</a></p>
 </li>
         </ul>
 </nav>
@@ -1177,7 +1256,116 @@ svg :is([fill="white"], [fill^="#fff"]) {
       <h2 id="name-introduction">
 <a href="#section-1" class="section-number selfRef">1. </a><a href="#name-introduction" class="section-name selfRef">Introduction</a>
       </h2>
-<p id="section-1-1">TODO Introduction<a href="#section-1-1" class="pilcrow">¶</a></p>
+<p id="section-1-1">When a user opens their laptop and navigates to a website, the first step
+is typically a DNS lookup to translate the hostname into an IP address.  If
+the laptop's DNS cache contains a record for that hostname, the answer is
+returned almost instantly and the user perceives no delay.  But if the
+record's TTL has expired, even by a single second, the laptop must perform
+a fresh DNS lookup.  On a wired connection this might take 50 to 200
+milliseconds.  On a cellular connection, particularly at the edge of
+coverage, it can take several seconds.<a href="#section-1-1" class="pilcrow">¶</a></p>
+<p id="section-1-2">The user experiences this as a brief but noticeable pause.  The website
+appears to hang.  The user wonders if something is wrong.  And in most
+cases, the expired record still contained the correct IP address and the
+website has not moved to a different server.  The user waited for
+confirmation of something the device already knew.<a href="#section-1-2" class="pilcrow">¶</a></p>
+<p id="section-1-3">Consider a record for www.example.com with a TTL of 60 seconds.  At time
+T=0 the record is fetched and cached.  For the next 60 seconds, any
+application that asks for www.example.com gets an instant answer.  At time
+T=61, the record has expired.  The very next lookup must go to the network.
+From the user's perspective, the transition from "instant" to "slow" is a
+cliff edge:<a href="#section-1-3" class="pilcrow">¶</a></p>
+<table class="center" id="table-1">
+        <caption><a href="#table-1" class="selfRef">Table 1</a></caption>
+<thead>
+          <tr>
+            <th class="text-left" rowspan="1" colspan="1">Time (seconds)</th>
+            <th class="text-left" rowspan="1" colspan="1">Response Latency</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">T=0 (fresh)</td>
+            <td class="text-left" rowspan="1" colspan="1">~0 ms (cache hit)</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">T=30 (fresh)</td>
+            <td class="text-left" rowspan="1" colspan="1">~0 ms (cache hit)</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">T=59 (fresh)</td>
+            <td class="text-left" rowspan="1" colspan="1">~0 ms (cache hit)</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">T=61 (expired)</td>
+            <td class="text-left" rowspan="1" colspan="1">150 ms (network query)</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">T=62 (fresh)</td>
+            <td class="text-left" rowspan="1" colspan="1">~0 ms (cache hit again)</td>
+          </tr>
+        </tbody>
+      </table>
+<p id="section-1-5">The record was valid for 60 seconds, then invalid for the fraction of a
+second it took to refresh it, then valid again.  Yet that fraction of a
+second is the one the user noticed.<a href="#section-1-5" class="pilcrow">¶</a></p>
+<p id="section-1-6">This document describes Optimistic DNS, a stub resolver mechanism that
+addresses this problem.  When the stub resolver has expired cached records
+that match a query, it returns those expired records to the application
+immediately -- within microseconds -- while simultaneously issuing a fresh
+network query in the background.  The application receives two sets of
+results: first the expired (but likely still correct) records, then the
+authoritative fresh records.<a href="#section-1-6" class="pilcrow">¶</a></p>
+<p id="section-1-7">The application is explicitly told which answers are expired and which are
+fresh, allowing it to make intelligent decisions about how to use each.  An
+application connecting to a well-known server may immediately use the
+expired address and establish a connection, gambling that the address has
+not changed.  An application performing a security-sensitive lookup may
+choose to wait for the fresh answer.<a href="#section-1-7" class="pilcrow">¶</a></p>
+<p id="section-1-8">The following diagram illustrates the timing difference between
+conventional DNS resolution and Optimistic DNS:<a href="#section-1-8" class="pilcrow">¶</a></p>
+<p id="section-1-9"><strong>Conventional DNS (after cache expiry):</strong><a href="#section-1-9" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-1-10">
+<pre>
+  Application        Stub Resolver        DNS Server
+      |                    |                    |
+      |--- Query ---------&gt;|                    |
+      |                    |--- Query ---------&gt;|
+      |                    |                    |
+      |              (waiting for network)      |
+      |                    |                    |
+      |                    |&lt;-- Response -------|
+      |&lt;-- Fresh Answer ---|                    |
+      |                    |                    |
+      [====== 150ms+ latency ======]
+</pre><a href="#section-1-10" class="pilcrow">¶</a>
+</div>
+<p id="section-1-11"><strong>Optimistic DNS (after cache expiry):</strong><a href="#section-1-11" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-1-12">
+<pre>
+  Application        Stub Resolver        DNS Server
+      |                    |                    |
+      |--- Query ---------&gt;|                    |
+      |&lt;- Expired Answer --|--- Query ---------&gt;|
+      |   (~0ms latency)   |                    |
+      |                    |                    |
+      | (app can start     |                    |
+      |  connecting now)   |                    |
+      |                    |&lt;-- Response -------|
+      |&lt;-- Fresh Answer ---|                    |
+      |                    |                    |
+</pre><a href="#section-1-12" class="pilcrow">¶</a>
+</div>
+<p id="section-1-13">Optimistic DNS is complementary to the mechanism described in
+<span>[<a href="#RFC8767" class="cite xref">RFC8767</a>]</span>, which allows recursive resolvers to serve stale data during
+upstream failures.  The two mechanisms address different parts of the
+resolution chain: RFC 8767 operates at the recursive resolver, while
+Optimistic DNS operates at the stub resolver on the end-user's device.
+Both can be deployed simultaneously for layered staleness tolerance.<a href="#section-1-13" class="pilcrow">¶</a></p>
+<p id="section-1-14">This document describes only the client-side behavior.  Optimistic DNS does
+not define any new DNS wire-protocol messages, opcodes, or EDNS options.
+The signaling between the stub resolver and the application is purely a
+local API matter.<a href="#section-1-14" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="conventions-and-definitions">
@@ -1189,37 +1377,976 @@ svg :is([fill="white"], [fill^="#fff"]) {
 "<span class="bcp14">MAY</span>", and "<span class="bcp14">OPTIONAL</span>" in this document are to be interpreted as
 described in BCP 14 <span>[<a href="#RFC2119" class="cite xref">RFC2119</a>]</span> <span>[<a href="#RFC8174" class="cite xref">RFC8174</a>]</span> when, and only when, they
 appear in all capitals, as shown here.<a href="#section-2-1" class="pilcrow">¶</a></p>
+<span class="break"></span><dl class="dlParallel" id="section-2-2">
+        <dt id="section-2-2.1">Stub Resolver</dt>
+        <dd style="margin-left: 1.5em" id="section-2-2.2">
+          <p id="section-2-2.2.1">A DNS resolver that operates on the end-user device.  It maintains a
+local cache of DNS records and forwards queries to configured recursive
+resolvers when cached answers are unavailable or expired.  This is the
+component that implements Optimistic DNS.<a href="#section-2-2.2.1" class="pilcrow">¶</a></p>
+</dd>
+        <dd class="break"></dd>
+<dt id="section-2-2.3">Expired Record</dt>
+        <dd style="margin-left: 1.5em" id="section-2-2.4">
+          <p id="section-2-2.4.1">A cached DNS record whose TTL has reached zero.  Under conventional DNS
+caching rules, such a record would be purged from the cache or ignored
+when answering queries.  Optimistic DNS gives expired records a second
+life.<a href="#section-2-2.4.1" class="pilcrow">¶</a></p>
+</dd>
+        <dd class="break"></dd>
+<dt id="section-2-2.5">Optimistic Answer</dt>
+        <dd style="margin-left: 1.5em" id="section-2-2.6">
+          <p id="section-2-2.6.1">An expired cached record that is returned to an application in response
+to a query, before the stub resolver has confirmed whether the record's
+data is still current.  Optimistic answers are explicitly flagged as
+expired so the application can distinguish them from fresh answers.<a href="#section-2-2.6.1" class="pilcrow">¶</a></p>
+</dd>
+        <dd class="break"></dd>
+<dt id="section-2-2.7">Fresh Answer</dt>
+        <dd style="margin-left: 1.5em" id="section-2-2.8">
+          <p id="section-2-2.8.1">A DNS record received from the network in response to a query, as
+opposed to a record served from the local cache.  Fresh answers reflect
+the current state of the authoritative DNS data (subject to normal
+caching along the resolution path).<a href="#section-2-2.8.1" class="pilcrow">¶</a></p>
+</dd>
+        <dd class="break"></dd>
+<dt id="section-2-2.9">Mortal Record</dt>
+        <dd style="margin-left: 1.5em" id="section-2-2.10">
+          <p id="section-2-2.10.1">A cached DNS record in its normal lifecycle state.  When its TTL
+expires, a mortal record is eligible for purging from the cache.  This
+is the default state for all newly cached records.<a href="#section-2-2.10.1" class="pilcrow">¶</a></p>
+</dd>
+        <dd class="break"></dd>
+<dt id="section-2-2.11">Immortal Record</dt>
+        <dd style="margin-left: 1.5em" id="section-2-2.12">
+          <p id="section-2-2.12.1">A cached DNS record that has been marked to survive beyond its TTL
+expiry.  Records are immortalized when they answer an Optimistic DNS
+query, ensuring they remain available for future optimistic lookups.<a href="#section-2-2.12.1" class="pilcrow">¶</a></p>
+</dd>
+        <dd class="break"></dd>
+<dt id="section-2-2.13">Ghost Record</dt>
+        <dd style="margin-left: 1.5em" id="section-2-2.14">
+          <p id="section-2-2.14.1">An immortal record whose TTL has expired.  Ghost records linger in the
+cache for an extended period (the ghost retention period) and can serve
+as optimistic answers to future queries.  After the ghost retention
+period elapses, the ghost record is finally purged.<a href="#section-2-2.14.1" class="pilcrow">¶</a></p>
+</dd>
+        <dd class="break"></dd>
+<dt id="section-2-2.15">Ghost Retention Period</dt>
+        <dd style="margin-left: 1.5em" id="section-2-2.16">
+          <p id="section-2-2.16.1">The maximum time a ghost record is retained in the cache after its TTL
+has expired.  This document recommends a default of one week.<a href="#section-2-2.16.1" class="pilcrow">¶</a></p>
+</dd>
+        <dd class="break"></dd>
+<dt id="section-2-2.17">TTL Stretching</dt>
+        <dd style="margin-left: 1.5em" id="section-2-2.18">
+          <p id="section-2-2.18.1">A stub resolver technique that transparently extends the effective
+lifetime of cached records beyond their original TTL.  The resolver
+continues to serve expired records to applications without any
+indication of staleness, while refreshing them in the background.
+Unlike Optimistic DNS, no expired flag is set and the application
+cannot distinguish stale answers from fresh ones.<a href="#section-2-2.18.1" class="pilcrow">¶</a></p>
+</dd>
+      <dd class="break"></dd>
+</dl>
+</section>
+</div>
+<div id="problem-statement">
+<section id="section-3">
+      <h2 id="name-problem-statement">
+<a href="#section-3" class="section-number selfRef">3. </a><a href="#name-problem-statement" class="section-name selfRef">Problem Statement</a>
+      </h2>
+<p id="section-3-1">The DNS TTL mechanism creates an inherent tension between freshness and
+performance.  When a record is cached and its TTL has not expired, lookups
+are essentially free and the answer is returned from local memory in
+microseconds.  The moment the TTL expires, the cost jumps to a full
+network round trip.<a href="#section-3-1" class="pilcrow">¶</a></p>
+<p id="section-3-2">This is not a graceful degradation.  It is a cliff.  The following timeline
+illustrates the problem for a user browsing the web.  Assume
+www.example.com has a TTL of 300 seconds (5 minutes) and the user's
+network round-trip time to the recursive resolver is 100 milliseconds:<a href="#section-3-2" class="pilcrow">¶</a></p>
+<table class="center" id="table-2">
+        <caption><a href="#table-2" class="selfRef">Table 2</a></caption>
+<thead>
+          <tr>
+            <th class="text-left" rowspan="1" colspan="1">Time</th>
+            <th class="text-left" rowspan="1" colspan="1">Event</th>
+            <th class="text-left" rowspan="1" colspan="1">Perceived Latency</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">0:00</td>
+            <td class="text-left" rowspan="1" colspan="1">First visit to site</td>
+            <td class="text-left" rowspan="1" colspan="1">100 ms (cold cache)</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">0:30</td>
+            <td class="text-left" rowspan="1" colspan="1">Click a link (same site)</td>
+            <td class="text-left" rowspan="1" colspan="1">~0 ms (cache hit)</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">2:00</td>
+            <td class="text-left" rowspan="1" colspan="1">Click another link</td>
+            <td class="text-left" rowspan="1" colspan="1">~0 ms (cache hit)</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">4:59</td>
+            <td class="text-left" rowspan="1" colspan="1">Click another link</td>
+            <td class="text-left" rowspan="1" colspan="1">~0 ms (cache hit)</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">5:01</td>
+            <td class="text-left" rowspan="1" colspan="1">Click another link</td>
+            <td class="text-left" rowspan="1" colspan="1">100 ms (TTL expired)</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">5:02</td>
+            <td class="text-left" rowspan="1" colspan="1">Click another link</td>
+            <td class="text-left" rowspan="1" colspan="1">~0 ms (cache hit)</td>
+          </tr>
+        </tbody>
+      </table>
+<p id="section-3-4">At the 5:01 mark, the user perceives a delay that was absent one second
+earlier.  Nothing changed about the website.  The delay exists solely
+because a timer expired.<a href="#section-3-4" class="pilcrow">¶</a></p>
+<p id="section-3-5">This problem is compounded by several factors:<a href="#section-3-5" class="pilcrow">¶</a></p>
+<span class="break"></span><dl class="dlParallel" id="section-3-6">
+        <dt id="section-3-6.1">Short TTLs</dt>
+        <dd style="margin-left: 1.5em" id="section-3-6.2">
+          <p id="section-3-6.2.1">Many content delivery networks and cloud services use TTLs of 60 seconds
+or less to facilitate rapid failover and load balancing.  Short TTLs mean
+more frequent cache expiration events, which means users hit the latency
+cliff more often.<a href="#section-3-6.2.1" class="pilcrow">¶</a></p>
+</dd>
+        <dd class="break"></dd>
+<dt id="section-3-6.3">High-latency networks</dt>
+        <dd style="margin-left: 1.5em" id="section-3-6.4">
+          <p id="section-3-6.4.1">On cellular networks, satellite links, or congested Wi-Fi, a DNS round
+trip can take one to five seconds.  The penalty for a cache miss is
+severe.<a href="#section-3-6.4.1" class="pilcrow">¶</a></p>
+</dd>
+        <dd class="break"></dd>
+<dt id="section-3-6.5">Multiple queries per page load</dt>
+        <dd style="margin-left: 1.5em" id="section-3-6.6">
+          <p id="section-3-6.6.1">A typical web page load involves DNS queries for dozens of hostnames (the
+page itself, stylesheets, scripts, images, analytics, ads).  If several
+of these expire simultaneously, the cumulative delay is substantial.<a href="#section-3-6.6.1" class="pilcrow">¶</a></p>
+</dd>
+        <dd class="break"></dd>
+<dt id="section-3-6.7">First query after sleep</dt>
+        <dd style="margin-left: 1.5em" id="section-3-6.8">
+          <p id="section-3-6.8.1">When a laptop or phone wakes from sleep, many cached records will have
+expired during the sleep period.  The first network operation after
+waking pays the maximum penalty, precisely when the user is most
+impatient.<a href="#section-3-6.8.1" class="pilcrow">¶</a></p>
+</dd>
+      <dd class="break"></dd>
+</dl>
+<p id="section-3-7">The fundamental observation behind Optimistic DNS is that in most cases, a
+DNS record that expired a few minutes ago still contains the correct data.
+Servers do not typically change IP addresses the instant a TTL expires.
+The TTL is a freshness hint, not a correctness deadline.<a href="#section-3-7" class="pilcrow">¶</a></p>
+<p id="section-3-8">An application that receives an expired record and begins connecting to the
+address it contains will, in the vast majority of cases, succeed.  And even
+in the rare case where the address has changed, the application will learn
+this quickly -- the TCP handshake will fail, or the TLS certificate will
+not match, and the application can fall back to the fresh answer that the
+background query will deliver shortly.<a href="#section-3-8" class="pilcrow">¶</a></p>
+<p id="section-3-9">The cost of using a stale answer that turns out to be wrong is a failed
+connection attempt -- typically detected within a few hundred milliseconds.
+The cost of not using a stale answer that turns out to be right is a
+guaranteed delay of the full network round-trip time on every cache expiry.
+For most applications, the expected value of the optimistic approach is
+clearly positive.<a href="#section-3-9" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="ttl-stretching">
+<section id="section-4">
+      <h2 id="name-ttl-stretching">
+<a href="#section-4" class="section-number selfRef">4. </a><a href="#name-ttl-stretching" class="section-name selfRef">TTL Stretching</a>
+      </h2>
+<p id="section-4-1">TTL Stretching is a simple modification to the stub resolver behavior.
+In TTL stretching, the stub resolver unilaterally extends the effective
+lifetime of cached records.  When a record's TTL expires, instead of
+immediately discarding it or refusing to serve it, the resolver continues
+to return it to applications for a brief grace period -- seconds to
+minutes -- while initiating a background refresh.  The application
+receives the record as if it were still fresh.  No expired flag is set.
+No new API is involved.  From the application's perspective, the record
+simply has a longer TTL than the authoritative server originally
+specified.<a href="#section-4-1" class="pilcrow">¶</a></p>
+<p id="section-4-2">TTL stretching is attractive because it is entirely transparent.  Every
+application benefits automatically, with no code changes.  The latency
+cliff described in the Problem Statement disappears: instead of a sudden
+jump from zero to hundreds of milliseconds, the application continues to
+receive instant cache answers while the resolver refreshes the record in
+the background.<a href="#section-4-2" class="pilcrow">¶</a></p>
+<p id="section-4-3">However, TTL stretching has limitations that motivate the more
+sophisticated Optimistic DNS mechanism:<a href="#section-4-3" class="pilcrow">¶</a></p>
+<span class="break"></span><dl class="dlParallel" id="section-4-4">
+        <dt id="section-4-4.1">No application awareness</dt>
+        <dd style="margin-left: 1.5em" id="section-4-4.2">
+          <p id="section-4-4.2.1">The application cannot distinguish a fresh record from a stale one.
+This makes it impossible for the application to make risk-appropriate
+decisions.  A web browser rendering a non-critical image might be happy
+to use a stretched record without question, while a security-sensitive
+authentication flow might prefer to wait for a confirmed-fresh answer.
+TTL stretching forces both applications into the same behavior.<a href="#section-4-4.2.1" class="pilcrow">¶</a></p>
+</dd>
+        <dd class="break"></dd>
+<dt id="section-4-4.3">No opt-in or opt-out</dt>
+        <dd style="margin-left: 1.5em" id="section-4-4.4">
+          <p id="section-4-4.4.1">All applications receive stretched TTLs whether they want them or not.
+An application that specifically needs authoritative-fresh data (for
+example, to verify that a DNS-based access control record has been
+updated) has no way to bypass the stretched cache.<a href="#section-4-4.4.1" class="pilcrow">¶</a></p>
+</dd>
+        <dd class="break"></dd>
+<dt id="section-4-4.5">Bounded effectiveness</dt>
+        <dd style="margin-left: 1.5em" id="section-4-4.6">
+          <p id="section-4-4.6.1">TTL stretching is practical only for brief periods of staleness.  A
+stretch window of a few minutes handles the common case of a record
+expiring between successive page loads.  But it does not help after
+longer gaps -- for example, when a laptop wakes from an overnight
+sleep and all cached records expired hours ago.  Extending the stretch
+window to cover these cases would require serving records that are
+hours or days stale, significantly increasing the risk of returning
+incorrect data with no way for the application to detect it.<a href="#section-4-4.6.1" class="pilcrow">¶</a></p>
+</dd>
+      <dd class="break"></dd>
+</dl>
+<p id="section-4-5">Optimistic DNS, which we discuss next, generalizes TTL stretching by making
+staleness explicit.  The application receives expired records just as quickly,
+but with a clear signal that the data may be stale.  This transparency allows
+Optimistic DNS to extend the mechanism to much longer time horizons (via
+immortalization and ghost records) while keeping the application informed and in
+control.<a href="#section-4-5" class="pilcrow">¶</a></p>
+<p id="section-4-6">TTL stretching can be viewed as a simpler version of Optimistic DNS: one
+where the expired flag is never set, the application has no visibility
+into staleness, and the stretch window must remain short because there is
+no mechanism for the application to handle stale data intelligently.<a href="#section-4-6" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="optimistic-dns-overview">
+<section id="section-5">
+      <h2 id="name-optimistic-dns-overview">
+<a href="#section-5" class="section-number selfRef">5. </a><a href="#name-optimistic-dns-overview" class="section-name selfRef">Optimistic DNS Overview</a>
+      </h2>
+<p id="section-5-1">Optimistic DNS introduces further modification to stub resolver behavior.
+When an application issues a DNS query and the stub resolver's cache
+contains expired records matching that query, the resolver performs two
+actions in parallel:<a href="#section-5-1" class="pilcrow">¶</a></p>
+<ol start="1" type="1" class="normal type-1" id="section-5-2">
+<li id="section-5-2.1">
+          <p id="section-5-2.1.1">It immediately returns the expired cached records to the application,
+flagging each one as an expired answer.<a href="#section-5-2.1.1" class="pilcrow">¶</a></p>
+</li>
+        <li id="section-5-2.2">
+          <p id="section-5-2.2.1">It issues a standard DNS query on the network to obtain fresh records.<a href="#section-5-2.2.1" class="pilcrow">¶</a></p>
+</li>
+      </ol>
+<p id="section-5-3">As fresh answers arrive from the network, the resolver delivers them to
+the application through the normal callback mechanism.<a href="#section-5-3" class="pilcrow">¶</a></p>
+<p id="section-5-4">The application therefore receives two waves of results:<a href="#section-5-4" class="pilcrow">¶</a></p>
+<span class="break"></span><dl class="dlParallel" id="section-5-5">
+        <dt id="section-5-5.1">First wave (immediate)</dt>
+        <dd style="margin-left: 1.5em" id="section-5-5.2">
+          <p id="section-5-5.2.1">Expired cached records, explicitly marked as expired.  These arrive
+within microseconds of the query being issued.<a href="#section-5-5.2.1" class="pilcrow">¶</a></p>
+</dd>
+        <dd class="break"></dd>
+<dt id="section-5-5.3">Second wave (after network round trip)</dt>
+        <dd style="margin-left: 1.5em" id="section-5-5.4">
+          <p id="section-5-5.4.1">Fresh records from the network.  These arrive after the normal DNS
+resolution delay.<a href="#section-5-5.4.1" class="pilcrow">¶</a></p>
+</dd>
+      <dd class="break"></dd>
+</dl>
+<p id="section-5-6">The following diagram shows both waves for a query where www.example.com
+has an expired A record (93.184.216.34) in the cache, and the fresh answer
+returns the same address:<a href="#section-5-6" class="pilcrow">¶</a></p>
+<table class="center" id="table-3">
+        <caption><a href="#table-3" class="selfRef">Table 3</a></caption>
+<thead>
+          <tr>
+            <th class="text-left" rowspan="1" colspan="1">Time</th>
+            <th class="text-left" rowspan="1" colspan="1">Event</th>
+            <th class="text-left" rowspan="1" colspan="1">Flags</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">T+0us</td>
+            <td class="text-left" rowspan="1" colspan="1">App queries www.example.com</td>
+            <td class="text-left" rowspan="1" colspan="1"> </td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">T+5us</td>
+            <td class="text-left" rowspan="1" colspan="1">Callback: 93.184.216.34</td>
+            <td class="text-left" rowspan="1" colspan="1">Expired, FromCache</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">T+5us</td>
+            <td class="text-left" rowspan="1" colspan="1">Signal: no more expired records</td>
+            <td class="text-left" rowspan="1" colspan="1"> </td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">T+120ms</td>
+            <td class="text-left" rowspan="1" colspan="1">Callback: 93.184.216.34</td>
+            <td class="text-left" rowspan="1" colspan="1">(fresh, from network)</td>
+          </tr>
+        </tbody>
+      </table>
+<p id="section-5-8">In this case the expired answer and the fresh answer contain the same
+data.  The application that began connecting at T+5us saved 120
+milliseconds compared to waiting for the fresh answer.<a href="#section-5-8" class="pilcrow">¶</a></p>
+<p id="section-5-9">When the data has changed (for example, if the server moved to a new
+address), the sequence looks like this:<a href="#section-5-9" class="pilcrow">¶</a></p>
+<table class="center" id="table-4">
+        <caption><a href="#table-4" class="selfRef">Table 4</a></caption>
+<thead>
+          <tr>
+            <th class="text-left" rowspan="1" colspan="1">Time</th>
+            <th class="text-left" rowspan="1" colspan="1">Event</th>
+            <th class="text-left" rowspan="1" colspan="1">Flags</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">T+0us</td>
+            <td class="text-left" rowspan="1" colspan="1">App queries www.example.com</td>
+            <td class="text-left" rowspan="1" colspan="1"> </td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">T+5us</td>
+            <td class="text-left" rowspan="1" colspan="1">Callback: 93.184.216.34</td>
+            <td class="text-left" rowspan="1" colspan="1">Expired, FromCache</td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">T+5us</td>
+            <td class="text-left" rowspan="1" colspan="1">Signal: no more expired records</td>
+            <td class="text-left" rowspan="1" colspan="1"> </td>
+          </tr>
+          <tr>
+            <td class="text-left" rowspan="1" colspan="1">T+120ms</td>
+            <td class="text-left" rowspan="1" colspan="1">Callback: 198.51.100.42</td>
+            <td class="text-left" rowspan="1" colspan="1">(fresh, from network)</td>
+          </tr>
+        </tbody>
+      </table>
+<p id="section-5-11">Here the expired answer contained the old address.  An application that
+connected to 93.184.216.34 may find that the connection fails or returns
+unexpected content.  But the fresh answer arrives 120 milliseconds later,
+and the application can retry with the correct address.  The total time to
+a successful connection is still only about 120 milliseconds -- the same as
+it would have been without Optimistic DNS.<a href="#section-5-11" class="pilcrow">¶</a></p>
+<p id="section-5-12">The key insight is that Optimistic DNS never makes things worse for the
+application.  In the common case where the data has not changed, it makes
+things dramatically faster.  In the uncommon case where the data has
+changed, it costs nothing beyond a failed connection attempt that overlaps
+with the network query the resolver would have performed anyway.<a href="#section-5-12" class="pilcrow">¶</a></p>
+<p id="section-5-13">Optimistic DNS is an opt-in mechanism.  Applications that do not request it
+receive conventional stub resolver behavior: expired records are ignored,
+and only fresh network answers are returned.  This ensures backward
+compatibility and allows applications to choose the tradeoff that suits
+their needs.<a href="#section-5-13" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="detailed-mechanism">
+<section id="section-6">
+      <h2 id="name-detailed-mechanism">
+<a href="#section-6" class="section-number selfRef">6. </a><a href="#name-detailed-mechanism" class="section-name selfRef">Detailed Mechanism</a>
+      </h2>
+<div id="query-initiation">
+<section id="section-6.1">
+        <h3 id="name-query-initiation">
+<a href="#section-6.1" class="section-number selfRef">6.1. </a><a href="#name-query-initiation" class="section-name selfRef">Query Initiation</a>
+        </h3>
+<p id="section-6.1-1">To use Optimistic DNS, an application signals its willingness to receive
+expired answers when it issues a DNS query.  This signaling is a local
+matter between the application and the stub resolver -- it is not carried
+on the wire.<a href="#section-6.1-1" class="pilcrow">¶</a></p>
+<p id="section-6.1-2">The stub resolver API provides a flag (called AllowExpiredAnswers in this
+document) that the application includes with its query.  Setting this flag
+indicates that the application is prepared to handle expired answers and
+will treat them appropriately.<a href="#section-6.1-2" class="pilcrow">¶</a></p>
+<p id="section-6.1-3">Upon receiving a query with AllowExpiredAnswers set, the stub resolver sets
+its internal expired record policy for that query to "UseCached".  This
+policy has two effects:<a href="#section-6.1-3" class="pilcrow">¶</a></p>
+<ol start="1" type="1" class="normal type-1" id="section-6.1-4">
+<li id="section-6.1-4.1">
+            <p id="section-6.1-4.1.1">Expired positive cache records matching the query will be returned to
+the application, flagged as expired.<a href="#section-6.1-4.1.1" class="pilcrow">¶</a></p>
+</li>
+          <li id="section-6.1-4.2">
+            <p id="section-6.1-4.2.1">All records that answer this query -- whether cached or received from
+the network -- will be immortalized (see <a href="#record-immortalization" class="auto internal xref">Section 6.4</a>).<a href="#section-6.1-4.2.1" class="pilcrow">¶</a></p>
+</li>
+        </ol>
+<p id="section-6.1-5">If the global Optimistic DNS feature is disabled in the stub resolver's
+configuration, the AllowExpiredAnswers flag is ignored and the query
+proceeds conventionally.<a href="#section-6.1-5" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="cache-lookup-with-expired-records">
+<section id="section-6.2">
+        <h3 id="name-cache-lookup-with-expired-r">
+<a href="#section-6.2" class="section-number selfRef">6.2. </a><a href="#name-cache-lookup-with-expired-r" class="section-name selfRef">Cache Lookup with Expired Records</a>
+        </h3>
+<p id="section-6.2-1">When the stub resolver processes a query with the UseCached policy, it
+iterates through its cache looking for records that match the query's name,
+type, and class.  For each matching record, it determines whether the
+record has expired by comparing the time elapsed since the record was
+received against the record's original TTL.<a href="#section-6.2-1" class="pilcrow">¶</a></p>
+<p id="section-6.2-2">If a matching record has expired:<a href="#section-6.2-2" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-6.2-3.1">
+            <p id="section-6.2-3.1.1">If the record is a positive record (contains actual resource record
+data), it is returned to the application with the expired flag set.<a href="#section-6.2-3.1.1" class="pilcrow">¶</a></p>
+</li>
+          <li class="normal" id="section-6.2-3.2">
+            <p id="section-6.2-3.2.1">If the record is a negative cache entry (representing a previous
+NXDOMAIN or NODATA response), it is NOT returned.  Negative cache
+entries are excluded from Optimistic DNS because returning a stale
+"this name does not exist" answer could prevent the application from
+discovering that the name has since been created.  The cost of a false
+negative (telling the application a name does not exist when it now
+does) is higher than the cost of a brief delay.<a href="#section-6.2-3.2.1" class="pilcrow">¶</a></p>
+</li>
+        </ul>
+<p id="section-6.2-4">If a matching record has not expired, it is returned normally, as with any
+cache hit.<a href="#section-6.2-4" class="pilcrow">¶</a></p>
+<p id="section-6.2-5">Each expired record that is returned to the application is accompanied by
+the ExpiredAnswer flag in the callback, allowing the application to
+distinguish it from a fresh cached answer.  The AnsweredFromCache flag is
+also set, since the record did come from the cache (albeit an expired
+portion of it).<a href="#section-6.2-5" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="parallel-network-query">
+<section id="section-6.3">
+        <h3 id="name-parallel-network-query">
+<a href="#section-6.3" class="section-number selfRef">6.3. </a><a href="#name-parallel-network-query" class="section-name selfRef">Parallel Network Query</a>
+        </h3>
+<p id="section-6.3-1">Regardless of whether expired records were found in the cache, the stub
+resolver issues a standard DNS query on the network.  This query proceeds
+through the normal resolution path: contacting configured recursive
+resolvers, following CNAME chains, appending search domains if applicable,
+and so on.<a href="#section-6.3-1" class="pilcrow">¶</a></p>
+<p id="section-6.3-2">Fresh answers from the network are delivered to the application through the
+normal callback mechanism, without the ExpiredAnswer flag.  The application
+can use these fresh answers to confirm or replace any expired answers it
+received earlier.<a href="#section-6.3-2" class="pilcrow">¶</a></p>
+<p id="section-6.3-3">The parallel network query is not optional.  Even if expired records were
+returned from the cache, the network query <span class="bcp14">MUST</span> still be issued.  The
+expired records are a convenience for the application, not a substitute for
+proper DNS resolution.<a href="#section-6.3-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="record-immortalization">
+<section id="section-6.4">
+        <h3 id="name-record-immortalization">
+<a href="#section-6.4" class="section-number selfRef">6.4. </a><a href="#name-record-immortalization" class="section-name selfRef">Record Immortalization</a>
+        </h3>
+<p id="section-6.4-1">A critical component of Optimistic DNS is the record lifecycle management
+that ensures expired records remain available for future optimistic
+queries.  Without this mechanism, expired records would be purged from the
+cache according to normal TTL rules, and Optimistic DNS would have nothing
+to offer.<a href="#section-6.4-1" class="pilcrow">¶</a></p>
+<p id="section-6.4-2">Optimistic DNS extends the standard record lifecycle with two additional
+states beyond the normal "mortal" state:<a href="#section-6.4-2" class="pilcrow">¶</a></p>
+<span class="break"></span><dl class="dlParallel" id="section-6.4-3">
+          <dt id="section-6.4-3.1">Mortal (default)</dt>
+          <dd style="margin-left: 1.5em" id="section-6.4-3.2">
+            <p id="section-6.4-3.2.1">A record in the normal cache lifecycle.  When its TTL expires, it is
+eligible for immediate removal from the cache.  All newly cached records
+begin in this state.<a href="#section-6.4-3.2.1" class="pilcrow">¶</a></p>
+</dd>
+          <dd class="break"></dd>
+<dt id="section-6.4-3.3">Immortal</dt>
+          <dd style="margin-left: 1.5em" id="section-6.4-3.4">
+            <p id="section-6.4-3.4.1">A record that has been marked to survive past its TTL expiry.  A mortal
+record is promoted to immortal when it answers a query that has the
+Optimistic DNS policy active (either UseCached or Immortalize).  The
+promotion occurs at the time the record is delivered to the application,
+whether the record is expired or fresh.<a href="#section-6.4-3.4.1" class="pilcrow">¶</a></p>
+<p id="section-6.4-3.4.2">The following conditions must all be true for a record to be
+immortalized:<a href="#section-6.4-3.4.2" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-6.4-3.4.3.1">
+                <p id="section-6.4-3.4.3.1.1">The query's expired record policy is UseCached or Immortalize.<a href="#section-6.4-3.4.3.1.1" class="pilcrow">¶</a></p>
+</li>
+              <li class="normal" id="section-6.4-3.4.3.2">
+                <p id="section-6.4-3.4.3.2.1">The record is a positive record (not a negative cache entry).<a href="#section-6.4-3.4.3.2.1" class="pilcrow">¶</a></p>
+</li>
+              <li class="normal" id="section-6.4-3.4.3.3">
+                <p id="section-6.4-3.4.3.3.1">The record is not DNSSEC-validated (see <a href="#dnssec" class="auto internal xref">Section 8.1</a>).<a href="#section-6.4-3.4.3.3.1" class="pilcrow">¶</a></p>
+</li>
+              <li class="normal" id="section-6.4-3.4.3.4">
+                <p id="section-6.4-3.4.3.4.1">The record is being added (not removed) from the answer set.<a href="#section-6.4-3.4.3.4.1" class="pilcrow">¶</a></p>
+</li>
+            </ul>
+</dd>
+          <dd class="break"></dd>
+<dt id="section-6.4-3.5">Ghost</dt>
+          <dd style="margin-left: 1.5em" id="section-6.4-3.6">
+            <p id="section-6.4-3.6.1">When an immortal record's TTL expires, instead of being purged, it
+transitions to the ghost state.  A ghost record is an expired immortal
+record that lingers in the cache, available to serve future optimistic
+queries.<a href="#section-6.4-3.6.1" class="pilcrow">¶</a></p>
+<p id="section-6.4-3.6.2">Ghost records are retained for a bounded period called the ghost
+retention period.  This document recommends a default ghost retention
+period of one week.  After the ghost retention period elapses, the ghost
+record is finally purged from the cache like any other expired record.<a href="#section-6.4-3.6.2" class="pilcrow">¶</a></p>
+</dd>
+        <dd class="break"></dd>
+</dl>
+<p id="section-6.4-4">The complete lifecycle is:<a href="#section-6.4-4" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-6.4-5">
+<pre>
+  +--------+     TTL expires     +-----------+
+  | Mortal |---(if immortalized)-| Immortal  |
+  +--------+   during lifetime   +-----------+
+      |                               |
+      | TTL expires                   | TTL expires
+      | (not immortalized)            |
+      v                               v
+   [purged]                      +---------+
+                                 |  Ghost  |
+                                 +---------+
+                                      |
+                                      | ghost retention
+                                      | period expires
+                                      v
+                                   [purged]
+</pre><a href="#section-6.4-5" class="pilcrow">¶</a>
+</div>
+<p id="section-6.4-6">The immortalization mechanism ensures that once a record has been used to
+answer an optimistic query, it remains available in the cache for a
+substantial period.  This creates a virtuous cycle: the more frequently a
+name is queried with Optimistic DNS, the more likely it is that the cache
+will contain a ghost record for it the next time an optimistic query
+arrives after the TTL has expired.<a href="#section-6.4-6" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="policy-transition">
+<section id="section-6.5">
+        <h3 id="name-policy-transition">
+<a href="#section-6.5" class="section-number selfRef">6.5. </a><a href="#name-policy-transition" class="section-name selfRef">Policy Transition</a>
+        </h3>
+<p id="section-6.5-1">After the stub resolver has delivered all available expired records from
+the cache and there are no more expired records to return, it performs two
+actions:<a href="#section-6.5-1" class="pilcrow">¶</a></p>
+<ol start="1" type="1" class="normal type-1" id="section-6.5-2">
+<li id="section-6.5-2.1">
+            <p id="section-6.5-2.1.1">It signals the application that no more expired records will be
+provided.  This signal is delivered through the query's event handler
+mechanism.<a href="#section-6.5-2.1.1" class="pilcrow">¶</a></p>
+</li>
+          <li id="section-6.5-2.2">
+            <p id="section-6.5-2.2.1">It downgrades the query's expired record policy from UseCached to
+Immortalize.<a href="#section-6.5-2.2.1" class="pilcrow">¶</a></p>
+</li>
+        </ol>
+<p id="section-6.5-3">The Immortalize policy preserves the immortalization behavior (fresh
+answers that arrive from the network will still be immortalized) but
+disables the use of expired records.  This ensures that later processing
+stages (such as CNAME following) do not inadvertently serve expired records
+that were not part of the initial cache lookup.<a href="#section-6.5-3" class="pilcrow">¶</a></p>
+<p id="section-6.5-4">The three expired record policies form a strict ordering:<a href="#section-6.5-4" class="pilcrow">¶</a></p>
+<span class="break"></span><dl class="dlParallel" id="section-6.5-5">
+          <dt id="section-6.5-5.1">DoNotUse</dt>
+          <dd style="margin-left: 1.5em" id="section-6.5-5.2">
+            <p id="section-6.5-5.2.1">The default for queries without AllowExpiredAnswers.  Expired records are
+ignored.  Records are not immortalized.<a href="#section-6.5-5.2.1" class="pilcrow">¶</a></p>
+</dd>
+          <dd class="break"></dd>
+<dt id="section-6.5-5.3">UseCached</dt>
+          <dd style="margin-left: 1.5em" id="section-6.5-5.4">
+            <p id="section-6.5-5.4.1">The initial policy for optimistic queries.  Expired records are returned.
+Records are immortalized.<a href="#section-6.5-5.4.1" class="pilcrow">¶</a></p>
+</dd>
+          <dd class="break"></dd>
+<dt id="section-6.5-5.5">Immortalize</dt>
+          <dd style="margin-left: 1.5em" id="section-6.5-5.6">
+            <p id="section-6.5-5.6.1">The downgraded policy after expired records have been delivered.  Expired
+records are no longer returned, but records are still immortalized.<a href="#section-6.5-5.6.1" class="pilcrow">¶</a></p>
+</dd>
+        <dd class="break"></dd>
+</dl>
+<p id="section-6.5-6">Policy transitions are one-directional: UseCached transitions to
+Immortalize, and Immortalize remains at Immortalize.  A query never
+transitions back to a more permissive policy.<a href="#section-6.5-6" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="cname-handling">
+<section id="section-6.6">
+        <h3 id="name-cname-handling">
+<a href="#section-6.6" class="section-number selfRef">6.6. </a><a href="#name-cname-handling" class="section-name selfRef">CNAME Handling</a>
+        </h3>
+<p id="section-6.6-1">CNAME records introduce a complication for Optimistic DNS.  When a DNS
+query encounters a CNAME record, the resolver must follow the CNAME chain
+to find the ultimate answer.  If the CNAME record itself is expired,
+following it may lead to a stale alias that no longer points to the correct
+canonical name.<a href="#section-6.6-1" class="pilcrow">¶</a></p>
+<p id="section-6.6-2">Consider the following example.  An application queries for
+www.example.com, which has a CNAME record pointing to cdn.example.net.
+Both records are in the cache but expired:<a href="#section-6.6-2" class="pilcrow">¶</a></p>
+<p id="section-6.6-3"><code>
+  www.example.com.   CNAME  cdn.example.net.  (expired)
+  cdn.example.net.   A      198.51.100.42     (expired)
+</code><a href="#section-6.6-3" class="pilcrow">¶</a></p>
+<p id="section-6.6-4">If the resolver follows the expired CNAME to cdn.example.net and returns
+the expired A record, the application receives a result.  But if the CNAME
+has changed (www.example.com now points to cdn2.example.net instead), the
+resolver has followed a stale chain and returned a record for the wrong
+name.<a href="#section-6.6-4" class="pilcrow">¶</a></p>
+<p id="section-6.6-5">To handle this safely, when the stub resolver encounters an expired CNAME
+record during optimistic resolution, it takes the following steps:<a href="#section-6.6-5" class="pilcrow">¶</a></p>
+<ol start="1" type="1" class="normal type-1" id="section-6.6-6">
+<li id="section-6.6-6.1">
+            <p id="section-6.6-6.1.1">The expired CNAME is returned to the application, flagged as expired,
+so the application has the information.<a href="#section-6.6-6.1.1" class="pilcrow">¶</a></p>
+</li>
+          <li id="section-6.6-6.2">
+            <p id="section-6.6-6.2.1">When the "no more expired records" signal is generated, the resolver
+detects that an expired CNAME was encountered.<a href="#section-6.6-6.2.1" class="pilcrow">¶</a></p>
+</li>
+          <li id="section-6.6-6.3">
+            <p id="section-6.6-6.3.1">The resolver rewinds the query back to the original QNAME
+(www.example.com in the example above).<a href="#section-6.6-6.3.1" class="pilcrow">¶</a></p>
+</li>
+          <li id="section-6.6-6.4">
+            <p id="section-6.6-6.4.1">The query is restarted with the Immortalize policy instead of
+UseCached, meaning no more expired records will be returned but fresh
+answers will still be immortalized.<a href="#section-6.6-6.4.1" class="pilcrow">¶</a></p>
+</li>
+          <li id="section-6.6-6.5">
+            <p id="section-6.6-6.5.1">The restarted query proceeds through normal DNS resolution, following
+whatever CNAME chain the fresh network response provides.<a href="#section-6.6-6.5.1" class="pilcrow">¶</a></p>
+</li>
+        </ol>
+<p id="section-6.6-7">This rewind-and-restart approach ensures that the application always
+receives a complete, consistent answer from the fresh network query, even
+if the CNAME chain has changed since the cached records were stored.<a href="#section-6.6-7" class="pilcrow">¶</a></p>
+<p id="section-6.6-8">When search domains are in use (the resolver is appending search domains
+to a partially-qualified name), the restart preserves the current search
+domain.  For example, if the resolver was trying
+www.example.com.corp.example.net (the original query www with search domain
+corp.example.net) when the expired CNAME was encountered, the restart
+continues with that same search domain rather than advancing to the next
+one in the list.<a href="#section-6.6-8" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="signaling">
+<section id="section-7">
+      <h2 id="name-signaling">
+<a href="#section-7" class="section-number selfRef">7. </a><a href="#name-signaling" class="section-name selfRef">Signaling</a>
+      </h2>
+<p id="section-7-1">Optimistic DNS uses local signaling between the application and the stub
+resolver.  No new DNS wire-protocol elements are defined.<a href="#section-7-1" class="pilcrow">¶</a></p>
+<div id="query-flags">
+<section id="section-7.1">
+        <h3 id="name-query-flags">
+<a href="#section-7.1" class="section-number selfRef">7.1. </a><a href="#name-query-flags" class="section-name selfRef">Query Flags</a>
+        </h3>
+<span class="break"></span><dl class="dlParallel" id="section-7.1-1">
+          <dt id="section-7.1-1.1">AllowExpiredAnswers</dt>
+          <dd style="margin-left: 1.5em" id="section-7.1-1.2">
+            <p id="section-7.1-1.2.1">Set by the application when issuing a query to indicate that the
+application is willing to receive expired cached records.  This flag is
+purely local; it is not transmitted on the wire.<a href="#section-7.1-1.2.1" class="pilcrow">¶</a></p>
+<p id="section-7.1-1.2.2">When this flag is set, and the stub resolver's global Optimistic DNS
+feature is enabled, the query's expired record policy is set to
+UseCached.<a href="#section-7.1-1.2.2" class="pilcrow">¶</a></p>
+<p id="section-7.1-1.2.3">When this flag is not set, the query behaves conventionally: only
+unexpired cached records and fresh network records are returned.<a href="#section-7.1-1.2.3" class="pilcrow">¶</a></p>
+</dd>
+        <dd class="break"></dd>
+</dl>
+</section>
+</div>
+<div id="response-flags">
+<section id="section-7.2">
+        <h3 id="name-response-flags">
+<a href="#section-7.2" class="section-number selfRef">7.2. </a><a href="#name-response-flags" class="section-name selfRef">Response Flags</a>
+        </h3>
+<span class="break"></span><dl class="dlParallel" id="section-7.2-1">
+          <dt id="section-7.2-1.1">ExpiredAnswer</dt>
+          <dd style="margin-left: 1.5em" id="section-7.2-1.2">
+            <p id="section-7.2-1.2.1">Set by the stub resolver on individual answer callbacks to indicate that
+the record being returned is an expired cached record.  The application
+<span class="bcp14">SHOULD</span> treat this answer as potentially stale and be prepared for the
+data to be incorrect.<a href="#section-7.2-1.2.1" class="pilcrow">¶</a></p>
+<p id="section-7.2-1.2.2">This flag is set when the record returned is a ghost record (an immortal
+record that has expired) or when an expired CNAME was encountered during
+resolution.<a href="#section-7.2-1.2.2" class="pilcrow">¶</a></p>
+</dd>
+          <dd class="break"></dd>
+<dt id="section-7.2-1.3">AnsweredFromCache</dt>
+          <dd style="margin-left: 1.5em" id="section-7.2-1.4">
+            <p id="section-7.2-1.4.1">Set by the stub resolver to indicate that the record was served from the
+local cache rather than from a network response.  This flag is set
+regardless of whether the record is expired, allowing the application to
+distinguish between cached answers (immediate) and network answers
+(delayed).<a href="#section-7.2-1.4.1" class="pilcrow">¶</a></p>
+</dd>
+          <dd class="break"></dd>
+<dt id="section-7.2-1.5">NoMoreExpiredRecords (event)</dt>
+          <dd style="margin-left: 1.5em" id="section-7.2-1.6">
+            <p id="section-7.2-1.6.1">A signal delivered through the query's event mechanism to indicate that
+the stub resolver has finished delivering all available expired cached
+records.  After this signal:<a href="#section-7.2-1.6.1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-7.2-1.6.2.1">
+                <p id="section-7.2-1.6.2.1.1">No more expired records will be returned for this query.<a href="#section-7.2-1.6.2.1.1" class="pilcrow">¶</a></p>
+</li>
+              <li class="normal" id="section-7.2-1.6.2.2">
+                <p id="section-7.2-1.6.2.2.1">The query's expired record policy is downgraded to Immortalize.<a href="#section-7.2-1.6.2.2.1" class="pilcrow">¶</a></p>
+</li>
+              <li class="normal" id="section-7.2-1.6.2.3">
+                <p id="section-7.2-1.6.2.3.1">If an expired CNAME was encountered, the query is restarted at the
+original QNAME (see <a href="#cname-handling" class="auto internal xref">Section 6.6</a>).<a href="#section-7.2-1.6.2.3.1" class="pilcrow">¶</a></p>
+</li>
+            </ul>
+</dd>
+        <dd class="break"></dd>
+</dl>
+</section>
+</div>
+</section>
+</div>
+<div id="interaction-with-other-dns-features">
+<section id="section-8">
+      <h2 id="name-interaction-with-other-dns-">
+<a href="#section-8" class="section-number selfRef">8. </a><a href="#name-interaction-with-other-dns-" class="section-name selfRef">Interaction with Other DNS Features</a>
+      </h2>
+<div id="dnssec">
+<section id="section-8.1">
+        <h3 id="name-dnssec">
+<a href="#section-8.1" class="section-number selfRef">8.1. </a><a href="#name-dnssec" class="section-name selfRef">DNSSEC</a>
+        </h3>
+<p id="section-8.1-1">Optimistic DNS <span class="bcp14">MUST NOT</span> be used for DNSSEC-validated responses.<a href="#section-8.1-1" class="pilcrow">¶</a></p>
+<p id="section-8.1-2">DNSSEC relies on cryptographic signatures (RRSIG records) that have
+explicit validity periods.  An expired DNS record may have an associated
+RRSIG whose signature validity period has also expired.  Serving such a
+record as an optimistic answer would provide the application with data
+whose cryptographic authentication can no longer be verified, undermining
+the security guarantees that DNSSEC is designed to provide.<a href="#section-8.1-2" class="pilcrow">¶</a></p>
+<p id="section-8.1-3">When the stub resolver is processing a query that requests DNSSEC
+validation, records <span class="bcp14">MUST NOT</span> be immortalized, and expired records <span class="bcp14">MUST NOT</span>
+be returned, regardless of the AllowExpiredAnswers flag.<a href="#section-8.1-3" class="pilcrow">¶</a></p>
+<p id="section-8.1-4">Similarly, records that were originally received with DNSSEC validation
+<span class="bcp14">MUST NOT</span> be immortalized even when answering a non-DNSSEC query, because
+doing so could cause them to be served as optimistic answers to a future
+DNSSEC-requesting query after their signatures have expired.<a href="#section-8.1-4" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="encrypted-dns-transports">
+<section id="section-8.2">
+        <h3 id="name-encrypted-dns-transports">
+<a href="#section-8.2" class="section-number selfRef">8.2. </a><a href="#name-encrypted-dns-transports" class="section-name selfRef">Encrypted DNS Transports</a>
+        </h3>
+<p id="section-8.2-1">Optimistic DNS is transport-agnostic.  It operates entirely within the stub
+resolver's cache layer, which sits above the transport layer.  Whether the
+stub resolver communicates with recursive resolvers using classic DNS over
+UDP/TCP, DNS over TLS (DoT) <span>[<a href="#RFC7858" class="cite xref">RFC7858</a>]</span>, DNS over HTTPS (DoH)
+<span>[<a href="#RFC8484" class="cite xref">RFC8484</a>]</span>, or DNS over QUIC (DoQ) <span>[<a href="#RFC9250" class="cite xref">RFC9250</a>]</span>, the Optimistic DNS
+mechanism functions identically.<a href="#section-8.2-1" class="pilcrow">¶</a></p>
+<p id="section-8.2-2">The transport used to obtain a record has no bearing on whether that record
+can be immortalized or served as an expired answer.  The cache does not
+distinguish between records obtained via different transports.<a href="#section-8.2-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="search-domains">
+<section id="section-8.3">
+        <h3 id="name-search-domains">
+<a href="#section-8.3" class="section-number selfRef">8.3. </a><a href="#name-search-domains" class="section-name selfRef">Search Domains</a>
+        </h3>
+<p id="section-8.3-1">When the stub resolver appends search domains to partially-qualified domain
+names, Optimistic DNS interacts with the search domain iteration process.<a href="#section-8.3-1" class="pilcrow">¶</a></p>
+<p id="section-8.3-2">If an optimistic query encounters an expired CNAME while using a particular
+search domain, the query restart described in <a href="#cname-handling" class="auto internal xref">Section 6.6</a> preserves
+the current search domain.  The restart does not advance to the next search
+domain in the list, because the current search domain may still be the
+correct one -- the expired CNAME merely prevented the resolver from
+following the chain to a fresh answer.<a href="#section-8.3-2" class="pilcrow">¶</a></p>
+<p id="section-8.3-3">For example, if the user queries for "mail" and the search domain list is
+[corp.example.com, example.com]:<a href="#section-8.3-3" class="pilcrow">¶</a></p>
+<ol start="1" type="1" class="normal type-1" id="section-8.3-4">
+<li id="section-8.3-4.1">
+            <p id="section-8.3-4.1.1">The resolver tries mail.corp.example.com with Optimistic DNS.<a href="#section-8.3-4.1.1" class="pilcrow">¶</a></p>
+</li>
+          <li id="section-8.3-4.2">
+            <p id="section-8.3-4.2.1">An expired CNAME is found for mail.corp.example.com pointing to
+mailserver.corp.example.com.<a href="#section-8.3-4.2.1" class="pilcrow">¶</a></p>
+</li>
+          <li id="section-8.3-4.3">
+            <p id="section-8.3-4.3.1">The "no more expired records" signal fires, and the resolver detects the
+expired CNAME.<a href="#section-8.3-4.3.1" class="pilcrow">¶</a></p>
+</li>
+          <li id="section-8.3-4.4">
+            <p id="section-8.3-4.4.1">The resolver restarts at mail.corp.example.com (not mail.example.com)
+with the Immortalize policy.<a href="#section-8.3-4.4.1" class="pilcrow">¶</a></p>
+</li>
+          <li id="section-8.3-4.5">
+            <p id="section-8.3-4.5.1">The fresh network query resolves mail.corp.example.com normally.<a href="#section-8.3-4.5.1" class="pilcrow">¶</a></p>
+</li>
+        </ol>
+</section>
+</div>
+<div id="relationship-to-rfc-8767">
+<section id="section-8.4">
+        <h3 id="name-relationship-to-rfc-8767">
+<a href="#section-8.4" class="section-number selfRef">8.4. </a><a href="#name-relationship-to-rfc-8767" class="section-name selfRef">Relationship to RFC 8767</a>
+        </h3>
+<p id="section-8.4-1"><span>[<a href="#RFC8767" class="cite xref">RFC8767</a>]</span> ("Serving Stale Data to Improve DNS Resiliency") describes a
+mechanism for recursive resolvers to serve stale cached data when they are
+unable to refresh it from authoritative servers.  Optimistic DNS and
+RFC 8767 address different levels of the DNS resolution chain:<a href="#section-8.4-1" class="pilcrow">¶</a></p>
+<span class="break"></span><dl class="dlParallel" id="section-8.4-2">
+          <dt id="section-8.4-2.1">RFC 8767</dt>
+          <dd style="margin-left: 1.5em" id="section-8.4-2.2">
+            <p id="section-8.4-2.2.1">Operates at the recursive resolver.  Serves stale data when upstream
+authoritative servers are unreachable.  The primary goal is resiliency --
+maintaining DNS service during outages.<a href="#section-8.4-2.2.1" class="pilcrow">¶</a></p>
+</dd>
+          <dd class="break"></dd>
+<dt id="section-8.4-2.3">Optimistic DNS</dt>
+          <dd style="margin-left: 1.5em" id="section-8.4-2.4">
+            <p id="section-8.4-2.4.1">Operates at the stub resolver on the end-user's device.  Serves expired
+cached data proactively, before attempting a network query.  The primary
+goal is latency reduction -- eliminating the TTL expiry cliff.<a href="#section-8.4-2.4.1" class="pilcrow">¶</a></p>
+</dd>
+        <dd class="break"></dd>
+</dl>
+<p id="section-8.4-3">The two mechanisms are complementary and can be deployed simultaneously.
+When both are active, the resolution chain has two layers of staleness
+tolerance:<a href="#section-8.4-3" class="pilcrow">¶</a></p>
+<ol start="1" type="1" class="normal type-1" id="section-8.4-4">
+<li id="section-8.4-4.1">
+            <p id="section-8.4-4.1.1">The stub resolver returns expired records optimistically, eliminating
+client-perceived latency.<a href="#section-8.4-4.1.1" class="pilcrow">¶</a></p>
+</li>
+          <li id="section-8.4-4.2">
+            <p id="section-8.4-4.2.1">If the recursive resolver's cache has also expired and the authoritative
+server is unreachable, the recursive resolver can serve its own stale
+data rather than returning SERVFAIL.<a href="#section-8.4-4.2.1" class="pilcrow">¶</a></p>
+</li>
+        </ol>
+<p id="section-8.4-5">A key difference is in the signaling model.  RFC 8767 serves stale data
+transparently -- the stub resolver cannot distinguish a stale answer from a
+fresh one based on the DNS wire protocol.  In this regard, RFC 8767 is
+more similar to TTL stretching (<a href="#ttl-stretching" class="auto internal xref">Section 4</a>) than to Optimistic
+DNS: both RFC 8767 and TTL stretching serve stale data without informing
+the application.  Optimistic DNS, by contrast, explicitly signals
+staleness to the application through local API flags, empowering the
+application to make informed decisions.<a href="#section-8.4-5" class="pilcrow">¶</a></p>
+</section>
+</div>
 </section>
 </div>
 <div id="security-considerations">
-<section id="section-3">
+<section id="section-9">
       <h2 id="name-security-considerations">
-<a href="#section-3" class="section-number selfRef">3. </a><a href="#name-security-considerations" class="section-name selfRef">Security Considerations</a>
+<a href="#section-9" class="section-number selfRef">9. </a><a href="#name-security-considerations" class="section-name selfRef">Security Considerations</a>
       </h2>
-<p id="section-3-1">TODO Security<a href="#section-3-1" class="pilcrow">¶</a></p>
+<p id="section-9-1">Optimistic DNS introduces a tradeoff between latency and freshness.
+Applications that use expired answers must be prepared for those answers to
+be incorrect.<a href="#section-9-1" class="pilcrow">¶</a></p>
+<span class="break"></span><dl class="dlParallel" id="section-9-2">
+        <dt id="section-9-2.1">IP Address Reuse</dt>
+        <dd style="margin-left: 1.5em" id="section-9-2.2">
+          <p id="section-9-2.2.1">When a DNS record expires, the IP address it contained may no longer be
+associated with the original domain.  If the address has been reassigned
+to a different entity, an application connecting to that address may
+reach the wrong server.  For HTTPS connections, TLS certificate
+validation will detect this mismatch and prevent data from being sent to
+the wrong party.  For unencrypted protocols, there is a risk of
+connecting to an unintended server.<a href="#section-9-2.2.1" class="pilcrow">¶</a></p>
+</dd>
+        <dd class="break"></dd>
+<dt id="section-9-2.3">Poisoning Amplification</dt>
+        <dd style="margin-left: 1.5em" id="section-9-2.4">
+          <p id="section-9-2.4.1">If an attacker successfully poisons a cache entry, the immortalization
+mechanism could extend the lifetime of the poisoned record beyond its
+original TTL.  However, the ghost retention period provides a bounded
+window of exposure.  The record will eventually be purged regardless of
+its mortality state.  Additionally, the parallel network query will
+obtain and deliver the correct answer, giving the application an
+opportunity to detect the discrepancy.<a href="#section-9-2.4.1" class="pilcrow">¶</a></p>
+</dd>
+        <dd class="break"></dd>
+<dt id="section-9-2.5">DNSSEC Exclusion</dt>
+        <dd style="margin-left: 1.5em" id="section-9-2.6">
+          <p id="section-9-2.6.1">As described in <a href="#dnssec" class="auto internal xref">Section 8.1</a>, Optimistic DNS excludes DNSSEC-validated
+records from immortalization and expired serving.  This prevents the
+serving of records whose cryptographic signatures have expired,
+maintaining DNSSEC's security guarantees.<a href="#section-9-2.6.1" class="pilcrow">¶</a></p>
+</dd>
+        <dd class="break"></dd>
+<dt id="section-9-2.7">Ghost Retention Period</dt>
+        <dd style="margin-left: 1.5em" id="section-9-2.8">
+          <p id="section-9-2.8.1">The ghost retention period (recommended default: one week) bounds the
+maximum time a stale record can be served.  Implementations <span class="bcp14">SHOULD</span> allow
+this period to be configured.  Shorter periods reduce the window of
+exposure to stale data but also reduce the effectiveness of Optimistic
+DNS for infrequently-accessed names.<a href="#section-9-2.8.1" class="pilcrow">¶</a></p>
+</dd>
+        <dd class="break"></dd>
+<dt id="section-9-2.9">Negative Record Exclusion</dt>
+        <dd style="margin-left: 1.5em" id="section-9-2.10">
+          <p id="section-9-2.10.1">Negative cache entries (representing NXDOMAIN or NODATA responses) are
+excluded from optimistic serving.  This prevents stale negative answers
+from suppressing the discovery of newly-created names.<a href="#section-9-2.10.1" class="pilcrow">¶</a></p>
+</dd>
+      <dd class="break"></dd>
+</dl>
+<p id="section-9-3">Applications using Optimistic DNS <span class="bcp14">SHOULD</span> employ transport-layer security
+(TLS, QUIC) when connecting to addresses obtained from expired
+answers, to detect cases where the address has been reassigned.<a href="#section-9-3" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="iana-considerations">
-<section id="section-4">
+<section id="section-10">
       <h2 id="name-iana-considerations">
-<a href="#section-4" class="section-number selfRef">4. </a><a href="#name-iana-considerations" class="section-name selfRef">IANA Considerations</a>
+<a href="#section-10" class="section-number selfRef">10. </a><a href="#name-iana-considerations" class="section-name selfRef">IANA Considerations</a>
       </h2>
-<p id="section-4-1">This document has no IANA actions.<a href="#section-4-1" class="pilcrow">¶</a></p>
+<p id="section-10-1">This document has no IANA actions.<a href="#section-10-1" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="sec-normative-references">
-<section id="section-5">
+<section id="section-11">
       <h2 id="name-normative-references">
-<a href="#section-5" class="section-number selfRef">5. </a><a href="#name-normative-references" class="section-name selfRef">Normative References</a>
+<a href="#section-11" class="section-number selfRef">11. </a><a href="#name-normative-references" class="section-name selfRef">Normative References</a>
       </h2>
 <dl class="references">
 <dt id="RFC2119">[RFC2119]</dt>
       <dd>
 <span class="refAuthor">Bradner, S.</span>, <span class="refTitle">"Key words for use in RFCs to Indicate Requirement Levels"</span>, <span class="seriesInfo">BCP 14</span>, <span class="seriesInfo">RFC 2119</span>, <span class="seriesInfo">DOI 10.17487/RFC2119</span>, <time datetime="1997-03" class="refDate">March 1997</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc2119">https://www.rfc-editor.org/rfc/rfc2119</a>&gt;</span>. </dd>
 <dd class="break"></dd>
+<dt id="RFC7858">[RFC7858]</dt>
+      <dd>
+<span class="refAuthor">Hu, Z.</span>, <span class="refAuthor">Zhu, L.</span>, <span class="refAuthor">Heidemann, J.</span>, <span class="refAuthor">Mankin, A.</span>, <span class="refAuthor">Wessels, D.</span>, and <span class="refAuthor">P. Hoffman</span>, <span class="refTitle">"Specification for DNS over Transport Layer Security (TLS)"</span>, <span class="seriesInfo">RFC 7858</span>, <span class="seriesInfo">DOI 10.17487/RFC7858</span>, <time datetime="2016-05" class="refDate">May 2016</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc7858">https://www.rfc-editor.org/rfc/rfc7858</a>&gt;</span>. </dd>
+<dd class="break"></dd>
 <dt id="RFC8174">[RFC8174]</dt>
-    <dd>
+      <dd>
 <span class="refAuthor">Leiba, B.</span>, <span class="refTitle">"Ambiguity of Uppercase vs Lowercase in RFC 2119 Key Words"</span>, <span class="seriesInfo">BCP 14</span>, <span class="seriesInfo">RFC 8174</span>, <span class="seriesInfo">DOI 10.17487/RFC8174</span>, <time datetime="2017-05" class="refDate">May 2017</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8174">https://www.rfc-editor.org/rfc/rfc8174</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC8484">[RFC8484]</dt>
+      <dd>
+<span class="refAuthor">Hoffman, P.</span> and <span class="refAuthor">P. McManus</span>, <span class="refTitle">"DNS Queries over HTTPS (DoH)"</span>, <span class="seriesInfo">RFC 8484</span>, <span class="seriesInfo">DOI 10.17487/RFC8484</span>, <time datetime="2018-10" class="refDate">October 2018</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8484">https://www.rfc-editor.org/rfc/rfc8484</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC8767">[RFC8767]</dt>
+      <dd>
+<span class="refAuthor">Lawrence, D.</span>, <span class="refAuthor">Kumari, W.</span>, and <span class="refAuthor">P. Sood</span>, <span class="refTitle">"Serving Stale Data to Improve DNS Resiliency"</span>, <span class="seriesInfo">RFC 8767</span>, <span class="seriesInfo">DOI 10.17487/RFC8767</span>, <time datetime="2020-03" class="refDate">March 2020</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8767">https://www.rfc-editor.org/rfc/rfc8767</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC9250">[RFC9250]</dt>
+    <dd>
+<span class="refAuthor">Huitema, C.</span>, <span class="refAuthor">Dickinson, S.</span>, and <span class="refAuthor">A. Mankin</span>, <span class="refTitle">"DNS over Dedicated QUIC Connections"</span>, <span class="seriesInfo">RFC 9250</span>, <span class="seriesInfo">DOI 10.17487/RFC9250</span>, <time datetime="2022-05" class="refDate">May 2022</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc9250">https://www.rfc-editor.org/rfc/rfc9250</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 </dl>
 </section>
@@ -1239,7 +2366,7 @@ appear in all capitals, as shown here.<a href="#section-2-1" class="pilcrow">¶<
       </h2>
 <address class="vcard">
         <div dir="auto" class="left"><span class="fn nameRole">Your Name Here</span></div>
-<div dir="auto" class="left"><span class="org">Your Organization Here</span></div>
+<div dir="auto" class="left"><span class="org">Apple Inc</span></div>
 <div class="email">
 <span>Email:</span>
 <a href="mailto:your.email@example.com" class="email">your.email@example.com</a>
