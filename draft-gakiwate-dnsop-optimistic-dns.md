@@ -175,9 +175,7 @@ Mortal Record
   is the default state for all newly cached records.
 
 Immortal Record
-: A cached DNS record that has been marked to survive beyond its TTL
-  expiry.  Records are immortalized when they answer an Optimistic DNS
-  query, ensuring they remain available for future optimistic lookups.
+: A cached DNS record that has been marked to survive beyond its TTL expiry.
 
 Ghost Record
 : An immortal record whose TTL has expired.  Ghost records linger in the
@@ -191,11 +189,25 @@ Ghost Retention Period
 
 TTL Stretching
 : A stub resolver technique that transparently extends the effective
-  lifetime of cached records beyond their original TTL.  The resolver
-  continues to serve expired records to applications without any
-  indication of staleness, while refreshing them in the background.
-  Unlike Optimistic DNS, no expired flag is set and the application
-  cannot distinguish stale answers from fresh ones.
+  lifetime of cached records beyond their original TTL.  The resolver continues
+  to serve expired records to applications without any indication of staleness.
+  Unlike Optimistic DNS, no expired flag is set, no background query is
+  initiated, and the application cannot distinguish stale answers from fresh
+  ones.
+
+Asynchronous DNS Resolution
+: A DNS resolution model where the application initiates a query and
+  receives results through callbacks or event notifications as they
+  become available, rather than blocking until a single answer is
+  returned.  This model supports receiving multiple answers over time,
+  including updated answers that supersede earlier ones.
+
+Happy Eyeballs
+: A client-side connection establishment algorithm (defined in
+  {{!RFC8305}} and {{!RFC9622}}) that races connection attempts across
+  multiple addresses and address families, using whichever connection
+  succeeds first.  Failed connection attempts to individual addresses
+  are absorbed within the algorithm's normal timeout budget.
 
 # Problem Statement
 
@@ -203,25 +215,7 @@ The DNS TTL mechanism creates an inherent tension between freshness and
 performance.  When a record is cached and its TTL has not expired, lookups
 are essentially free and the answer is returned from local memory in
 microseconds.  The moment the TTL expires, the cost jumps to a full
-network round trip.
-
-This is not a graceful degradation.  It is a cliff.  The following timeline
-illustrates the problem for a user browsing the web.  Assume
-www.example.com has a TTL of 300 seconds (5 minutes) and the user's
-network round-trip time to the recursive resolver is 100 milliseconds:
-
-| Time | Event                    | Perceived Latency         |
-|------|--------------------------|---------------------------|
-| 0:00 | First visit to site      | 100 ms (cold cache)       |
-| 0:30 | Click a link (same site) | ~0 ms (cache hit)         |
-| 2:00 | Click another link       | ~0 ms (cache hit)         |
-| 4:59 | Click another link       | ~0 ms (cache hit)         |
-| 5:01 | Click another link       | 100 ms (TTL expired)      |
-| 5:02 | Click another link       | ~0 ms (cache hit)         |
-
-At the 5:01 mark, the user perceives a delay that was absent one second
-earlier.  Nothing changed about the website.  The delay exists solely
-because a timer expired.
+network round trip. This is not a graceful degradation.  It is a cliff.
 
 This problem is compounded by several factors:
 
@@ -248,23 +242,20 @@ First query after sleep
   impatient.
 
 The fundamental observation behind Optimistic DNS is that in most cases, a
-DNS record that expired a few minutes ago still contains the correct data.
+DNS record that expired a little while ago still contains the correct data.
 Servers do not typically change IP addresses the instant a TTL expires.
 The TTL is a freshness hint, not a correctness deadline.
 
+When used in conjunction with Asynchronous DNS Resolution and Happy Eyeballs,
+there is little to no cost to using a stale answer that turns out to be wrong.
 An application that receives an expired record and begins connecting to the
-address it contains will, in the vast majority of cases, succeed.  And even
-in the rare case where the address has changed, the application will learn
-this quickly -- the TCP handshake will fail, or the TLS certificate will
-not match, and the application can fall back to the fresh answer that the
-background query will deliver shortly.
-
-The cost of using a stale answer that turns out to be wrong is a failed
-connection attempt -- typically detected within a few hundred milliseconds.
-The cost of not using a stale answer that turns out to be right is a
-guaranteed delay of the full network round-trip time on every cache expiry.
-For most applications, the expected value of the optimistic approach is
-clearly positive.
+address it contains will, in the vast majority of cases, succeed.  Even in the
+rare case where the address has changed, it is not fatal to the application
+since the application can then try again with the new candidates when the
+background query returns with the fresh answers. As such, the cost of not using
+a stale answer that turns out to be right is a guaranteed delay of the full
+network round-trip time on every cache expiry.  For most applications, the
+expected value of the optimistic approach is clearly positive.
 
 # TTL Stretching
 
@@ -273,18 +264,16 @@ In TTL stretching, the stub resolver unilaterally extends the effective
 lifetime of cached records.  When a record's TTL expires, instead of
 immediately discarding it or refusing to serve it, the resolver continues
 to return it to applications for a brief grace period -- seconds to
-minutes -- while initiating a background refresh.  The application
-receives the record as if it were still fresh.  No expired flag is set.
-No new API is involved.  From the application's perspective, the record
-simply has a longer TTL than the authoritative server originally
-specified.
+minutes.  The application receives the record as if it were still fresh.
+No expired flag is set.  No background query is initiated.  No new API
+is involved.  From the application's perspective, the record simply has a
+longer TTL than the authoritative server originally specified.
 
 TTL stretching is attractive because it is entirely transparent.  Every
 application benefits automatically, with no code changes.  The latency
 cliff described in the Problem Statement disappears: instead of a sudden
-jump from zero to hundreds of milliseconds, the application continues to
-receive instant cache answers while the resolver refreshes the record in
-the background.
+jump from zero to hundreds of milliseconds, the application continues to receive
+instant cache answers while the record remains within its stretched lifetime.
 
 However, TTL stretching has limitations that motivate the more
 sophisticated Optimistic DNS mechanism:
@@ -321,14 +310,100 @@ immortalization and ghost records) while keeping the application informed and in
 control.
 
 TTL stretching can be viewed as a simpler version of Optimistic DNS: one
-where the expired flag is never set, the application has no visibility
-into staleness, and the stretch window must remain short because there is
-no mechanism for the application to handle stale data intelligently.
+where the expired flag is never set, the application has no visibility into
+staleness, no background query is initiated, and the stretch window must remain
+short because there is no mechanism for the application to handle stale data
+intelligently.
+
+# Enabling Technologies
+
+When an application receives an expired address and immediately begins
+connecting to it, two things need to happen.  First, when the fresh
+answer arrives moments later, the application needs a way to receive it
+-- which means the DNS API cannot have already returned a single answer
+and closed the query.  Second, if the expired address turns out to be
+wrong, the application needs a way to recover without the user noticing
+a large delay.
+
+## Asynchronous DNS Resolution
+
+Traditional synchronous DNS APIs such as getaddrinfo() block until a
+single answer is returned.  The caller issues a query, waits, receives
+one result, and the call is complete.  Optimistic DNS cannot function
+with this model.  There is no mechanism to deliver an expired answer now
+and a fresh answer later -- the API returns exactly once.
+
+With Asynchronous DNS APIs, the application registers a callback and receives
+results as they become available.  The query remains active, and the resolver
+delivers additional results through subsequent callbacks.  This is the
+resolution model described in {{!RFC6762}} (in the context of multicast DNS).
+
+This model naturally supports the two-wave delivery that Optimistic DNS
+requires.  Expired records arrive in the first callback, within
+microseconds.  Fresh records from the network arrive in subsequent
+callbacks, within milliseconds.  The application can act on the expired
+answer immediately -- for example, by opening a connection to the cached
+address -- and adapt when the fresh answer arrives.  If the address has
+changed, the application can start a new connection to the updated
+address.  If the address is the same, the connection is already
+established and the fresh answer serves as confirmation.
+
+Without asynchronous DNS resolution, Optimistic DNS has no way to
+deliver its core value: the expired answer arrives instantly and the
+fresh answer follows as an update.
+
+## Happy Eyeballs
+
+Happy Eyeballs version 2 {{!RFC8305}} and its successor Happy Eyeballs version 3
+{{!I-D.ietf-happy-happyeyeballs-v3}} define algorithms for racing connection
+attempts across multiple addresses and address families.  When a client has
+several candidate addresses for a destination, Happy Eyeballs staggers
+connection attempts with short delays and uses whichever connection succeeds
+first.  Failed attempts to individual addresses are absorbed within the
+algorithm's normal timeout budget.
+
+This mechanism pairs naturally with Optimistic DNS.  When the resolver
+returns expired addresses, Happy Eyeballs can begin racing connections to
+those addresses immediately, rather than waiting for DNS resolution to
+complete before starting any connection attempt.
+
+When the expired addresses are still correct (the most common scenario) a
+connection succeeds before the fresh DNS answer even arrives.  The user
+perceives zero latency: no DNS wait, no connection establishment wait beyond the
+minimum.
+
+When an expired address is wrong (the rare scenario) the failed connection
+attempt is simply one candidate among several.  Happy Eyeballs is already
+designed to tolerate some addresses failing.  When the fresh DNS answer arrives
+with the correct address, it enters the ongoing connection race.  The cost of
+the wrong expired address is not a user-visible delay but a single failed
+attempt, and the network capacity that it uses, that the racing algorithm
+absorbs.
+
+Without Happy Eyeballs, a wrong expired address means a failed
+connection and a visible delay while the application falls back to the
+fresh answer and retries.  With Happy Eyeballs, the cost is absorbed --
+the wrong address is not catastrophic, just one failed attempt among
+several candidates.
+
+## Combined Effect
+
+Asynchronous DNS resolution makes Optimistic DNS *possible*.  It provides the
+delivery mechanism for two waves of results and allows the application to
+receive updated answers after it has already acted on the first. Happy Eyeballs
+makes Optimistic DNS *safe*.  It ensures that acting on a wrong expired address
+is not fatal to the overall connection attempt, not a user-visible delay.
+
+Together with Optimistic DNS, these three mechanisms allow the application to
+start connecting instantly with best-effort cached addresses.  The connection
+race handles any staleness gracefully.  And the fresh DNS answer arrives as an
+update, confirming or correcting the initial result.
 
 # Optimistic DNS Overview
 
-Optimistic DNS introduces further modification to stub resolver behavior.
-When an application issues a DNS query and the stub resolver's cache
+Building on the asynchronous resolution model and connection racing described
+above, Optimistic DNS introduces a specific modification to stub resolver
+behavior.  When an application issues a DNS query and the stub resolver's cache
 contains expired records matching that query, the resolver performs two
 actions in parallel:
 
