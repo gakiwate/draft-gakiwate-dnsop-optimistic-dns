@@ -469,7 +469,13 @@ name.
 To handle this safely, when the stub resolver encounters an expired CNAME
 record during optimistic resolution, it takes the following steps:
 
-TODO: Phil to fill in the steps
+1. The stub resolver returns the expired result to the calling application and
+   continues following the expired CNAME chain and returns the available 
+   results from the cache.
+2. It simultaneously performs a standard DNS query on the network starting at
+   the first expired CNAME result encountered.
+3. As fresh results are received from the DNS query they are returned to the 
+   calling application.
 
 This rewind-and-restart approach ensures that the application always
 receives a complete, consistent answer from the fresh network query, even
