@@ -206,7 +206,54 @@ This problem is compounded by several factors:
 The fundamental observation behind Optimistic DNS is that in most cases, a
 DNS record that expired a little while ago still contains the correct data.
 Servers do not typically change IP addresses the instant a TTL expires.
-The TTL is a freshness hint, not a correctness deadline.
+The TTL is a freshness hint, not a correctness deadline.  It marks when
+the resolver decides to refresh, not when the data becomes incorrect.
+
+The "stale" state is also relative.  A user querying the same record at
+two different resolvers can see entirely different views of staleness.
+The diagram below illustrates this: both Recursive A and Recursive B
+cached R1 before the authoritative server replaced it with R2 at T=50.
+From T=50 onward, both resolvers hold stale data.  But because each
+resolver started its TTL clock at a different moment, a user query at
+T=90 receives a fresh network lookup from Recursive A (whose TTL has
+run out) and a "TTL-valid" stale cache hit from Recursive B (whose TTL
+has not).
+
+~~~
+Time:
+T=0 ---- T=25 --- T=40 --- T=50 ----- T=85 ----- T=90 -- T=100
+
+Authoritative Nameserver:
+|------------ R1 ------------|------------ R2 ------------|
+                             ^
+          Authoritative Answer Changes: R1 "stale" at T=50
+
+Recursive A queries at T=25:
+           +----------------------+
+           |  Cached R1 (TTL=60)  |
+           +----------------------+
+           25 ------------- 50 ------- 85          |
+                            ^      (TTL expires)   |
+                     R1 stale from here            v
+                                              User query at T=90:
+                                              R1 TTL expired. New Query.
+
+Recursive B queries at T=40:
+                  +----------------------+
+                  |  Cached R1 (TTL=60)  |
+                  +----------------------+
+                  40 ----- 50 ------------------- 90 --- 100
+                           ^                       |     (TTL expires)
+                   R1 stale from here              v
+                                        User query at T=90:
+                                        R1 TTL still valid.
+                                        Returns cached R1 (stale).
+~~~
+
+A user querying Recursive A sees R1 as expired though
+another user querying Recursive B at the same time sees R1 as
+valid.  Whether a record is considered "valid" or "expired" depends not
+on the data itself, but on which resolver happens to hold it.
 
 When used in conjunction with Asynchronous DNS Resolution and Happy Eyeballs,
 there is little to no cost to using a stale answer that turns out to be wrong.
@@ -470,11 +517,12 @@ To handle this safely, when the stub resolver encounters an expired CNAME
 record during optimistic resolution, it takes the following steps:
 
 1. The stub resolver returns the expired result to the calling application and
-   continues following the expired CNAME chain and returns the available 
+   continues following the CNAME chain and returning expired and unexpired
    results from the cache.
 2. It simultaneously performs a standard DNS query on the network starting at
-   the first expired CNAME result encountered.
-3. As fresh results are received from the DNS query they are returned to the 
+   the first expired CNAME result encountered while returning results from the
+   cache.
+3. As fresh results are received from the DNS query they are returned to the
    calling application.
 
 This rewind-and-restart approach ensures that the application always
@@ -593,11 +641,9 @@ Expired Records Retention Period
   exposure to stale data but also reduce the effectiveness of Optimistic
   DNS for infrequently-accessed names.
 
-
 # IANA Considerations
 
 This document has no IANA actions.
-
 
 --- back
 
