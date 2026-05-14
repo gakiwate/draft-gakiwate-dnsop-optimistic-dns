@@ -1241,12 +1241,14 @@ between the stub resolver and applications about answer freshness.<a href="#sect
 <ul class="compact toc ulBare ulEmpty">
 <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.12.2.1">
                 <p id="section-toc.1-1.12.2.1.1"><a href="#appendix-A.1" class="auto internal xref">A.1</a>.  <a href="#name-optimistic-dns-in-mdnsrespo" class="internal xref">Optimistic DNS in mDNSResponder</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.12.2.1.2.1">
+                    <p id="section-toc.1-1.12.2.1.2.1.1"><a href="#appendix-A.1.1" class="auto internal xref">A.1.1</a>.  <a href="#name-signaling" class="internal xref">Signaling</a></p>
 </li>
-              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.12.2.2">
-                <p id="section-toc.1-1.12.2.2.1"><a href="#appendix-A.2" class="auto internal xref">A.2</a>.  <a href="#name-signaling" class="internal xref">Signaling</a></p>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.12.2.1.2.2">
+                    <p id="section-toc.1-1.12.2.1.2.2.1"><a href="#appendix-A.1.2" class="auto internal xref">A.1.2</a>.  <a href="#name-record-lifecycle" class="internal xref">Record Lifecycle</a></p>
 </li>
-              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.12.2.3">
-                <p id="section-toc.1-1.12.2.3.1"><a href="#appendix-A.3" class="auto internal xref">A.3</a>.  <a href="#name-record-lifecycle" class="internal xref">Record Lifecycle</a></p>
+                </ul>
 </li>
             </ul>
 </li>
@@ -2097,78 +2099,76 @@ all applications that use asynchronous DNS resolution APIs.<a href="#appendix-A-
 <p id="appendix-A.1-1">mDNSResponder is an open source system stub resolver, shipping on macOS, iOS,
 tvOS, and watchOS.  This section describes its concrete implementation of the
 Optimistic DNS mechanism described in this document.<a href="#appendix-A.1-1" class="pilcrow">¶</a></p>
-</section>
-</div>
 <div id="signaling">
-<section id="appendix-A.2">
-        <h3 id="name-signaling">
-<a href="#appendix-A.2" class="section-number selfRef">A.2. </a><a href="#name-signaling" class="section-name selfRef">Signaling</a>
-        </h3>
-<p id="appendix-A.2-1">The main draft describes query initiation as a local signaling matter
+<section id="appendix-A.1.1">
+          <h4 id="name-signaling">
+<a href="#appendix-A.1.1" class="section-number selfRef">A.1.1. </a><a href="#name-signaling" class="section-name selfRef">Signaling</a>
+          </h4>
+<p id="appendix-A.1.1-1">The main draft describes query initiation as a local signaling matter
 between the application and the stub resolver.  mDNSResponder implements
-this through the following API flags:<a href="#appendix-A.2-1" class="pilcrow">¶</a></p>
-<span class="break"></span><dl class="dlParallel" id="appendix-A.2-2">
-          <dt id="appendix-A.2-2.1">kDNSServiceFlagsAllowExpiredAnswers</dt>
-          <dd style="margin-left: 1.5em" id="appendix-A.2-2.2">
-            <p id="appendix-A.2-2.2.1">Set by the application when issuing a query to indicate willingness to
-receive expired cached records.<a href="#appendix-A.2-2.2.1" class="pilcrow">¶</a></p>
+this through the following API flags:<a href="#appendix-A.1.1-1" class="pilcrow">¶</a></p>
+<span class="break"></span><dl class="dlParallel" id="appendix-A.1.1-2">
+            <dt id="appendix-A.1.1-2.1">kDNSServiceFlagsAllowExpiredAnswers</dt>
+            <dd style="margin-left: 1.5em" id="appendix-A.1.1-2.2">
+              <p id="appendix-A.1.1-2.2.1">Set by the application when issuing a query to indicate willingness to
+receive expired cached records.<a href="#appendix-A.1.1-2.2.1" class="pilcrow">¶</a></p>
 </dd>
-          <dd class="break"></dd>
-<dt id="appendix-A.2-2.3">kDNSServiceFlagsExpiredAnswer</dt>
-          <dd style="margin-left: 1.5em" id="appendix-A.2-2.4">
-            <p id="appendix-A.2-2.4.1">Set by the resolver on individual answer callbacks to indicate that the
+            <dd class="break"></dd>
+<dt id="appendix-A.1.1-2.3">kDNSServiceFlagsExpiredAnswer</dt>
+            <dd style="margin-left: 1.5em" id="appendix-A.1.1-2.4">
+              <p id="appendix-A.1.1-2.4.1">Set by the resolver on individual answer callbacks to indicate that the
 record being returned is expired.  While this flag is not necessary for
 optimistic DNS to function correctly, mDNSResponder adds this hint for
-applications.<a href="#appendix-A.2-2.4.1" class="pilcrow">¶</a></p>
+applications.<a href="#appendix-A.1.1-2.4.1" class="pilcrow">¶</a></p>
 </dd>
-          <dd class="break"></dd>
-<dt id="appendix-A.2-2.5">kDNSServiceFlagsAnsweredFromCache</dt>
-          <dd style="margin-left: 1.5em" id="appendix-A.2-2.6">
-            <p id="appendix-A.2-2.6.1">Set by the resolver to indicate that the record was served from the
+            <dd class="break"></dd>
+<dt id="appendix-A.1.1-2.5">kDNSServiceFlagsAnsweredFromCache</dt>
+            <dd style="margin-left: 1.5em" id="appendix-A.1.1-2.6">
+              <p id="appendix-A.1.1-2.6.1">Set by the resolver to indicate that the record was served from the
 local cache rather than from a network response.  Set regardless of
 whether the record is expired, allowing the application to distinguish
-cached answers (immediate) from network answers (delayed).<a href="#appendix-A.2-2.6.1" class="pilcrow">¶</a></p>
+cached answers (immediate) from network answers (delayed).<a href="#appendix-A.1.1-2.6.1" class="pilcrow">¶</a></p>
 </dd>
-        <dd class="break"></dd>
+          <dd class="break"></dd>
 </dl>
 </section>
 </div>
 <div id="record-immortalization">
-<section id="appendix-A.3">
-        <h3 id="name-record-lifecycle">
-<a href="#appendix-A.3" class="section-number selfRef">A.3. </a><a href="#name-record-lifecycle" class="section-name selfRef">Record Lifecycle</a>
-        </h3>
-<p id="appendix-A.3-1">The main cache lookup requires that expired records remain in the cache to serve
+<section id="appendix-A.1.2">
+          <h4 id="name-record-lifecycle">
+<a href="#appendix-A.1.2" class="section-number selfRef">A.1.2. </a><a href="#name-record-lifecycle" class="section-name selfRef">Record Lifecycle</a>
+          </h4>
+<p id="appendix-A.1.2-1">The main cache lookup requires that expired records remain in the cache to serve
 optimistically.  Conceptually, a client saves all records always for the
 duration of their choosing. Practically, a client may want to manage the record
 lifecycle for memory reasons. mDNSResponder approaches this with a three-state
-record lifecycle:<a href="#appendix-A.3-1" class="pilcrow">¶</a></p>
-<span class="break"></span><dl class="dlParallel" id="appendix-A.3-2">
-          <dt id="appendix-A.3-2.1">Mortal (default)</dt>
-          <dd style="margin-left: 1.5em" id="appendix-A.3-2.2">
-            <p id="appendix-A.3-2.2.1">The normal cache state.  When the TTL expires, the record is eligible
-for immediate removal.  All newly cached records begin in this state.<a href="#appendix-A.3-2.2.1" class="pilcrow">¶</a></p>
+record lifecycle:<a href="#appendix-A.1.2-1" class="pilcrow">¶</a></p>
+<span class="break"></span><dl class="dlParallel" id="appendix-A.1.2-2">
+            <dt id="appendix-A.1.2-2.1">Mortal (default)</dt>
+            <dd style="margin-left: 1.5em" id="appendix-A.1.2-2.2">
+              <p id="appendix-A.1.2-2.2.1">The normal cache state.  When the TTL expires, the record is eligible
+for immediate removal.  All newly cached records begin in this state.<a href="#appendix-A.1.2-2.2.1" class="pilcrow">¶</a></p>
 </dd>
-          <dd class="break"></dd>
-<dt id="appendix-A.3-2.3">Immortal</dt>
-          <dd style="margin-left: 1.5em" id="appendix-A.3-2.4">
-            <p id="appendix-A.3-2.4.1">A record marked to survive past its TTL expiry.  Promotion from mortal to
+            <dd class="break"></dd>
+<dt id="appendix-A.1.2-2.3">Immortal</dt>
+            <dd style="margin-left: 1.5em" id="appendix-A.1.2-2.4">
+              <p id="appendix-A.1.2-2.4.1">A record marked to survive past its TTL expiry.  Promotion from mortal to
 immortal occurs when the record answers a query from an application that has
 opted in to Optimistic DNS. To be marked immortal, the record has to be a
-positive record (not a negative cache entry) and not DNSSEC-validated.<a href="#appendix-A.3-2.4.1" class="pilcrow">¶</a></p>
+positive record (not a negative cache entry) and not DNSSEC-validated.<a href="#appendix-A.1.2-2.4.1" class="pilcrow">¶</a></p>
 </dd>
-          <dd class="break"></dd>
-<dt id="appendix-A.3-2.5">Ghost</dt>
-          <dd style="margin-left: 1.5em" id="appendix-A.3-2.6">
-            <p id="appendix-A.3-2.6.1">An immortal record whose TTL has expired.  Ghost records linger in the
+            <dd class="break"></dd>
+<dt id="appendix-A.1.2-2.5">Ghost</dt>
+            <dd style="margin-left: 1.5em" id="appendix-A.1.2-2.6">
+              <p id="appendix-A.1.2-2.6.1">An immortal record whose TTL has expired.  Ghost records linger in the
 cache, available to serve future optimistic queries.  They are retained
 for a bounded ghost retention period (maximum of one week), after which
-they are purged.<a href="#appendix-A.3-2.6.1" class="pilcrow">¶</a></p>
+they are purged.<a href="#appendix-A.1.2-2.6.1" class="pilcrow">¶</a></p>
 </dd>
-        <dd class="break"></dd>
+          <dd class="break"></dd>
 </dl>
-<p id="appendix-A.3-3">The complete lifecycle:<a href="#appendix-A.3-3" class="pilcrow">¶</a></p>
-<div class="alignLeft art-text artwork" id="appendix-A.3-4">
+<p id="appendix-A.1.2-3">The complete lifecycle:<a href="#appendix-A.1.2-3" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="appendix-A.1.2-4">
 <pre>
   +--------+     TTL expires     +-----------+
   | Mortal |---(if immortalized)-| Immortal  |
@@ -2185,11 +2185,13 @@ they are purged.<a href="#appendix-A.3-2.6.1" class="pilcrow">¶</a></p>
                                       | period expires
                                       v
                                    [purged]
-</pre><a href="#appendix-A.3-4" class="pilcrow">¶</a>
+</pre><a href="#appendix-A.1.2-4" class="pilcrow">¶</a>
 </div>
-<p id="appendix-A.3-5">This creates a virtuous cycle: the more frequently a name is queried with
+<p id="appendix-A.1.2-5">This creates a virtuous cycle: the more frequently a name is queried with
 Optimistic DNS, the more likely the cache will contain a ghost record for
-it the next time the TTL expires.<a href="#appendix-A.3-5" class="pilcrow">¶</a></p>
+it the next time the TTL expires.<a href="#appendix-A.1.2-5" class="pilcrow">¶</a></p>
+</section>
+</div>
 </section>
 </div>
 </section>

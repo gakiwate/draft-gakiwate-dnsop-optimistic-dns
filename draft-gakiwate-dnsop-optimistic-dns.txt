@@ -101,8 +101,8 @@ Table of Contents
    11. Normative References
    Appendix A.  Deployment History
      A.1.  Optimistic DNS in mDNSResponder
-     A.2.  Signaling
-     A.3.  Record Lifecycle
+       A.1.1.  Signaling
+       A.1.2.  Record Lifecycle
    Acknowledgments
    Author's Address
 
@@ -812,7 +812,7 @@ A.1.  Optimistic DNS in mDNSResponder
    implementation of the Optimistic DNS mechanism described in this
    document.
 
-A.2.  Signaling
+A.1.1.  Signaling
 
    The main draft describes query initiation as a local signaling matter
    between the application and the stub resolver.  mDNSResponder
@@ -833,7 +833,7 @@ A.2.  Signaling
       expired, allowing the application to distinguish cached answers
       (immediate) from network answers (delayed).
 
-A.3.  Record Lifecycle
+A.1.2.  Record Lifecycle
 
    The main cache lookup requires that expired records remain in the
    cache to serve optimistically.  Conceptually, a client saves all
