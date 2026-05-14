@@ -659,7 +659,7 @@ mDNSResponder is an open source system stub resolver, shipping on macOS, iOS,
 tvOS, and watchOS.  This section describes its concrete implementation of the
 Optimistic DNS mechanism described in this document.
 
-## Signaling
+### Signaling
 
 The main draft describes query initiation as a local signaling matter
 between the application and the stub resolver.  mDNSResponder implements
@@ -681,7 +681,7 @@ kDNSServiceFlagsAnsweredFromCache
   whether the record is expired, allowing the application to distinguish
   cached answers (immediate) from network answers (delayed).
 
-## Record Lifecycle {#record-immortalization}
+### Record Lifecycle {#record-immortalization}
 
 The main cache lookup requires that expired records remain in the cache to serve
 optimistically.  Conceptually, a client saves all records always for the
