@@ -472,7 +472,6 @@ If a matching record has expired:
 If a matching record has not expired, it is returned normally, as with any
 cache hit.
 
-
 ## Parallel Network Query
 
 If unexpired records are found in the cache, they are returned to the
@@ -649,11 +648,86 @@ This document has no IANA actions.
 
 # Deployment History
 
-Optimistic DNS was first implemented in mDNSResponder in January 2018 and
-shipped enabled by default in macOS 10.14 (Mojave) and iOS 12 in September 2018.
-It has been active on all Apple platforms since that release, serving as the
-default stub resolver behavior for all applications that use asynchronous DNS
-resolution APIs.
+Optimistic DNS in mDNSResponder was first shipped enabled by default in macOS
+10.14 (Mojave) and iOS 12 in September 2018.  It has been active on all Apple
+platforms since that release, serving as the default stub resolver behavior for
+all applications that use asynchronous DNS resolution APIs.
+
+## Optimistic DNS in mDNSResponder {#mdnsresponder}
+
+mDNSResponder is an open source system stub resolver, shipping on macOS, iOS,
+tvOS, and watchOS.  This section describes its concrete implementation of the
+Optimistic DNS mechanism described in this document.
+
+## Signaling
+
+The main draft describes query initiation as a local signaling matter
+between the application and the stub resolver.  mDNSResponder implements
+this through the following API flags:
+
+kDNSServiceFlagsAllowExpiredAnswers
+: Set by the application when issuing a query to indicate willingness to
+  receive expired cached records.
+
+kDNSServiceFlagsExpiredAnswer
+: Set by the resolver on individual answer callbacks to indicate that the
+  record being returned is expired.  While this flag is not necessary for
+  optimistic DNS to function correctly, mDNSResponder adds this hint for
+  applications.
+
+kDNSServiceFlagsAnsweredFromCache
+: Set by the resolver to indicate that the record was served from the
+  local cache rather than from a network response.  Set regardless of
+  whether the record is expired, allowing the application to distinguish
+  cached answers (immediate) from network answers (delayed).
+
+## Record Lifecycle {#record-immortalization}
+
+The main cache lookup requires that expired records remain in the cache to serve
+optimistically.  Conceptually, a client saves all records always for the
+duration of their choosing. Practically, a client may want to manage the record
+lifecycle for memory reasons. mDNSResponder approaches this with a three-state
+record lifecycle:
+
+Mortal (default)
+: The normal cache state.  When the TTL expires, the record is eligible
+  for immediate removal.  All newly cached records begin in this state.
+
+Immortal
+: A record marked to survive past its TTL expiry.  Promotion from mortal to
+  immortal occurs when the record answers a query from an application that has
+  opted in to Optimistic DNS. To be marked immortal, the record has to be a
+  positive record (not a negative cache entry) and not DNSSEC-validated.
+
+Ghost
+: An immortal record whose TTL has expired.  Ghost records linger in the
+  cache, available to serve future optimistic queries.  They are retained
+  for a bounded ghost retention period (maximum of one week), after which
+  they are purged.
+
+The complete lifecycle:
+
+~~~
+  +--------+     TTL expires     +-----------+
+  | Mortal |---(if immortalized)-| Immortal  |
+  +--------+   during lifetime   +-----------+
+      |                               |
+      | TTL expires                   | TTL expires
+      | (not immortalized)            |
+      v                               v
+   [purged]                      +---------+
+                                 |  Ghost  |
+                                 +---------+
+                                      |
+                                      | ghost retention
+                                      | period expires
+                                      v
+                                   [purged]
+~~~
+
+This creates a virtuous cycle: the more frequently a name is queried with
+Optimistic DNS, the more likely the cache will contain a ghost record for
+it the next time the TTL expires.
 
 # Acknowledgments
 {:numbered="false"}
