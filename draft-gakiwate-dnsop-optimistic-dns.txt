@@ -2,10 +2,11 @@
 
 
 
-Domain Name System Operations                                 Y. N. Here
-Internet-Draft                                                 Apple Inc
-Intended status: Standards Track                             25 May 2026
-Expires: 26 November 2026
+Domain Name System Operations                                 G. Akiwate
+Internet-Draft                                               S. Cheshire
+Intended status: Standards Track                              Apple Inc.
+Expires: 26 November 2026                                       P. Flack
+                                                             25 May 2026
 
 
                              Optimistic DNS
@@ -104,7 +105,7 @@ Table of Contents
        A.1.1.  Signaling
        A.1.2.  Record Lifecycle
    Acknowledgments
-   Author's Address
+   Authors' Addresses
 
 1.  Introduction
 
@@ -879,8 +880,22 @@ Acknowledgments
 
    TODO acknowledge.
 
-Author's Address
+Authors' Addresses
 
-   Your Name Here
-   Apple Inc
-   Email: your.email@example.com
+   Gautam Akiwate
+   Apple Inc.
+   One Apple Park Way
+   Cupertino, CA 95014
+   United States of America
+   Email: gakiwate@apple.com
+
+
+   Stuart Cheshire
+   Apple Inc.
+   One Apple Park Way
+   Cupertino, CA 95014
+   United States of America
+   Email: cheshire@apple.com
+
+
+   Phil Flack
