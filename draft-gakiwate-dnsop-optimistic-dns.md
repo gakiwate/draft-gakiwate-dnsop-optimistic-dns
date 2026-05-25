@@ -21,9 +21,30 @@ venue:
 
 author:
  -
-    fullname: Your Name Here
-    organization: Apple Inc
-    email: your.email@example.com
+    ins: G. Akiwate
+    name: Gautam Akiwate
+    org: Apple Inc.
+    street: One Apple Park Way
+    city: Cupertino
+    region: CA
+    code: "95014"
+    country: USA
+    email: gakiwate@apple.com
+
+ -
+    ins: S. Cheshire
+    name: Stuart Cheshire
+    org: Apple Inc.
+    street: One Apple Park Way
+    city: Cupertino
+    region: CA
+    code: "95014"
+    country: USA
+    email: cheshire@apple.com
+
+ -
+    ins: P. Flack
+    name: Phil Flack
 
 normative:
   HEv3: I-D.ietf-happy-happyeyeballs-v3
