@@ -25,6 +25,9 @@ author:
     organization: Apple Inc
     email: your.email@example.com
 
+normative:
+  HEv3: I-D.ietf-happy-happyeyeballs-v3
+
 --- abstract
 
 DNS lookups introduce user-visible latency, particularly when cached records
@@ -165,8 +168,8 @@ local API matter.
   including updated answers that supersede earlier ones.
 
 *Happy Eyeballs.*
-: A client-side connection establishment algorithm (defined in {{!RFC6555}},
-{{!RFC8305}} and {{!I-D.ietf-happy-happyeyeballs-v3}}) that races connection
+: A client-side connection establishment algorithm {{!RFC6555}} {{!RFC8305}} {{HEv3}}
+that races connection
 attempts across multiple addresses and address families, using whichever
 connection succeeds first.  Failed connection attempts to individual addresses
 are absorbed within the algorithm's normal timeout budget.
@@ -346,8 +349,7 @@ established and the fresh answer serves as confirmation.
 
 ## Happy Eyeballs
 
-Happy Eyeballs (Version 1 {{!RFC6555}}, Version 2 {{!RFC8305}} and their successor
-Version 3 {{!I-D.ietf-happy-happyeyeballs-v3}}) define algorithms for racing
+Happy Eyeballs {{!RFC6555}} {{!RFC8305}} {{HEv3}} defines algorithms for racing
 connection attempts across multiple addresses and address families.  When a
 client has several candidate addresses for a destination, Happy Eyeballs
 staggers connection attempts with short delays and uses whichever connection
