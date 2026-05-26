@@ -1759,7 +1759,9 @@ performed anyway.<a href="#section-6-9" class="pilcrow">¶</a></p>
 receive conventional stub resolver behavior: expired records are ignored,
 and only fresh network answers are returned.  This ensures backward
 compatibility and allows applications to choose the tradeoff that suits
-their needs.<a href="#section-6-10" class="pilcrow">¶</a></p>
+their needs.
+Applications that do not support Happy Eyeballs and
+application-layer security <span class="bcp14">SHOULD NOT</span> use Optimistic DNS.<a href="#section-6-10" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="implementation-details">
@@ -1920,13 +1922,12 @@ mailserver.corp.example.com.<a href="#section-7.5-4.2.1" class="pilcrow">¶</a><
         <h3 id="name-dnssec">
 <a href="#section-8.1" class="section-number selfRef">8.1. </a><a href="#name-dnssec" class="section-name selfRef">DNSSEC</a>
         </h3>
-<p id="section-8.1-1">Optimistic DNS <span class="bcp14">MUST NOT</span> be used for DNSSEC-validated responses.<a href="#section-8.1-1" class="pilcrow">¶</a></p>
-<p id="section-8.1-2">DNSSEC relies on cryptographic signatures (RRSIG records) that have
-explicit validity periods.  An expired DNS record may have an associated
-RRSIG whose signature validity period has also expired.  Serving such a
-record as an optimistic answer would provide the application with data
-whose cryptographic authentication can no longer be verified, undermining
-the security guarantees that DNSSEC is designed to provide.<a href="#section-8.1-2" class="pilcrow">¶</a></p>
+<p id="section-8.1-1">Optimistic DNS extends the cache lifetime for DNS records,
+as signalled by the TTL values.<a href="#section-8.1-1" class="pilcrow">¶</a></p>
+<p id="section-8.1-2">Optimistic DNS does not extend the validity periods of cryptographic signatures.<a href="#section-8.1-2" class="pilcrow">¶</a></p>
+<p id="section-8.1-3">Optimistic DNS will deliver DNS records like RRSIG after their cache
+lifetime has expired, but recipients <span class="bcp14">MUST</span> respect
+the validity periods of cryptographic signatures.<a href="#section-8.1-3" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="encrypted-dns-transports">
@@ -1993,47 +1994,46 @@ DNS explicitly empowers the application to make informed decisions.<a href="#sec
       <h2 id="name-security-considerations">
 <a href="#section-9" class="section-number selfRef">9. </a><a href="#name-security-considerations" class="section-name selfRef">Security Considerations</a>
       </h2>
-<p id="section-9-1">Optimistic DNS introduces a tradeoff between latency and freshness.
+<p id="section-9-1">Optimistic DNS introduces a tradeoff between speed and freshness.
 Applications that use expired answers must be prepared for those answers to be
-incorrect.  Applications using Optimistic DNS <span class="bcp14">SHOULD</span> employ transport-layer
-security (TLS, QUIC) when connecting to addresses obtained from expired answers,
+occasionally incorrect.
+Applications using Optimistic DNS <span class="bcp14">SHOULD</span> employ application-layer
+security (e.g., using TLS or QUIC) when connecting to addresses obtained from expired answers,
 to detect cases where the address has been reassigned.<a href="#section-9-1" class="pilcrow">¶</a></p>
-<span class="break"></span><dl class="dlParallel" id="section-9-2">
-        <dt id="section-9-2.1">IP Address Reuse</dt>
-        <dd style="margin-left: 1.5em" id="section-9-2.2">
-          <p id="section-9-2.2.1">When a DNS record expires, the IP address it contained may no longer be
-associated with the original domain.  If the address has been reassigned
-to a different entity, an application connecting to that address may
-reach the wrong server.  For HTTPS connections, TLS certificate
+<p id="section-9-2">Networking always entails a degree of uncertainty
+-- for example, packets may be intercepted in transit and
+not reach their intended destination -- and for correct
+operation, secure applications have to guard against this.
+Optimistic DNS adds a new way that packets may not reach their
+intended destination, but does not fundamentally alter the
+importance of application-layer security.<a href="#section-9-2" class="pilcrow">¶</a></p>
+<span class="break"></span><dl class="dlParallel" id="section-9-3">
+        <dt id="section-9-3.1">IP Address Reuse</dt>
+        <dd style="margin-left: 1.5em" id="section-9-3.2">
+          <p id="section-9-3.2.1">When a DNS record expires, the IP address it contained may no longer be
+associated with the previous host or service.
+For HTTPS connections, TLS certificate
 validation will detect this mismatch and prevent data from being sent to
 the wrong party.  For unencrypted protocols, there is a risk of
-connecting to an unintended server.<a href="#section-9-2.2.1" class="pilcrow">¶</a></p>
+connecting to an unintended server.<a href="#section-9-3.2.1" class="pilcrow">¶</a></p>
 </dd>
         <dd class="break"></dd>
-<dt id="section-9-2.3">Poisoning Amplification</dt>
-        <dd style="margin-left: 1.5em" id="section-9-2.4">
-          <p id="section-9-2.4.1">If an attacker successfully poisons a cache entry, Optimistic DNS could
+<dt id="section-9-3.3">Poisoning Amplification</dt>
+        <dd style="margin-left: 1.5em" id="section-9-3.4">
+          <p id="section-9-3.4.1">If an attacker successfully poisons a cache entry, Optimistic DNS could
 extend the lifetime of the poisoned record beyond its original TTL.
 However, the record will be purged after the retention period expires.
 Moreover, the parallel network query will obtain and deliver the correct
-answer, giving the application an opportunity to detect the discrepancy.<a href="#section-9-2.4.1" class="pilcrow">¶</a></p>
+answer, giving the application an opportunity to detect the discrepancy.<a href="#section-9-3.4.1" class="pilcrow">¶</a></p>
 </dd>
         <dd class="break"></dd>
-<dt id="section-9-2.5">DNSSEC Exclusion</dt>
-        <dd style="margin-left: 1.5em" id="section-9-2.6">
-          <p id="section-9-2.6.1">Optimistic DNS excludes DNSSEC-validated records from extended caching
-and expired serving.  This prevents the serving of records whose
-cryptographic signatures have expired, maintaining DNSSEC's security
-guarantees.<a href="#section-9-2.6.1" class="pilcrow">¶</a></p>
-</dd>
-        <dd class="break"></dd>
-<dt id="section-9-2.7">Expired Records Retention Period</dt>
-        <dd style="margin-left: 1.5em" id="section-9-2.8">
-          <p id="section-9-2.8.1">The retention period (recommended maximum of one week) bounds the
+<dt id="section-9-3.5">Expired Records Retention Period</dt>
+        <dd style="margin-left: 1.5em" id="section-9-3.6">
+          <p id="section-9-3.6.1">The retention period (recommended maximum of one week) bounds the
 maximum time a stale record can be served.  Implementations <span class="bcp14">SHOULD</span> allow
 this period to be configured.  Shorter periods reduce the window of
 exposure to stale data but also reduce the effectiveness of Optimistic
-DNS for infrequently-accessed names.<a href="#section-9-2.8.1" class="pilcrow">¶</a></p>
+DNS for infrequently-accessed names.<a href="#section-9-3.6.1" class="pilcrow">¶</a></p>
 </dd>
       <dd class="break"></dd>
 </dl>

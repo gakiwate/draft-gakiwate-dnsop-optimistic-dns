@@ -524,7 +524,9 @@ Recursive B queries at T=40:
    request it receive conventional stub resolver behavior: expired
    records are ignored, and only fresh network answers are returned.
    This ensures backward compatibility and allows applications to choose
-   the tradeoff that suits their needs.
+   the tradeoff that suits their needs.  Applications that do not
+   support Happy Eyeballs and application-layer security SHOULD NOT use
+   Optimistic DNS.
 
 7.  Implementation Details
 
@@ -654,15 +656,15 @@ Recursive B queries at T=40:
 
 8.1.  DNSSEC
 
-   Optimistic DNS MUST NOT be used for DNSSEC-validated responses.
+   Optimistic DNS extends the cache lifetime for DNS records, as
+   signalled by the TTL values.
 
-   DNSSEC relies on cryptographic signatures (RRSIG records) that have
-   explicit validity periods.  An expired DNS record may have an
-   associated RRSIG whose signature validity period has also expired.
-   Serving such a record as an optimistic answer would provide the
-   application with data whose cryptographic authentication can no
-   longer be verified, undermining the security guarantees that DNSSEC
-   is designed to provide.
+   Optimistic DNS does not extend the validity periods of cryptographic
+   signatures.
+
+   Optimistic DNS will deliver DNS records like RRSIG after their cache
+   lifetime has expired, but recipients MUST respect the validity
+   periods of cryptographic signatures.
 
 8.2.  Encrypted DNS Transports
 
@@ -708,21 +710,26 @@ Recursive B queries at T=40:
 
 9.  Security Considerations
 
-   Optimistic DNS introduces a tradeoff between latency and freshness.
+   Optimistic DNS introduces a tradeoff between speed and freshness.
    Applications that use expired answers must be prepared for those
-   answers to be incorrect.  Applications using Optimistic DNS SHOULD
-   employ transport-layer security (TLS, QUIC) when connecting to
-   addresses obtained from expired answers, to detect cases where the
-   address has been reassigned.
+   answers to be occasionally incorrect.  Applications using Optimistic
+   DNS SHOULD employ application-layer security (e.g., using TLS or
+   QUIC) when connecting to addresses obtained from expired answers, to
+   detect cases where the address has been reassigned.
+
+   Networking always entails a degree of uncertainty -- for example,
+   packets may be intercepted in transit and not reach their intended
+   destination -- and for correct operation, secure applications have to
+   guard against this.  Optimistic DNS adds a new way that packets may
+   not reach their intended destination, but does not fundamentally
+   alter the importance of application-layer security.
 
    IP Address Reuse  When a DNS record expires, the IP address it
-      contained may no longer be associated with the original domain.
-      If the address has been reassigned to a different entity, an
-      application connecting to that address may reach the wrong server.
-      For HTTPS connections, TLS certificate validation will detect this
-      mismatch and prevent data from being sent to the wrong party.  For
-      unencrypted protocols, there is a risk of connecting to an
-      unintended server.
+      contained may no longer be associated with the previous host or
+      service.  For HTTPS connections, TLS certificate validation will
+      detect this mismatch and prevent data from being sent to the wrong
+      party.  For unencrypted protocols, there is a risk of connecting
+      to an unintended server.
 
    Poisoning Amplification  If an attacker successfully poisons a cache
       entry, Optimistic DNS could extend the lifetime of the poisoned
@@ -730,11 +737,6 @@ Recursive B queries at T=40:
       purged after the retention period expires.  Moreover, the parallel
       network query will obtain and deliver the correct answer, giving
       the application an opportunity to detect the discrepancy.
-
-   DNSSEC Exclusion  Optimistic DNS excludes DNSSEC-validated records
-      from extended caching and expired serving.  This prevents the
-      serving of records whose cryptographic signatures have expired,
-      maintaining DNSSEC's security guarantees.
 
    Expired Records Retention Period  The retention period (recommended
       maximum of one week) bounds the maximum time a stale record can be
