@@ -626,8 +626,11 @@ if the CNAME chain has changed since the cached records were stored.
 
 ## Search Domains
 
-When the stub resolver appends search domains to partially-qualified domain
+When the stub resolver appends search domains to unqualified domain
 names, Optimistic DNS interacts with the search domain iteration process.
+
+Note: This section needs to be updated to discuss domain search lists.
+Right now it is just focussed on CNAME following.
 
 If an optimistic query encounters an expired CNAME while using a particular
 search domain, the query restart described in {{cname-handling}} preserves
