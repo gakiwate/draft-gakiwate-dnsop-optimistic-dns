@@ -178,9 +178,9 @@ local API matter.
 
 *Fresh Answer.*
 : A DNS record received from the network in response to a query, as
-  opposed to a record served from the local cache.  Fresh answers reflect
-  the current state of the authoritative DNS data (subject to normal
-  caching along the resolution path).
+  opposed to a record served from the local cache.
+  Fresh answers reflect the data known by the upstream recursive
+  resolver, which may be more recent than the data in the local cache.
 
 *TTL Stretching.*
 : A stub resolver technique that transparently extends the effective
@@ -191,8 +191,8 @@ local API matter.
 *Asynchronous DNS Resolution.*
 : A DNS resolution model where the application initiates a query and
   receives results through callbacks or event notifications as they
-  become available, rather than blocking until a single answer is
-  returned.  This model supports receiving multiple answers over time,
+  become available, rather than blocking until a single atomic set of answers is
+  returned all at once.  This model supports receiving multiple answers over time,
   including updated answers that supersede earlier ones.
 
 *Happy Eyeballs.*
@@ -225,8 +225,13 @@ This problem is compounded by several factors:
 
 *Multiple queries per page load.*
 : A typical web page load involves DNS queries for dozens of hostnames (the
-  page itself, stylesheets, scripts, images, analytics, ads).  If several
-  of these expire simultaneously, the cumulative delay is substantial.
+  page itself, stylesheets, scripts, images, analytics, ads).
+  Often these DNS queries cannot be issued concurrently because
+  some of the hostnames are not known until earlier transactions complete.
+  For example, the hostnames for stylesheets and images are not known
+  until after the base HTML document is fetched.
+  If multiple hostnames have expired address records,
+  the cumulative delay can be substantial.
 
 *First query after sleep.*
 : When a laptop or phone wakes from sleep, many cached records will have
