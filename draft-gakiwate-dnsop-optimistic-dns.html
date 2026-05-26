@@ -1311,10 +1311,13 @@ confirmation of something the device already knew.<a href="#section-1-3" class="
 T=0 the record is fetched and cached.  For the next 60 seconds, any
 application that asks for www.example.com gets an instant answer.  At time T=61,
 the record has expired.  The very next lookup must go to the network.  From the
-user's perspective, the transition from "instant" to "slow" is a cliff edge. The
-record was valid for 60 seconds, then invalid for the fraction of a second it
-took to refresh it, then valid again.  Yet that fraction of a second is the one
-the user noticed.<a href="#section-1-4" class="pilcrow">¶</a></p>
+user's perspective, the transition from "instant" to "slow" is a sudden large spike.
+The record was valid for 60 seconds, giving cached results in microseconds,
+then invalid for the fraction of a second it took to refresh it,
+resulting in a delay of tens or hundreds of milliseconds,
+then valid again, with the delay returning to microseconds.
+Yet that intermittent slowness will be the experience that the user notices
+when the rest of their web browsing is usually consistently fast.<a href="#section-1-4" class="pilcrow">¶</a></p>
 <p id="section-1-5">This document describes Optimistic DNS, a stub resolver mechanism that addresses
 this problem.  When the stub resolver has expired cached records that match a
 query, it returns those expired records to the application immediately while
@@ -1456,7 +1459,7 @@ are absorbed within the algorithm's normal timeout budget.<a href="#section-2-2.
 performance.  When a record is cached and its TTL has not expired, lookups
 are essentially free and the answer is returned from local memory in
 microseconds.  The moment the TTL expires, the cost jumps to a full
-network round trip. This is not a graceful degradation.  It is a cliff.<a href="#section-3-1" class="pilcrow">¶</a></p>
+network round trip. This is not a graceful degradation.  It is a dramatic spike.<a href="#section-3-1" class="pilcrow">¶</a></p>
 <p id="section-3-2">This problem is compounded by several factors:<a href="#section-3-2" class="pilcrow">¶</a></p>
 <span class="break"></span><dl class="dlParallel" id="section-3-3">
         <dt id="section-3-3.1"><em>Short TTLs.</em></dt>
@@ -1464,7 +1467,7 @@ network round trip. This is not a graceful degradation.  It is a cliff.<a href="
           <p id="section-3-3.2.1">Many content delivery networks and cloud services use TTLs of 60 seconds
 or less to facilitate rapid failover and load balancing.  Short TTLs mean
 more frequent cache expiration events, which means users hit the latency
-cliff more often.<a href="#section-3-3.2.1" class="pilcrow">¶</a></p>
+spike more often.<a href="#section-3-3.2.1" class="pilcrow">¶</a></p>
 </dd>
         <dd class="break"></dd>
 <dt id="section-3-3.3"><em>High-latency networks.</em></dt>
@@ -1637,7 +1640,7 @@ application's perspective, the record simply has a longer TTL than the
 authoritative server originally specified.<a href="#section-4-2" class="pilcrow">¶</a></p>
 <p id="section-4-3">TTL stretching is attractive because it is entirely transparent.  Every
 application benefits automatically, with no code changes.
-However, the latency cliff still occurs; it just occurs at a different time.<a href="#section-4-3" class="pilcrow">¶</a></p>
+However, the latency spike still occurs; it just occurs at a different time.<a href="#section-4-3" class="pilcrow">¶</a></p>
 <span class="break"></span><dl class="dlParallel" id="section-4-4">
         <dt id="section-4-4.1"><em>No application opt-out.</em></dt>
         <dd style="margin-left: 1.5em" id="section-4-4.2">
@@ -2054,7 +2057,7 @@ maintaining DNS service during outages.<a href="#section-8.3-2.2.1" class="pilcr
             <p id="section-8.3-2.4.1">Operates at the stub resolver on the end-user's device.  Serves expired
 cached data proactively, while simultaneously initiating a network query.
 The primary
-goal is latency reduction -- eliminating the TTL expiry cliff.<a href="#section-8.3-2.4.1" class="pilcrow">¶</a></p>
+goal is latency reduction -- eliminating the TTL expiry spike.<a href="#section-8.3-2.4.1" class="pilcrow">¶</a></p>
 </dd>
         <dd class="break"></dd>
 </dl>
