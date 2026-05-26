@@ -141,9 +141,13 @@ conventional DNS resolution and Optimistic DNS:
 
 Optimistic DNS is complementary to Serving Stale Data to Improve DNS
 Resiliency {{!RFC8767}}, which allows recursive resolvers to serve stale data
-during upstream failures.  The two mechanisms address different parts of the
-resolution chain: RFC 8767 operates at the recursive resolver, while
-Optimistic DNS operates at the stub resolver on the end-user's device.
+during upstream failures. The two mechanisms differ in their focus.
+As reflected in the document title, the specification for serving stale
+data from recursive resolvers was focussed on improving resiliency
+in situations where the authoritative servers are down or unreachable.
+Optimistic DNS is focussed on enhancements to the stub resolver
+on the end-user's device, to reduce delays even in cases
+where the authoritative servers are functioning perfectly well.
 Both can be deployed simultaneously for layered staleness tolerance.
 
 This document describes only the client-side behavior.  Optimistic DNS does
@@ -678,7 +682,8 @@ RFC 8767
 
 Optimistic DNS
 : Operates at the stub resolver on the end-user's device.  Serves expired
-  cached data proactively, before attempting a network query.  The primary
+  cached data proactively, while simultaneously initiating a network query.
+  The primary
   goal is latency reduction -- eliminating the TTL expiry cliff.
 
 The two mechanisms are complementary and can be deployed simultaneously.
@@ -692,9 +697,17 @@ tolerance:
    server is unreachable, the recursive resolver can serve its own stale
    data rather than returning SERVFAIL.
 
-RFC 8767 serves stale data transparently, making it more similar to TTL
-stretching ({{ttl-stretching}}) than to Optimistic DNS. By contrast, Optimistic
-DNS explicitly empowers the application to make informed decisions.
+RFC 8767 serves stale data without any provision for a future
+asynchronous notification when the desired data becomes available,
+making it more similar to TTL
+stretching ({{ttl-stretching}}) than to Optimistic DNS.
+
+In contrast, Optimistic DNS delivers the data it has immediately, while
+also delivering updated data the moment it becomes available. It gives
+the application the benefit of timely data, which could occasionally be
+wrong, without depriving the application of also receiving the exact
+data it would have received with a traditional non-optimistic DNS query,
+at the time it would have received it.
 
 # Security Considerations {#security-considerations}
 
