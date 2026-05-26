@@ -101,10 +101,13 @@ Consider a record for www.example.com with a TTL of 60 seconds.  At time
 T=0 the record is fetched and cached.  For the next 60 seconds, any
 application that asks for www.example.com gets an instant answer.  At time T=61,
 the record has expired.  The very next lookup must go to the network.  From the
-user's perspective, the transition from "instant" to "slow" is a cliff edge. The
-record was valid for 60 seconds, then invalid for the fraction of a second it
-took to refresh it, then valid again.  Yet that fraction of a second is the one
-the user noticed.
+user's perspective, the transition from "instant" to "slow" is a sudden large spike.
+The record was valid for 60 seconds, giving cached results in microseconds,
+then invalid for the fraction of a second it took to refresh it,
+resulting in a delay of tens or hundreds of milliseconds,
+then valid again, with the delay returning to microseconds.
+Yet that intermittent slowness will be the experience that the user notices
+when the rest of their web browsing is usually consistently fast.
 
 This document describes Optimistic DNS, a stub resolver mechanism that addresses
 this problem.  When the stub resolver has expired cached records that match a
@@ -224,7 +227,7 @@ The DNS TTL mechanism creates an inherent tension between freshness and
 performance.  When a record is cached and its TTL has not expired, lookups
 are essentially free and the answer is returned from local memory in
 microseconds.  The moment the TTL expires, the cost jumps to a full
-network round trip. This is not a graceful degradation.  It is a cliff.
+network round trip. This is not a graceful degradation.  It is a dramatic spike.
 
 This problem is compounded by several factors:
 
@@ -232,7 +235,7 @@ This problem is compounded by several factors:
 : Many content delivery networks and cloud services use TTLs of 60 seconds
   or less to facilitate rapid failover and load balancing.  Short TTLs mean
   more frequent cache expiration events, which means users hit the latency
-  cliff more often.
+  spike more often.
 
 *High-latency networks.*
 : On cellular networks, satellite links, or congested Wi-Fi, a DNS round
@@ -404,7 +407,7 @@ authoritative server originally specified.
 
 TTL stretching is attractive because it is entirely transparent.  Every
 application benefits automatically, with no code changes.
-However, the latency cliff still occurs; it just occurs at a different time.
+However, the latency spike still occurs; it just occurs at a different time.
 
 *No application opt-out.*
 : All applications receive stretched TTLs whether they want them or not.  An
@@ -707,7 +710,7 @@ Optimistic DNS
 : Operates at the stub resolver on the end-user's device.  Serves expired
   cached data proactively, while simultaneously initiating a network query.
   The primary
-  goal is latency reduction -- eliminating the TTL expiry cliff.
+  goal is latency reduction -- eliminating the TTL expiry spike.
 
 The two mechanisms are complementary and can be deployed simultaneously.
 When both are active, the resolution chain has two layers of staleness
