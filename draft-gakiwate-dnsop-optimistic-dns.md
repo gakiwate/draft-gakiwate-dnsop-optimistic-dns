@@ -49,6 +49,9 @@ author:
 normative:
   HEv3: I-D.ietf-happy-happyeyeballs-v3
 
+informative:
+  Stretch: I-D.draft-wkumari-dnsop-ttl-stretching
+
 --- abstract
 
 DNS lookups introduce user-visible latency, particularly when cached records
@@ -296,6 +299,10 @@ positive.
 
 # TTL Stretching
 
+Note: We should consider if we need this text. Does any stub
+resolver do this? Warren Kumari’s draft {{Stretch}} refers
+to recursive resolver behavior, not stub resolvers.
+
 TTL Stretching is a simple modification to the stub resolver behavior where it
 unilaterally extends the effective lifetime of cached records.  When a record's
 TTL expires, instead of immediately discarding it or refusing to serve it, the
@@ -306,13 +313,8 @@ application's perspective, the record simply has a longer TTL than the
 authoritative server originally specified.
 
 TTL stretching is attractive because it is entirely transparent.  Every
-application benefits automatically, with no code changes.  The latency cliff
-disappears: instead of a sudden jump from zero to hundreds of milliseconds, the
-application continues to receive instant cache answers while the record remains
-within its stretched lifetime.
-
-However, TTL stretching has limitations that motivate the more
-sophisticated Optimistic DNS mechanism:
+application benefits automatically, with no code changes.
+However, the latency cliff still occurs; it just occurs at a different time.
 
 *No application opt-out.*
 : All applications receive stretched TTLs whether they want them or not.  An
@@ -327,10 +329,11 @@ window of a few minutes handles the common case of a record expiring between
 successive page loads.  Extending the stretch window significantly increases the
 risk of returning incorrect data with no way for the application to detect it.
 
-Optimistic DNS generalizes TTL stretching. The application receives expired
-records just as quickly, but since the applications can opt-out, Optimistic DNS
-to extend the mechanism to much longer time horizons while keeping the
-application in control.
+With Optimistic DNS, the application receives expired records quickly,
+but since applications choose whether to opt in for Optimistic DNS results
+depending on their ability to handle occasional stale results,
+Optimistic DNS is able to to extend the mechanism to much
+longer time horizons.
 
 TTL stretching can be viewed as a simpler version of Optimistic DNS: one where
 the application has no visibility, no background query is initiated, and the
