@@ -1754,7 +1754,7 @@ performs two actions in parallel:<a href="#section-6-1" class="pilcrow">¶</a></
 <p id="section-6-3">As fresh answers arrive from the network, the resolver delivers them to
 the application through the asynchronous callback mechanism.  The
 following diagram shows both waves for a query where www.example.com
-has an expired A record (93.184.216.34) in the cache, and the fresh answer
+has an expired A record (203.0.113.34) in the cache, and the fresh answer
 returns the same address:<a href="#section-6-3" class="pilcrow">¶</a></p>
 <table class="center" id="table-1">
         <caption><a href="#table-1" class="selfRef">Table 1</a></caption>
@@ -1773,7 +1773,7 @@ returns the same address:<a href="#section-6-3" class="pilcrow">¶</a></p>
           </tr>
           <tr>
             <td class="text-left" rowspan="1" colspan="1">T+5us</td>
-            <td class="text-left" rowspan="1" colspan="1">Callback: 93.184.216.34</td>
+            <td class="text-left" rowspan="1" colspan="1">Callback: 203.0.113.34</td>
             <td class="text-left" rowspan="1" colspan="1">Expired</td>
           </tr>
           <tr>
@@ -1805,7 +1805,7 @@ address), the sequence looks like this:<a href="#section-6-6" class="pilcrow">¶
           </tr>
           <tr>
             <td class="text-left" rowspan="1" colspan="1">T+5us</td>
-            <td class="text-left" rowspan="1" colspan="1">Callback: 93.184.216.34</td>
+            <td class="text-left" rowspan="1" colspan="1">Callback: 203.0.113.34</td>
             <td class="text-left" rowspan="1" colspan="1">Expired</td>
           </tr>
           <tr>
@@ -1815,17 +1815,18 @@ address), the sequence looks like this:<a href="#section-6-6" class="pilcrow">¶
           </tr>
         </tbody>
       </table>
-<p id="section-6-8">Here the expired answer contained the old address.  An application that
-connected to 93.184.216.34 may find that the connection fails or returns
+<p id="section-6-8">Here the expired answer contained an old address.  An application that
+connected to 203.0.113.34 may find that the connection fails with
+an ICMP Host Unreachable error, a TCP RST, a TLS failure, or other
 unexpected content.  But the fresh answer arrives 120 milliseconds later,
 and the application can retry with the correct address.  The total time to
-a successful connection is still only about 120 milliseconds -- the same as
+a successful connection is still only about 120 milliseconds -- roughly the same as
 it would have been without Optimistic DNS.<a href="#section-6-8" class="pilcrow">¶</a></p>
-<p id="section-6-9">Optimistic DNS never makes things worse for the application.  In the common
+<p id="section-6-9">Optimistic DNS never makes things substantially worse for the application.  In the common
 case where the data has not changed, it makes things dramatically faster.  In
-the uncommon case where the data has changed, it costs nothing beyond a failed
-connection attempt that overlaps with the network query the resolver would have
-performed anyway.<a href="#section-6-9" class="pilcrow">¶</a></p>
+the uncommon case where the data has changed and the server is no longer
+available at the previous address, the cost is a small amount of wasted traffic
+attempting to reach the previous address.<a href="#section-6-9" class="pilcrow">¶</a></p>
 <p id="section-6-10">Optimistic DNS is an opt-in mechanism.  Applications that do not request it
 receive conventional stub resolver behavior: expired records are ignored,
 and only fresh network answers are returned.  This ensures backward
@@ -1863,24 +1864,22 @@ appropriately.<a href="#section-7.1-2" class="pilcrow">¶</a></p>
 for records that match the query's name, type, and class.  For each matching
 record, it determines whether the record has expired by comparing the time
 elapsed since the record was received against the record's original TTL.<a href="#section-7.2-1" class="pilcrow">¶</a></p>
-<p id="section-7.2-2">If a matching record has expired:<a href="#section-7.2-2" class="pilcrow">¶</a></p>
+<p id="section-7.2-2">If unexpired records are found in the cache, they are returned to the
+application as a normal cache hit and no network query is needed.<a href="#section-7.2-2" class="pilcrow">¶</a></p>
+<p id="section-7.2-3">If a matching record has expired:<a href="#section-7.2-3" class="pilcrow">¶</a></p>
 <ul class="normal">
-<li class="normal" id="section-7.2-3.1">
-            <p id="section-7.2-3.1.1">If the record is a positive record (contains actual resource record
-data), it is returned to the application with the expired flag set.<a href="#section-7.2-3.1.1" class="pilcrow">¶</a></p>
+<li class="normal" id="section-7.2-4.1">
+            <p id="section-7.2-4.1.1">If the record is a positive record (contains actual resource record
+data), it is returned to the application.<a href="#section-7.2-4.1.1" class="pilcrow">¶</a></p>
 </li>
-          <li class="normal" id="section-7.2-3.2">
-            <p id="section-7.2-3.2.1">If the record is a negative cache entry (representing a previous
+          <li class="normal" id="section-7.2-4.2">
+            <p id="section-7.2-4.2.1">If the record is a negative cache entry (representing a previous
 NXDOMAIN or NODATA response), it is NOT returned.  Negative cache
-entries are excluded from Optimistic DNS because returning a stale
-"this name does not exist" answer could prevent the application from
-discovering that the name has since been created.  The cost of a false
-negative (telling the application a name does not exist when it now
-does) is higher than the cost of a brief delay.<a href="#section-7.2-3.2.1" class="pilcrow">¶</a></p>
+entries are excluded from Optimistic DNS. Delivering false
+negatives (telling the application a name does not exist when it now
+does) would not benefit the application.<a href="#section-7.2-4.2.1" class="pilcrow">¶</a></p>
 </li>
         </ul>
-<p id="section-7.2-4">If a matching record has not expired, it is returned normally, as with any
-cache hit.<a href="#section-7.2-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="parallel-network-query">
@@ -1888,18 +1887,16 @@ cache hit.<a href="#section-7.2-4" class="pilcrow">¶</a></p>
         <h3 id="name-parallel-network-query">
 <a href="#section-7.3" class="section-number selfRef">7.3. </a><a href="#name-parallel-network-query" class="section-name selfRef">Parallel Network Query</a>
         </h3>
-<p id="section-7.3-1">If unexpired records are found in the cache, they are returned to the
-application as a normal cache hit and no network query is needed.<a href="#section-7.3-1" class="pilcrow">¶</a></p>
-<p id="section-7.3-2">If no unexpired records are found, the stub resolver issues a standard DNS
+<p id="section-7.3-1">If no unexpired records are found, the stub resolver issues a standard DNS
 query on the network.  This query proceeds through the normal resolution path:
-contacting configured recursive resolvers, following CNAME chains, appending
-search domains if applicable, and so on.  This network query is not optional.
+contacting configured recursive resolvers, following CNAME chains,
+and so on.  This network query is not optional.
 Even if expired records were already returned from the cache, the network query
 <span class="bcp14">MUST</span> still be issued.  The expired records are a convenience for the
-application, not a substitute for proper DNS resolution.<a href="#section-7.3-2" class="pilcrow">¶</a></p>
-<p id="section-7.3-3">Fresh answers from the network are delivered to the application through the
-normal callback mechanism.  The application can use these fresh answers to
-confirm or replace any expired answers it received earlier.<a href="#section-7.3-3" class="pilcrow">¶</a></p>
+application, not a substitute for proper DNS resolution.<a href="#section-7.3-1" class="pilcrow">¶</a></p>
+<p id="section-7.3-2">Fresh answers from the network are delivered to the application through
+an asynchronous callback mechanism.  The application’s networking code <span class="bcp14">MUST</span>
+use these fresh answers to update the list of answers it received earlier.<a href="#section-7.3-2" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="cname-handling">
@@ -1907,11 +1904,10 @@ confirm or replace any expired answers it received earlier.<a href="#section-7.3
         <h3 id="name-cname-handling">
 <a href="#section-7.4" class="section-number selfRef">7.4. </a><a href="#name-cname-handling" class="section-name selfRef">CNAME Handling</a>
         </h3>
-<p id="section-7.4-1">CNAME records introduce a complication for Optimistic DNS.  When a DNS
-query encounters a CNAME record, the resolver must follow the CNAME chain
-to find the ultimate answer.  If the CNAME record itself is expired,
-following it may lead to a stale alias that no longer points to the correct
-canonical name.<a href="#section-7.4-1" class="pilcrow">¶</a></p>
+<p id="section-7.4-1">CNAME records introduce a complication for Optimistic DNS.
+When a DNS query encounters a CNAME record, the resolver must follow
+one or more records in a CNAME chain to find the ultimate answer.
+If a CNAME record itself is expired, it may no longer be correct.<a href="#section-7.4-1" class="pilcrow">¶</a></p>
 <p id="section-7.4-2">Consider the following example.  An application queries for
 www.example.com, which has a CNAME record pointing to cdn.example.net.
 Both records are in the cache but expired:<a href="#section-7.4-2" class="pilcrow">¶</a></p>
@@ -1935,16 +1931,16 @@ continues following the CNAME chain and returning expired and unexpired
 results from the cache.<a href="#section-7.4-6.1.1" class="pilcrow">¶</a></p>
 </li>
           <li id="section-7.4-6.2">
-            <p id="section-7.4-6.2.1">It simultaneously performs a standard DNS query on the network starting at
-the first expired CNAME result encountered while returning results from the
-cache.<a href="#section-7.4-6.2.1" class="pilcrow">¶</a></p>
+            <p id="section-7.4-6.2.1">While returning results from the cache,
+it simultaneously performs a standard DNS query on the network for
+the first expired CNAME result encountered.<a href="#section-7.4-6.2.1" class="pilcrow">¶</a></p>
 </li>
           <li id="section-7.4-6.3">
             <p id="section-7.4-6.3.1">As fresh results are received from the DNS query they are returned to the
 calling application.<a href="#section-7.4-6.3.1" class="pilcrow">¶</a></p>
 </li>
         </ol>
-<p id="section-7.4-7">This rewind-and-restart approach ensures that the application always
+<p id="section-7.4-7">This rewind-and-restart approach ensures that the application eventually
 receives a complete, consistent answer from the fresh network query, even
 if the CNAME chain has changed since the cached records were stored.<a href="#section-7.4-7" class="pilcrow">¶</a></p>
 </section>
