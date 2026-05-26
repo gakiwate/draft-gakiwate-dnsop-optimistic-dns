@@ -494,13 +494,13 @@ performs two actions in parallel:
 As fresh answers arrive from the network, the resolver delivers them to
 the application through the asynchronous callback mechanism.  The
 following diagram shows both waves for a query where www.example.com
-has an expired A record (93.184.216.34) in the cache, and the fresh answer
+has an expired A record (203.0.113.34) in the cache, and the fresh answer
 returns the same address:
 
 | Time   | Event                          | Notes                    |
 |--------|--------------------------------|--------------------------|
 | T+0us  | App queries www.example.com    |                          |
-| T+5us  | Callback: 93.184.216.34        | Expired                  |
+| T+5us  | Callback: 203.0.113.34         | Expired                  |
 | T+120ms| (data unchanged, no callback)  | Fresh Answer Same        |
 
 When the fresh answer matches the expired answer, no second callback is
@@ -513,21 +513,22 @@ address), the sequence looks like this:
 | Time   | Event                          | Notes                    |
 |--------|--------------------------------|--------------------------|
 | T+0us  | App queries www.example.com    |                          |
-| T+5us  | Callback: 93.184.216.34        | Expired                  |
+| T+5us  | Callback: 203.0.113.34         | Expired                  |
 | T+120ms| Callback: 198.51.100.42        | Fresh Answer Different   |
 
-Here the expired answer contained the old address.  An application that
-connected to 93.184.216.34 may find that the connection fails or returns
+Here the expired answer contained an old address.  An application that
+connected to 203.0.113.34 may find that the connection fails with
+an ICMP Host Unreachable error, a TCP RST, a TLS failure, or other
 unexpected content.  But the fresh answer arrives 120 milliseconds later,
 and the application can retry with the correct address.  The total time to
-a successful connection is still only about 120 milliseconds -- the same as
+a successful connection is still only about 120 milliseconds -- roughly the same as
 it would have been without Optimistic DNS.
 
-Optimistic DNS never makes things worse for the application.  In the common
+Optimistic DNS never makes things substantially worse for the application.  In the common
 case where the data has not changed, it makes things dramatically faster.  In
-the uncommon case where the data has changed, it costs nothing beyond a failed
-connection attempt that overlaps with the network query the resolver would have
-performed anyway.
+the uncommon case where the data has changed and the server is no longer
+available at the previous address, the cost is a small amount of wasted traffic
+attempting to reach the previous address.
 
 Optimistic DNS is an opt-in mechanism.  Applications that do not request it
 receive conventional stub resolver behavior: expired records are ignored,
@@ -557,46 +558,40 @@ for records that match the query's name, type, and class.  For each matching
 record, it determines whether the record has expired by comparing the time
 elapsed since the record was received against the record's original TTL.
 
-If a matching record has expired:
-
-- If the record is a positive record (contains actual resource record
-  data), it is returned to the application with the expired flag set.
-
-- If the record is a negative cache entry (representing a previous
-  NXDOMAIN or NODATA response), it is NOT returned.  Negative cache
-  entries are excluded from Optimistic DNS because returning a stale
-  "this name does not exist" answer could prevent the application from
-  discovering that the name has since been created.  The cost of a false
-  negative (telling the application a name does not exist when it now
-  does) is higher than the cost of a brief delay.
-
-If a matching record has not expired, it is returned normally, as with any
-cache hit.
-
-## Parallel Network Query
-
 If unexpired records are found in the cache, they are returned to the
 application as a normal cache hit and no network query is needed.
 
+If a matching record has expired:
+
+- If the record is a positive record (contains actual resource record
+  data), it is returned to the application.
+
+- If the record is a negative cache entry (representing a previous
+  NXDOMAIN or NODATA response), it is NOT returned.  Negative cache
+  entries are excluded from Optimistic DNS. Delivering false
+  negatives (telling the application a name does not exist when it now
+  does) would not benefit the application.
+
+## Parallel Network Query
+
 If no unexpired records are found, the stub resolver issues a standard DNS
 query on the network.  This query proceeds through the normal resolution path:
-contacting configured recursive resolvers, following CNAME chains, appending
-search domains if applicable, and so on.  This network query is not optional.
+contacting configured recursive resolvers, following CNAME chains,
+and so on.  This network query is not optional.
 Even if expired records were already returned from the cache, the network query
 MUST still be issued.  The expired records are a convenience for the
 application, not a substitute for proper DNS resolution.
 
-Fresh answers from the network are delivered to the application through the
-normal callback mechanism.  The application can use these fresh answers to
-confirm or replace any expired answers it received earlier.
+Fresh answers from the network are delivered to the application through
+an asynchronous callback mechanism.  The application’s networking code MUST
+use these fresh answers to update the list of answers it received earlier.
 
 ## CNAME Handling {#cname-handling}
 
-CNAME records introduce a complication for Optimistic DNS.  When a DNS
-query encounters a CNAME record, the resolver must follow the CNAME chain
-to find the ultimate answer.  If the CNAME record itself is expired,
-following it may lead to a stale alias that no longer points to the correct
-canonical name.
+CNAME records introduce a complication for Optimistic DNS.
+When a DNS query encounters a CNAME record, the resolver must follow
+one or more records in a CNAME chain to find the ultimate answer.
+If a CNAME record itself is expired, it may no longer be correct.
 
 Consider the following example.  An application queries for
 www.example.com, which has a CNAME record pointing to cdn.example.net.
@@ -619,13 +614,13 @@ record during optimistic resolution, it takes the following steps:
 1. The stub resolver returns the expired result to the calling application and
    continues following the CNAME chain and returning expired and unexpired
    results from the cache.
-2. It simultaneously performs a standard DNS query on the network starting at
-   the first expired CNAME result encountered while returning results from the
-   cache.
+2. While returning results from the cache,
+   it simultaneously performs a standard DNS query on the network for
+   the first expired CNAME result encountered.
 3. As fresh results are received from the DNS query they are returned to the
    calling application.
 
-This rewind-and-restart approach ensures that the application always
+This rewind-and-restart approach ensures that the application eventually
 receives a complete, consistent answer from the fresh network query, even
 if the CNAME chain has changed since the cached records were stored.
 
