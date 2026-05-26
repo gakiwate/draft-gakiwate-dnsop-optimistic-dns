@@ -271,66 +271,127 @@ Table of Contents
       precisely when the user is most impatient.
 
    The fundamental observation behind Optimistic DNS is that in most
-   cases, a DNS record that expired a little while ago still contains
-   the correct data.  Servers do not typically change IP addresses the
-   instant a TTL expires.  The TTL is a freshness hint, not a
-   correctness deadline.  It marks when the resolver decides to refresh,
-   not when the data becomes incorrect.
+   cases, a DNS record that expired a little while ago usually still
+   contains the correct data.  Servers do not typically change IP
+   addresses the instant a TTL expires.  The TTL is a freshness hint,
+   not a correctness deadline.  It marks when the resolver decides to
+   refresh, not when the data becomes incorrect.
 
-   The "stale" state is also relative.  A user querying the same record
-   at two different resolvers can see entirely different views of
+   The "stale" state is also subjective.  A user querying the same
+   record at two different resolvers can see entirely different views of
    staleness.  The diagram below illustrates this: both Recursive A and
    Recursive B cached R1 before the authoritative server replaced it
-   with R2 at T=50.  From T=50 onward, both resolvers hold stale data.
-   But because each resolver started its TTL clock at a different
-   moment, a user query at T=90 receives a fresh network lookup from
-   Recursive A (whose TTL has run out) and a "TTL-valid" stale cache hit
-   from Recursive B (whose TTL has not).
+   with R2 at T=90.  But because each resolver started its TTL clock at
+   a different moment, they present a different view to their clients.
+   A client querying Recursive A at time T=80 will cause a DNS request
+   to the authoritative DNS server to retrieve fresh data.  A client
+   querying Recursive B twenty seconds later at time T=100 will received
+   cached data because Recursive B considers it still valid.
 
-Time:
-T=0 ---- T=25 --- T=40 --- T=50 ----- T=85 ----- T=90 -- T=100
+   Time:
+    0 --- 15 --- 30 --- 45 --- 60 --- 75 --- 90 -- 105 -- 120
 
-Authoritative Nameserver:
-|------------ R1 ------------|------------ R2 ------------|
-                             ^
-          Authoritative Answer Changes: R1 "stale" at T=50
+   Authoritative Nameserver:
+   -------------------- A1 -------------------|----- A2 -----
+                                              ^
+                                 Authoritative Answer Changes
+                                 At T=90 A1 is replaced by A2
 
-Recursive A queries at T=25:
-           +----------------------+
-           |  Cached R1 (TTL=60)  |
-           +----------------------+
-           25 ------------- 50 ------- 85          |
-                            ^      (TTL expires)   |
-                     R1 stale from here            v
-                                              User query at T=90:
-                                              R1 TTL expired. New Query.
+   Recursive A queries at T=15:
+           +--------------------------+
+           |    Cached A1 (TTL=60)    |
+           +--------------------------+
+          15 --- 30 --- 45 --- 60 --- 75  |
+                                          |
+                                          v
+                               Client 1 queries at T=80:
+                                    A1 TTL expired
+                                      New Query
 
-Recursive B queries at T=40:
-                  +----------------------+
-                  |  Cached R1 (TTL=60)  |
-                  +----------------------+
-                  40 ----- 50 ------------------- 90 --- 100
-                           ^                       |     (TTL expires)
-                   R1 stale from here              v
-                                        User query at T=90:
-                                        R1 TTL still valid.
-                                        Returns cached R1 (stale).
+   Recursive B queries at T=45:
+                         +--------------------------+
+                         |    Cached A1 (TTL=60)    |
+                         +--------------------------+
+                        45 --- 60 --- 75 --- 90 -- 105
+                                                 |
+                                                 |
+                                                 v
+                                      Client 2 queries at T=100:
+                                          A1 TTL still valid
+                                          Returns cached R1
+                                           (now incorrect).
 
-   A user querying Recursive A sees R1 as expired though another user
-   querying Recursive B at the same time sees R1 as valid.  Whether a
-   record is considered "valid" or "expired" depends not on the data
-   itself, but on which resolver happens to hold it.
+   Client 1 issued a query at time T=80 and suffered a delay waiting for
+   “fresh” data, even though, at that time, the data on the
+   authoritative nameserver had not yet changed.  In this case, using
+   the expired cached data would have fine, because it was still
+   correct.
 
-   When used in conjunction with Asynchronous DNS Resolution and Happy
-   Eyeballs, there is little to no cost to using a stale answer that
-   turns out to be wrong.  An application that receives an expired
-   record and begins connecting to the address it contains will, in the
-   vast majority of cases, succeed.  Even in the rare case where the
-   address has changed, it is not fatal to the application since the
-   application can then try again with the new candidates when the
-   background query returns with the fresh answers.  Any security risk
-   from connecting to a wrong address can be mitigated by adopting
-   transport-layer security (Section 9).
+   Client 2 issued a query twenty seconds later at time T=100, yet
+   Recursive B happily sent it cached data that was no longer correct.
+
+   If the data was already considered “expired” at time T=80, it might
+   be natural to think that 20 seconds later it should be even more
+   expired, yet Client 2 received the opposite behavior.  Statistically,
+   averaged over a large set of queries, records that are older relative
+   to their published TTL are more likely to be considered expired, but
+   for a specific individual query the results are much less
+   deterministic.
+
+   Thus, clients should not to attach too much importance to the
+   absolute value of a record’s age relative to its declared TTL.  The
+   age of a record is a valuable hint as to whether it should be assumed
+   to be still valid, but it is not a guarantee.  Data being younger
+   than its TTL is not a guarantee that it is still correct, and data
+   being older than its TTL is not a guarantee that it is wrong.
+
+   Happy Eyeballs [RFC6555] [RFC8305] [HEv3] is the asynchronous
+   connection racing technology that makes Optimistic DNS possible.
+   Optimistic DNS delivers DNS answers quickly, with the caveat that, on
+   rare occasions, some of those answers might be stale, in which case
+   updated answers will be delivered as soon as they are available.  To
+   make this optimistic approach viable, it MUST be coupled with
+   networking code that is designed to embrace this uncertainty, and
+   account for the fact that all data received from a network is
+   necessarily at least a little stale by the time it arrives, and may
+   subsequently be found to be incorrect.
+
+   With Happy Eyeballs, the networking code takes the set of answers
+   immediately available in the local cache and selects the address it
+   predicts is most likely to succeed.  If it predicts correctly, as it
+   should at least 99% of the time, and the connection succeeds, then no
+   additional traffic is generated.  In the rare cases where the first
+   connection attempt does not succeed within the expected network
+   round-trip time, a connection is initiated to the next address in
+   order of preference.  The first connection attempt is not abandoned
+   when the second one starts -- its ususal schedule of retransmissions
+   is still followed -- and the two connection attempts proceed in
+   parallel.  Running connection attempts in parallel instead of
+   sequentially prevents long stalls waiting for a connection to time-
+   out and fail before the next attempt is started.  Staggering the
+   start times by the expected response time means that in the majority
+   of cases only a single connection attempt (the first one) is needed,
+   which avoids generating excessive extra network traffic or excessive
+   extra load on servers.  If, during this procedure, new DNS results
+   are received, the list of candidate addresses is updated accordingly,
+   for use in subsequent connection requests.
+
+   Using Optimistic DNS in conjunction with Happy Eyeballs means that,
+   in the common case, a connection to the correct server is made
+   faster, with no additional network traffic.  In the rare case when a
+   server address has actually changed, the cost is a small amount of
+   wasted network traffic while waiting for the DNS reply.  Once the
+   reply arrives the Happy Eyeballs algorithm can immediately connect to
+   the correct server, with no additional delay beyond what it would
+   have experienced had it just waited for the DNS reply without trying
+   other candidate addresses while it was waiting.
+
+   Applications using Optimistic DNS and Happy Eyeballs SHOULD follow
+   appropriate security practices (Section 9) to ensure that they are
+   connecting to the intended host or service on the network.
+   Applications that do not have application-layer security and simply
+   expect the Internet to connect them to right host every time SHOULD
+   NOT use Optimistic DNS.
 
    The cost of waiting for a fresh answer that confirms what the cache
    already had is a guaranteed delay of the full network round-trip time
