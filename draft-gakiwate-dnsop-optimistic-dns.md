@@ -674,86 +674,139 @@ This document has no IANA actions.
 
 # Deployment History
 
-Optimistic DNS in mDNSResponder was first shipped enabled by default in macOS
+Optimistic DNS in Apple’s mDNSResponder code was first shipped enabled by default in macOS
 10.14 (Mojave) and iOS 12 in September 2018.  It has been active on all Apple
 platforms since that release, serving as the default stub resolver behavior for
-all applications that use asynchronous DNS resolution APIs.
+all applications that use Apple’s recommended networking APIs.
 
 ## Optimistic DNS in mDNSResponder {#mdnsresponder}
 
-mDNSResponder is an open source system stub resolver, shipping on macOS, iOS,
-tvOS, and watchOS.  This section describes its concrete implementation of the
+The mDNSResponder project is an open source system stub resolver, and runs on macOS, iOS,
+tvOS, watchOS, Microsoft Windows, Android, Linux, and other platforms.
+This section describes its concrete implementation of the
 Optimistic DNS mechanism described in this document.
 
 ### Signaling
 
-The main draft describes query initiation as a local signaling matter
-between the application and the stub resolver.  mDNSResponder implements
+This document describes query initiation as a local signaling matter
+between the application and the stub resolver. The mDNSResponder code implements
 this through the following API flags:
 
 kDNSServiceFlagsAllowExpiredAnswers
-: Set by the application when issuing a query to indicate willingness to
-  receive expired cached records.
+: Set by the application when issuing a query to request delivery
+  of expired cached records.
 
 kDNSServiceFlagsExpiredAnswer
 : Set by the resolver on individual answer callbacks to indicate that the
   record being returned is expired.  While this flag is not necessary for
   optimistic DNS to function correctly, mDNSResponder adds this hint for
   applications.
+  Providing an equivalent indication in other implementations is not recommended,
+  because, as mentioned earlier, the notion of record expiry is subjective,
+  and this flag is easily misunderstood and misused by developers who
+  think it carries more significance that it really does.
 
 kDNSServiceFlagsAnsweredFromCache
 : Set by the resolver to indicate that the record was served from the
   local cache rather than from a network response.  Set regardless of
   whether the record is expired, allowing the application to distinguish
   cached answers (immediate) from network answers (delayed).
+  Providing an equivalent indication in other implementations is not recommended,
+  because this flag is easily misunderstood and misused by developers who
+  think it carries more significance that it really does.
+  If two clients happen to query for the same domain name at almost
+  exactly the same time then one will get told that the answer
+  came from the cache and the other will be told that it did not.
+  Which client gets told which is effectively a coin toss,
+  and usually has little significance.
 
 ### Record Lifecycle {#record-immortalization}
 
-The main cache lookup requires that expired records remain in the cache to serve
-optimistically.  Conceptually, a client saves all records always for the
-duration of their choosing. Practically, a client may want to manage the record
-lifecycle for memory reasons. mDNSResponder approaches this with a three-state
+The main cache lookup operation requires that expired records remain
+in the cache so that they are available to serve optimistically.
+Conceptually, the stub resolver code saves all records for up to seven days.
+Practically, the stub resolver code may want to limit its memory usage.
+The mDNSResponder code approaches this with a three-state
 record lifecycle:
 
 Mortal (default)
-: The normal cache state.  When the TTL expires, the record is eligible
-  for immediate removal.  All newly cached records begin in this state.
+: The normal cache state for a record retrieved to
+  answer a Traditional (not Optimistic DNS) query.
+  These records may be refreshed in the course
+  of normal operation.
+  If subsequently queried by an Optimistic DNS
+  operation, this record gets promoted to immortal.
+  If not refreshed, then when the TTL expires
+  the record is eligible for immediate removal.
 
 Immortal
-: A record marked to survive past its TTL expiry.  Promotion from mortal to
-  immortal occurs when the record answers a query from an application that has
-  opted in to Optimistic DNS. To be marked immortal, the record has to be a
-  positive record (not a negative cache entry) and not DNSSEC-validated.
+: A record marked to survive past its TTL expiry.
+  This is the initial cache state for a record retrieved to
+  answer an Optimistic DNS query.
+  In addition, promotion from mortal to immortal occurs when a cached
+  record is used to answer a query from an application that has opted
+  in to Optimistic DNS.
+  The logic is that if an application has made an Optimistic DNS query
+  for this DNS name, then there may be more such queries in the future.
+  If there has been not even one single Optimistic DNS query
+  for this DNS name, then that is a sign that whatever applications
+  are resolving this DNS name do not yet support Optimistic DNS,
+  so saving these records for a long time would be a waste of memory.
+  To be marked immortal, the record has to be a
+  positive record (not a negative cache entry).
+  Successful subsequent queries for these records
+  will refresh their lifetime.
+  If not refreshed, then when the TTL expires
+  an immortal record becomes a ghost record.
 
 Ghost
-: An immortal record whose TTL has expired.  Ghost records linger in the
-  cache, available to serve future optimistic queries.  They are retained
-  for a bounded ghost retention period (maximum of one week), after which
-  they are purged.
+: An immortal record whose TTL has expired.
+  Ghost records linger in the cache, available to serve future
+  Optimistic DNS queries.
+  If an Optimistic DNS query is issued that matches a ghost record,
+  then the ghost record data is delivered immediately to the
+  application, and the simultaneous DNS query over the network,
+  if successful, will refresh the TTL of the ghost record and
+  restore it to immortal state.
+  If not refreshed for the ghost retention period (maximum of
+  one week), ghost records are purged.
 
 The complete lifecycle:
 
 ~~~
-  +--------+     TTL expires     +-----------+
-  | Mortal |---(if immortalized)-| Immortal  |
-  +--------+   during lifetime   +-----------+
-      |                               |
-      | TTL expires                   | TTL expires
-      | (not immortalized)            |
-      v                               v
-   [purged]                      +---------+
-                                 |  Ghost  |
-                                 +---------+
-                                      |
-                                      | ghost retention
-                                      | period expires
-                                      v
-                                   [purged]
+
+       | Traditional      Optimistic DNS |
+       | Query                     Query |   ----R----
+       | for record           for record |  |         |
+ -R-   | not in cache       not in cache |  |   -R-   |
+|   |  |                                 |  |  |   |  |
+|   V  V                                 V  V  V   |  |
+| +--------+  Optimistic DNS Query   +-----------+ |  |
+| | Mortal | ----------------------> | Immortal  | |  |
+| +--------+     during lifetime     +-----------+ |  |
+|   | |                                    |   |   |  |
+ ---  |                                    |    ---   |
+      | TTL expires            TTL expires |          |
+      |                                    |          |
+      |                                    |          |
+      |                                    v          |
+      V                               +---------+     |
+   [purged] <-----------------------  |  Ghost  |-----
+                   ghost retention    +---------+
+                    period expires
 ~~~
 
 This creates a virtuous cycle: the more frequently a name is queried with
 Optimistic DNS, the more likely the cache will contain a ghost record for
 it the next time the TTL expires.
+
+Note: need to add text about Zeno’s paradox and record expiration.
+Re-querying when a record is about to expire doesn’t help,
+if the recursive resolver has the same TTL count.
+The mDNSResponder code stretches TTLs by 25%, and will re-query
+for nearly expired records at 80% of their (stretched) TTL, plus two seconds.
+This means that mDNSResponder will re-query the recursive resolver one second
+after its copy has expired, forcing it to fetch a new copy.
 
 # Acknowledgments
 {:numbered="false"}
