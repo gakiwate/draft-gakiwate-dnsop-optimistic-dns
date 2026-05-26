@@ -5,8 +5,8 @@
 Domain Name System Operations                                 G. Akiwate
 Internet-Draft                                               S. Cheshire
 Intended status: Standards Track                              Apple Inc.
-Expires: 26 November 2026                                       P. Flack
-                                                             25 May 2026
+Expires: 27 November 2026                                       P. Flack
+                                                             26 May 2026
 
 
                              Optimistic DNS
@@ -60,7 +60,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 26 November 2026.
+   This Internet-Draft will expire on 27 November 2026.
 
 Copyright Notice
 
@@ -99,7 +99,9 @@ Table of Contents
      8.3.  Relationship to RFC 8767
    9.  Security Considerations
    10. IANA Considerations
-   11. Normative References
+   11. References
+     11.1.  Normative References
+     11.2.  Informative References
    Appendix A.  Deployment History
      A.1.  Optimistic DNS in mDNSResponder
        A.1.1.  Signaling
@@ -337,6 +339,10 @@ Recursive B queries at T=40:
 
 4.  TTL Stretching
 
+   Note: We should consider if we need this text.  Does any stub
+   resolver do this?  Warren Kumari’s draft [Stretch] refers to
+   recursive resolver behavior, not stub resolvers.
+
    TTL Stretching is a simple modification to the stub resolver behavior
    where it unilaterally extends the effective lifetime of cached
    records.  When a record's TTL expires, instead of immediately
@@ -348,14 +354,9 @@ Recursive B queries at T=40:
    TTL than the authoritative server originally specified.
 
    TTL stretching is attractive because it is entirely transparent.
-   Every application benefits automatically, with no code changes.  The
-   latency cliff disappears: instead of a sudden jump from zero to
-   hundreds of milliseconds, the application continues to receive
-   instant cache answers while the record remains within its stretched
-   lifetime.
-
-   However, TTL stretching has limitations that motivate the more
-   sophisticated Optimistic DNS mechanism:
+   Every application benefits automatically, with no code changes.
+   However, the latency cliff still occurs; it just occurs at a
+   different time.
 
    _No application opt-out._  All applications receive stretched TTLs
       whether they want them or not.  An application that specifically
@@ -371,10 +372,11 @@ Recursive B queries at T=40:
       risk of returning incorrect data with no way for the application
       to detect it.
 
-   Optimistic DNS generalizes TTL stretching.  The application receives
-   expired records just as quickly, but since the applications can opt-
-   out, Optimistic DNS to extend the mechanism to much longer time
-   horizons while keeping the application in control.
+   With Optimistic DNS, the application receives expired records
+   quickly, but since applications choose whether to opt in for
+   Optimistic DNS results depending on their ability to handle
+   occasional stale results, Optimistic DNS is able to to extend the
+   mechanism to much longer time horizons.
 
    TTL stretching can be viewed as a simpler version of Optimistic DNS:
    one where the application has no visibility, no background query is
@@ -745,7 +747,9 @@ Recursive B queries at T=40:
 
    This document has no IANA actions.
 
-11.  Normative References
+11.  References
+
+11.1.  Normative References
 
    [HEv3]     Pauly, T., Schinazi, D., Jaju, N., and K. Ishibashi,
               "Happy Eyeballs Version 3: Better Connectivity Using
@@ -794,6 +798,13 @@ Recursive B queries at T=40:
               Dedicated QUIC Connections", RFC 9250,
               DOI 10.17487/RFC9250, May 2022,
               <https://www.rfc-editor.org/rfc/rfc9250>.
+
+11.2.  Informative References
+
+   [Stretch]  Kumari, W., "Stretching DNS TTLs", Work in Progress,
+              Internet-Draft, draft-wkumari-dnsop-ttl-stretching-00, 13
+              November 2016, <https://datatracker.ietf.org/doc/html/
+              draft-wkumari-dnsop-ttl-stretching-00>.
 
 Appendix A.  Deployment History
 
