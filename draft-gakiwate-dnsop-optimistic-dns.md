@@ -413,23 +413,28 @@ intelligently.
 # Enabling Technologies {#enabling-technologies}
 
 When an application receives an expired address and immediately begins
-connecting to it, two things need to happen.  First, when the fresh
-answer arrives moments later, the application needs a way to receive it
--- which means the DNS API cannot have already returned a single answer
-and closed the query.  Second, if the expired address turns out to be
-wrong, the application needs a way to recover.
+connecting to it, two things need to happen:
+
+- When the fresh answer arrives moments later, the application
+needs a way to receive it -- which means the DNS API has to
+support delivering asynchronous results as they arrive
+
+- If the expired address is found to be wrong,
+the application needs a way to continue gracefully.
 
 ## Asynchronous DNS Resolution
 
-Traditional synchronous DNS APIs typically block until a single set of answers
-is returned.  The caller issues a query, waits, receives one set of results, and
+Traditional synchronous DNS APIs typically block until the complete set of answers
+is available.  The caller issues a query, waits, receives one set of results, and
 the call is complete.  Optimistic DNS cannot function with this model since
-there is no mechanism to deliver an expired answer now and a fresh answer later.
+there is no mechanism to deliver an expired answer now and
+update it with newer answers shortly afterwards.
 
 With Asynchronous DNS APIs, the application registers a callback and receives
 results as they become available.  The query remains active, and the resolver
 delivers additional results through subsequent callbacks.  This is the
-resolution model defined by Multicast DNS {{!RFC6762}}.
+resolution model defined by Multicast DNS {{!RFC6762}}
+and is valuable for unicast DNS too.
 
 This model naturally supports the two-wave delivery that Optimistic DNS
 requires.  Expired records arrive in the first callback, within
@@ -445,9 +450,8 @@ established and the fresh answer serves as confirmation.
 Happy Eyeballs {{!RFC6555}} {{!RFC8305}} {{HEv3}} defines algorithms for racing
 connection attempts across multiple addresses and address families.  When a
 client has several candidate addresses for a destination, Happy Eyeballs
-staggers connection attempts with short delays and uses whichever connection
-succeeds first.  Failed attempts to individual addresses are absorbed within the
-algorithm's normal timeout budget.
+staggers connection attempts, in order of expected likelihood of success,
+with short delays, and uses whichever connection succeeds first.
 
 This mechanism pairs naturally with Optimistic DNS.  When the resolver
 returns expired addresses, Happy Eyeballs can begin racing connections to
@@ -455,20 +459,20 @@ those addresses immediately, rather than waiting for DNS resolution to
 complete before starting any connection attempt.
 
 When the expired addresses are still correct (the most common scenario) a
-connection succeeds before the fresh DNS answer even arrives.  When an expired
+connection may succeed before the fresh DNS answer even arrives.  When an expired
 address is wrong (the rare scenario) the failed connection attempt is simply one
 candidate among several.  Happy Eyeballs is already designed to tolerate some
 addresses failing.  When the fresh DNS answer arrives with the correct address,
-it enters the ongoing connection race.  The cost of the wrong expired address is
-a single failed attempt and its associated network costs.
+it enters the ongoing connection race.  The cost of wrong expired addresses is
+occasional failed attempts and their associated network costs.
 
-Without Happy Eyeballs, a wrong expired address means a failed connection and a
-visible delay while the application falls back to the fresh answer and retries.
+Without Happy Eyeballs, a wrong expired address would mean a failed connection and
+user frustration.
 
 ## Combined Effect
 
 Asynchronous DNS resolution makes Optimistic DNS *possible*.  It provides the
-delivery mechanism for two waves of results.  Happy Eyeballs makes Optimistic
+delivery mechanism for multiple waves of results.  Happy Eyeballs makes Optimistic
 DNS *safe*.  It ensures that acting on a wrong expired address is not fatal to
 the overall connection attempt.  Together, the application starts connecting
 instantly with best-effort cached addresses, the connection race handles any
