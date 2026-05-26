@@ -1655,24 +1655,33 @@ intelligently.<a href="#section-4-6" class="pilcrow">¶</a></p>
 <a href="#section-5" class="section-number selfRef">5. </a><a href="#name-enabling-technologies" class="section-name selfRef">Enabling Technologies</a>
       </h2>
 <p id="section-5-1">When an application receives an expired address and immediately begins
-connecting to it, two things need to happen.  First, when the fresh
-answer arrives moments later, the application needs a way to receive it
--- which means the DNS API cannot have already returned a single answer
-and closed the query.  Second, if the expired address turns out to be
-wrong, the application needs a way to recover.<a href="#section-5-1" class="pilcrow">¶</a></p>
+connecting to it, two things need to happen:<a href="#section-5-1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="section-5-2.1">
+          <p id="section-5-2.1.1">When the fresh answer arrives moments later, the application
+needs a way to receive it -- which means the DNS API has to
+support delivering asynchronous results as they arrive<a href="#section-5-2.1.1" class="pilcrow">¶</a></p>
+</li>
+        <li class="normal" id="section-5-2.2">
+          <p id="section-5-2.2.1">If the expired address is found to be wrong,
+the application needs a way to continue gracefully.<a href="#section-5-2.2.1" class="pilcrow">¶</a></p>
+</li>
+      </ul>
 <div id="asynchronous-dns-resolution">
 <section id="section-5.1">
         <h3 id="name-asynchronous-dns-resolution">
 <a href="#section-5.1" class="section-number selfRef">5.1. </a><a href="#name-asynchronous-dns-resolution" class="section-name selfRef">Asynchronous DNS Resolution</a>
         </h3>
-<p id="section-5.1-1">Traditional synchronous DNS APIs typically block until a single set of answers
-is returned.  The caller issues a query, waits, receives one set of results, and
+<p id="section-5.1-1">Traditional synchronous DNS APIs typically block until the complete set of answers
+is available.  The caller issues a query, waits, receives one set of results, and
 the call is complete.  Optimistic DNS cannot function with this model since
-there is no mechanism to deliver an expired answer now and a fresh answer later.<a href="#section-5.1-1" class="pilcrow">¶</a></p>
+there is no mechanism to deliver an expired answer now and
+update it with newer answers shortly afterwards.<a href="#section-5.1-1" class="pilcrow">¶</a></p>
 <p id="section-5.1-2">With Asynchronous DNS APIs, the application registers a callback and receives
 results as they become available.  The query remains active, and the resolver
 delivers additional results through subsequent callbacks.  This is the
-resolution model defined by Multicast DNS <span>[<a href="#RFC6762" class="cite xref">RFC6762</a>]</span>.<a href="#section-5.1-2" class="pilcrow">¶</a></p>
+resolution model defined by Multicast DNS <span>[<a href="#RFC6762" class="cite xref">RFC6762</a>]</span>
+and is valuable for unicast DNS too.<a href="#section-5.1-2" class="pilcrow">¶</a></p>
 <p id="section-5.1-3">This model naturally supports the two-wave delivery that Optimistic DNS
 requires.  Expired records arrive in the first callback, within
 microseconds.  Fresh records from the network arrive in subsequent
@@ -1691,22 +1700,21 @@ established and the fresh answer serves as confirmation.<a href="#section-5.1-3"
 <p id="section-5.2-1">Happy Eyeballs <span>[<a href="#RFC6555" class="cite xref">RFC6555</a>]</span> <span>[<a href="#RFC8305" class="cite xref">RFC8305</a>]</span> <span>[<a href="#HEv3" class="cite xref">HEv3</a>]</span> defines algorithms for racing
 connection attempts across multiple addresses and address families.  When a
 client has several candidate addresses for a destination, Happy Eyeballs
-staggers connection attempts with short delays and uses whichever connection
-succeeds first.  Failed attempts to individual addresses are absorbed within the
-algorithm's normal timeout budget.<a href="#section-5.2-1" class="pilcrow">¶</a></p>
+staggers connection attempts, in order of expected likelihood of success,
+with short delays, and uses whichever connection succeeds first.<a href="#section-5.2-1" class="pilcrow">¶</a></p>
 <p id="section-5.2-2">This mechanism pairs naturally with Optimistic DNS.  When the resolver
 returns expired addresses, Happy Eyeballs can begin racing connections to
 those addresses immediately, rather than waiting for DNS resolution to
 complete before starting any connection attempt.<a href="#section-5.2-2" class="pilcrow">¶</a></p>
 <p id="section-5.2-3">When the expired addresses are still correct (the most common scenario) a
-connection succeeds before the fresh DNS answer even arrives.  When an expired
+connection may succeed before the fresh DNS answer even arrives.  When an expired
 address is wrong (the rare scenario) the failed connection attempt is simply one
 candidate among several.  Happy Eyeballs is already designed to tolerate some
 addresses failing.  When the fresh DNS answer arrives with the correct address,
-it enters the ongoing connection race.  The cost of the wrong expired address is
-a single failed attempt and its associated network costs.<a href="#section-5.2-3" class="pilcrow">¶</a></p>
-<p id="section-5.2-4">Without Happy Eyeballs, a wrong expired address means a failed connection and a
-visible delay while the application falls back to the fresh answer and retries.<a href="#section-5.2-4" class="pilcrow">¶</a></p>
+it enters the ongoing connection race.  The cost of wrong expired addresses is
+occasional failed attempts and their associated network costs.<a href="#section-5.2-3" class="pilcrow">¶</a></p>
+<p id="section-5.2-4">Without Happy Eyeballs, a wrong expired address would mean a failed connection and
+user frustration.<a href="#section-5.2-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="combined-effect">
@@ -1715,7 +1723,7 @@ visible delay while the application falls back to the fresh answer and retries.<
 <a href="#section-5.3" class="section-number selfRef">5.3. </a><a href="#name-combined-effect" class="section-name selfRef">Combined Effect</a>
         </h3>
 <p id="section-5.3-1">Asynchronous DNS resolution makes Optimistic DNS <em>possible</em>.  It provides the
-delivery mechanism for two waves of results.  Happy Eyeballs makes Optimistic
+delivery mechanism for multiple waves of results.  Happy Eyeballs makes Optimistic
 DNS <em>safe</em>.  It ensures that acting on a wrong expired address is not fatal to
 the overall connection attempt.  Together, the application starts connecting
 instantly with best-effort cached addresses, the connection race handles any
