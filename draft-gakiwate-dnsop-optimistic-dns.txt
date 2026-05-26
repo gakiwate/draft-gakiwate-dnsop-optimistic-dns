@@ -111,6 +111,18 @@ Table of Contents
 
 1.  Introduction
 
+   In the early days of the Internet, computers and network connections
+   were much slower than they are now.  Delays of a few tens or hundreds
+   of milliseconds used to be insignificant compared to the overall time
+   taken to load a web page.  Today, increases in computing power and
+   network throughput have dramatically reduced previous major causes of
+   slowness.  To continue progress on improving user experience, we need
+   to identify and reduce the remaining sources of delay, which -- as
+   other aspects of computer and network performance improve -- now
+   constitute a larger proportion of the overall web page load time.
+   Computer processing speed and network throughput continue to
+   increase, but the speed of light isn’t changing.
+
    When a user opens their laptop and navigates to a website, the first
    step is typically a DNS lookup to translate the hostname into an IP
    address.  If the laptop's DNS cache contains a record for that
@@ -142,12 +154,15 @@ Table of Contents
    cached records that match a query, it returns those expired records
    to the application immediately while simultaneously issuing a fresh
    network query in the background.  The application first receives the
-   expired (but likely still correct) records, and then the
-   authoritative fresh records if different.  Of course, once the
-   application has the expired address it will start connecting.  Thus,
-   the query needs to remain open to asynchronously deliver the fresh
-   answer when it arrives, and the connection logic needs to cope if the
-   expired address turns out to be wrong (Section 5).
+   expired (but likely still correct) records, and then shortly
+   afterwards, the authoritative fresh records, if different.  Using the
+   (expired, but probably correct) address from the cache, the
+   networking library code that the application is using will start
+   connecting.  While connecting, the networking library code MUST
+   continue to pay attention to asynchronous notifications of new
+   addresses as they are learned, and the networking library code MUST
+   react gracefully if, occasionally, some of the candidate addresses
+   do, in fact, prove to be actually stale and incorrect (Section 5).
 
    The following diagram illustrates the timing difference between
    conventional DNS resolution and Optimistic DNS:

@@ -1282,41 +1282,56 @@ between the stub resolver and applications about answer freshness.<a href="#sect
       <h2 id="name-introduction">
 <a href="#section-1" class="section-number selfRef">1. </a><a href="#name-introduction" class="section-name selfRef">Introduction</a>
       </h2>
-<p id="section-1-1">When a user opens their laptop and navigates to a website, the first step
+<p id="section-1-1">In the early days of the Internet, computers and network connections
+were much slower than they are now.
+Delays of a few tens or hundreds of milliseconds used to be
+insignificant compared to the overall time taken to load a web page.
+Today, increases in computing power and network throughput
+have dramatically reduced previous major causes of slowness.
+To continue progress on improving user experience,
+we need to identify and reduce the remaining sources of delay, which
+-- as other aspects of computer and network performance improve --
+now constitute a larger proportion of the overall web page load time.
+Computer processing speed and network throughput continue to increase,
+but the speed of light isn’t changing.<a href="#section-1-1" class="pilcrow">¶</a></p>
+<p id="section-1-2">When a user opens their laptop and navigates to a website, the first step
 is typically a DNS lookup to translate the hostname into an IP address.  If
 the laptop's DNS cache contains a record for that hostname, the answer is
 returned almost instantly and the user perceives no delay.  But if the
 record's TTL has expired, even by a single second, the laptop must perform
 a fresh DNS lookup.  On a wired connection this might take 50 to 200
 milliseconds.  On a cellular connection, particularly at the edge of
-coverage, it can take several seconds.<a href="#section-1-1" class="pilcrow">¶</a></p>
-<p id="section-1-2">The user experiences this as a brief but noticeable pause.  The website
+coverage, it can take several seconds.<a href="#section-1-2" class="pilcrow">¶</a></p>
+<p id="section-1-3">The user experiences this as a brief but noticeable pause.  The website
 appears to hang.  The user wonders if something is wrong.  And in most
 cases, the expired record still contained the correct IP address and the
 website has not moved to a different server.  The user waited for
-confirmation of something the device already knew.<a href="#section-1-2" class="pilcrow">¶</a></p>
-<p id="section-1-3">Consider a record for www.example.com with a TTL of 60 seconds.  At time
+confirmation of something the device already knew.<a href="#section-1-3" class="pilcrow">¶</a></p>
+<p id="section-1-4">Consider a record for www.example.com with a TTL of 60 seconds.  At time
 T=0 the record is fetched and cached.  For the next 60 seconds, any
 application that asks for www.example.com gets an instant answer.  At time T=61,
 the record has expired.  The very next lookup must go to the network.  From the
 user's perspective, the transition from "instant" to "slow" is a cliff edge. The
 record was valid for 60 seconds, then invalid for the fraction of a second it
 took to refresh it, then valid again.  Yet that fraction of a second is the one
-the user noticed.<a href="#section-1-3" class="pilcrow">¶</a></p>
-<p id="section-1-4">This document describes Optimistic DNS, a stub resolver mechanism that addresses
+the user noticed.<a href="#section-1-4" class="pilcrow">¶</a></p>
+<p id="section-1-5">This document describes Optimistic DNS, a stub resolver mechanism that addresses
 this problem.  When the stub resolver has expired cached records that match a
 query, it returns those expired records to the application immediately while
-simultaneously issuing a fresh network query in the background.  The application
-first receives the expired (but likely still correct) records, and then the
-authoritative fresh records if different.  Of course, once the application has
-the expired address it will start connecting. Thus, the query needs to remain
-open to asynchronously deliver the fresh answer when it arrives, and the
-connection logic needs to cope if the expired address turns out to be wrong
-(<a href="#enabling-technologies" class="auto internal xref">Section 5</a>).<a href="#section-1-4" class="pilcrow">¶</a></p>
-<p id="section-1-5">The following diagram illustrates the timing difference between
-conventional DNS resolution and Optimistic DNS:<a href="#section-1-5" class="pilcrow">¶</a></p>
-<p id="section-1-6"><strong>Conventional DNS (after cache expiry):</strong><a href="#section-1-6" class="pilcrow">¶</a></p>
-<div class="alignLeft art-text artwork" id="section-1-7">
+simultaneously issuing a fresh network query in the background.
+The application first receives the expired (but likely still correct) records,
+and then shortly afterwards, the authoritative fresh records, if different.
+Using the (expired, but probably correct) address from the cache,
+the networking library code that the application is using will start connecting.
+While connecting, the networking library code <span class="bcp14">MUST</span> continue to pay attention
+to asynchronous notifications of new addresses as they are learned,
+and the networking library code <span class="bcp14">MUST</span> react gracefully if,
+occasionally, some of the candidate addresses do, in fact,
+prove to be actually stale and incorrect (<a href="#enabling-technologies" class="auto internal xref">Section 5</a>).<a href="#section-1-5" class="pilcrow">¶</a></p>
+<p id="section-1-6">The following diagram illustrates the timing difference between
+conventional DNS resolution and Optimistic DNS:<a href="#section-1-6" class="pilcrow">¶</a></p>
+<p id="section-1-7"><strong>Conventional DNS (after cache expiry):</strong><a href="#section-1-7" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-1-8">
 <pre>
   Application        Stub Resolver        DNS Server
       |                    |                    |
@@ -1329,10 +1344,10 @@ conventional DNS resolution and Optimistic DNS:<a href="#section-1-5" class="pil
       |&lt;-- Fresh Answer ---|                    |
       |                    |                    |
       [====== 150ms+ latency ======]
-</pre><a href="#section-1-7" class="pilcrow">¶</a>
+</pre><a href="#section-1-8" class="pilcrow">¶</a>
 </div>
-<p id="section-1-8"><strong>Optimistic DNS (after cache expiry):</strong><a href="#section-1-8" class="pilcrow">¶</a></p>
-<div class="alignLeft art-text artwork" id="section-1-9">
+<p id="section-1-9"><strong>Optimistic DNS (after cache expiry):</strong><a href="#section-1-9" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-1-10">
 <pre>
   Application        Stub Resolver        DNS Server
       |                    |                    |
@@ -1345,9 +1360,9 @@ conventional DNS resolution and Optimistic DNS:<a href="#section-1-5" class="pil
       |                    |&lt;-- Response -------|
       |&lt;-- Fresh Answer ---|                    |
       |    (if changed)    |                    |
-</pre><a href="#section-1-9" class="pilcrow">¶</a>
+</pre><a href="#section-1-10" class="pilcrow">¶</a>
 </div>
-<p id="section-1-10">Optimistic DNS is complementary to Serving Stale Data to Improve DNS
+<p id="section-1-11">Optimistic DNS is complementary to Serving Stale Data to Improve DNS
 Resiliency <span>[<a href="#RFC8767" class="cite xref">RFC8767</a>]</span>, which allows recursive resolvers to serve stale data
 during upstream failures. The two mechanisms differ in their focus.
 As reflected in the document title, the specification for serving stale
@@ -1356,11 +1371,11 @@ in situations where the authoritative servers are down or unreachable.
 Optimistic DNS is focussed on enhancements to the stub resolver
 on the end-user's device, to reduce delays even in cases
 where the authoritative servers are functioning perfectly well.
-Both can be deployed simultaneously for layered staleness tolerance.<a href="#section-1-10" class="pilcrow">¶</a></p>
-<p id="section-1-11">This document describes only the client-side behavior.  Optimistic DNS does
+Both can be deployed simultaneously for layered staleness tolerance.<a href="#section-1-11" class="pilcrow">¶</a></p>
+<p id="section-1-12">This document describes only the client-side behavior.  Optimistic DNS does
 not define any new DNS wire-protocol messages, opcodes, or EDNS options.
 The signaling between the stub resolver and the application is purely a
-local API matter.<a href="#section-1-11" class="pilcrow">¶</a></p>
+local API matter.<a href="#section-1-12" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="conventions-and-definitions">
