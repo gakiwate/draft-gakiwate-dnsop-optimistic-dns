@@ -1950,29 +1950,31 @@ if the CNAME chain has changed since the cached records were stored.<a href="#se
         <h3 id="name-search-domains">
 <a href="#section-7.5" class="section-number selfRef">7.5. </a><a href="#name-search-domains" class="section-name selfRef">Search Domains</a>
         </h3>
-<p id="section-7.5-1">When the stub resolver appends search domains to partially-qualified domain
+<p id="section-7.5-1">When the stub resolver appends search domains to unqualified domain
 names, Optimistic DNS interacts with the search domain iteration process.<a href="#section-7.5-1" class="pilcrow">¶</a></p>
-<p id="section-7.5-2">If an optimistic query encounters an expired CNAME while using a particular
+<p id="section-7.5-2">Note: This section needs to be updated to discuss domain search lists.
+Right now it is just focussed on CNAME following.<a href="#section-7.5-2" class="pilcrow">¶</a></p>
+<p id="section-7.5-3">If an optimistic query encounters an expired CNAME while using a particular
 search domain, the query restart described in <a href="#cname-handling" class="auto internal xref">Section 7.4</a> preserves
 the current search domain.  The restart does not advance to the next search
 domain in the list, because the current search domain may still be the
 correct one -- the expired CNAME merely prevented the resolver from
-following the chain to a fresh answer.<a href="#section-7.5-2" class="pilcrow">¶</a></p>
-<p id="section-7.5-3">For example, if the user queries for "mail" and the search domain list is
-[corp.example.com, example.com]:<a href="#section-7.5-3" class="pilcrow">¶</a></p>
-<ol start="1" type="1" class="normal type-1" id="section-7.5-4">
-<li id="section-7.5-4.1">
-            <p id="section-7.5-4.1.1">The resolver tries mail.corp.example.com with Optimistic DNS.<a href="#section-7.5-4.1.1" class="pilcrow">¶</a></p>
+following the chain to a fresh answer.<a href="#section-7.5-3" class="pilcrow">¶</a></p>
+<p id="section-7.5-4">For example, if the user queries for "mail" and the search domain list is
+[corp.example.com, example.com]:<a href="#section-7.5-4" class="pilcrow">¶</a></p>
+<ol start="1" type="1" class="normal type-1" id="section-7.5-5">
+<li id="section-7.5-5.1">
+            <p id="section-7.5-5.1.1">The resolver tries mail.corp.example.com with Optimistic DNS.<a href="#section-7.5-5.1.1" class="pilcrow">¶</a></p>
 </li>
-          <li id="section-7.5-4.2">
-            <p id="section-7.5-4.2.1">An expired CNAME is found for mail.corp.example.com pointing to
-mailserver.corp.example.com.<a href="#section-7.5-4.2.1" class="pilcrow">¶</a></p>
+          <li id="section-7.5-5.2">
+            <p id="section-7.5-5.2.1">An expired CNAME is found for mail.corp.example.com pointing to
+mailserver.corp.example.com.<a href="#section-7.5-5.2.1" class="pilcrow">¶</a></p>
 </li>
-          <li id="section-7.5-4.3">
-            <p id="section-7.5-4.3.1">The resolver restarts at mail.corp.example.com (not mail.example.com).<a href="#section-7.5-4.3.1" class="pilcrow">¶</a></p>
+          <li id="section-7.5-5.3">
+            <p id="section-7.5-5.3.1">The resolver restarts at mail.corp.example.com (not mail.example.com).<a href="#section-7.5-5.3.1" class="pilcrow">¶</a></p>
 </li>
-          <li id="section-7.5-4.4">
-            <p id="section-7.5-4.4.1">The fresh network query resolves mail.corp.example.com normally.<a href="#section-7.5-4.4.1" class="pilcrow">¶</a></p>
+          <li id="section-7.5-5.4">
+            <p id="section-7.5-5.4.1">The fresh network query resolves mail.corp.example.com normally.<a href="#section-7.5-5.4.1" class="pilcrow">¶</a></p>
 </li>
         </ol>
 </section>
