@@ -390,10 +390,63 @@ is a guaranteed delay of the full network round-trip time on every cache expiry.
 For most applications, the expected value of the optimistic approach is clearly
 positive.
 
+# Zeno’s Paradox
+
+One seemingly attractive approach to avoiding the latency spike
+might be to take inspiration from DHCP {{!RFC2131}} {{!RFC2132}},
+and renew a record before it expires, instead of waiting until
+after it is already expired before requesting an update.
+DHCP typically renews an address lease when half of the lease
+lifetime has elapsed, rather than waiting for the lease to
+actually expire and then briefly losing the right to use that
+IP address while a new request is processed.
+
+Unfortunately, because of the way DNS works, the DHCP-inspired approach
+of refreshing records in advance of their expiration does not work.
+
+Suppose a DNS stub resolver makes a request for a name
+that is not currently in the recursive resolver’s cache.
+Suppose that when the recursive resolver fetches the authoritative
+record it has a TTL of 24 hours, which it returns to the stub resolver.
+
+If the stub resolver were to request the same record 12 hours later,
+the recursive resolver will tell the stub resolver that the record
+has a remaining TTL of 12 hours.
+
+If the stub resolver were to request the same record 6 hours after that,
+the recursive resolver will tell the stub resolver that the record now
+has a remaining TTL of 6 hours.
+
+Using this algorithm would result in an ever-accelerating query rate
+as the remaining TTL continues to count down towards zero,
+without the stub resolver learning anything new.
+
+Eventually, the record finally expires from the recursive resolver’s
+cache, and the stub resolver then suffers a latency spike waiting
+for the recursive resolver to fetch the authoritative record.
+
+Currently, recursive resolvers will continue to return a cached record
+down to the last second of its lifetime. Even for a record that is the
+subject of a large volume of queries, recursive resolvers will not take
+the initiative of refreshing that record prior to its inevitable and
+entirely predictable expiration. Instead, recursive resolvers will let
+the record expire, and then suffer a latency spike on the very next query.
+
+With the current behavior of recursive resolvers, strictly
+respecting a record’s TTL and avoiding predictable latency
+spikes are incompatible goals. It is impossible to do both.
+
 # TTL Stretching
 
-Note: We should consider if we need this text. Does any stub
-resolver do this? Warren Kumari’s draft {{Stretch}} refers
+Note: We should consider if we need this text.
+If we are going to contrast Optimistic DNS with TTL Stretching
+and say that Optimistic DNS is better, that’s only relevant
+if there are people actually doing TTL Stretching.
+Otherwise we are making a hypothetical argument and then
+criticizing our own hypothetical argument.
+Possibly we could present this like the “Zeno’s Paradox” example
+above, as a seemingly attractive approach that has problems.
+Warren Kumari’s draft {{Stretch}} refers
 to recursive resolver behavior, not stub resolvers.
 
 TTL Stretching is a simple modification to the stub resolver behavior where it
@@ -908,13 +961,21 @@ This creates a virtuous cycle: the more frequently a name is queried with
 Optimistic DNS, the more likely the cache will contain a ghost record for
 it the next time the TTL expires.
 
-Note: need to add text about Zeno’s paradox and record expiration.
-Re-querying when a record is about to expire doesn’t help,
-if the recursive resolver has the same TTL count.
-The mDNSResponder code stretches TTLs by 25%, and will re-query
-for nearly expired records at 80% of their (stretched) TTL, plus two seconds.
-This means that mDNSResponder will re-query the recursive resolver one second
-after its copy has expired, forcing it to fetch a new copy.
+The mDNSResponder code addresses the
+Zeno’s paradox problem ({{zenos-paradox}})
+by implementing a modest form of TTL stretching.
+The mDNSResponder code stretches TTLs by 25% plus two seconds, and
+will re-query for nearly-expired records at 80% of their stretched TTL.
+With this calculation, the refresh query happens just after the
+record at the recursive resolver has expired, causing the
+recursive resolver to fetch a new fresh copy of the authoritative record.
+Because the stretched TTL still has 20% of its life remaining,
+traditional DNS clients do not experience a latency spike while
+waiting for the recursive resolver to refresh the record.
+Thus, traditional DNS queries using the mDNSResponder stub resolver
+may receive answers that are up to 25% beyond their original lifetime;
+only clients that opt-in for Optimistic DNS will receive answers
+that are more than 25% beyond their original lifetime.
 
 # Acknowledgments
 {:numbered="false"}
