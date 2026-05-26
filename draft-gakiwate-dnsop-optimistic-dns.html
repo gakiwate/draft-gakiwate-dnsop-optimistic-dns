@@ -1398,9 +1398,9 @@ data is still current.<a href="#section-2-2.6.1" class="pilcrow">¶</a></p>
 <dt id="section-2-2.7"><em>Fresh Answer.</em></dt>
         <dd style="margin-left: 1.5em" id="section-2-2.8">
           <p id="section-2-2.8.1">A DNS record received from the network in response to a query, as
-opposed to a record served from the local cache.  Fresh answers reflect
-the current state of the authoritative DNS data (subject to normal
-caching along the resolution path).<a href="#section-2-2.8.1" class="pilcrow">¶</a></p>
+opposed to a record served from the local cache.
+Fresh answers reflect the data known by the upstream recursive
+resolver, which may be more recent than the data in the local cache.<a href="#section-2-2.8.1" class="pilcrow">¶</a></p>
 </dd>
         <dd class="break"></dd>
 <dt id="section-2-2.9"><em>TTL Stretching.</em></dt>
@@ -1415,8 +1415,8 @@ query is initiated and the application cannot opt-out.<a href="#section-2-2.10.1
         <dd style="margin-left: 1.5em" id="section-2-2.12">
           <p id="section-2-2.12.1">A DNS resolution model where the application initiates a query and
 receives results through callbacks or event notifications as they
-become available, rather than blocking until a single answer is
-returned.  This model supports receiving multiple answers over time,
+become available, rather than blocking until a single atomic set of answers is
+returned all at once.  This model supports receiving multiple answers over time,
 including updated answers that supersede earlier ones.<a href="#section-2-2.12.1" class="pilcrow">¶</a></p>
 </dd>
         <dd class="break"></dd>
@@ -1462,8 +1462,13 @@ severe.<a href="#section-3-3.4.1" class="pilcrow">¶</a></p>
 <dt id="section-3-3.5"><em>Multiple queries per page load.</em></dt>
         <dd style="margin-left: 1.5em" id="section-3-3.6">
           <p id="section-3-3.6.1">A typical web page load involves DNS queries for dozens of hostnames (the
-page itself, stylesheets, scripts, images, analytics, ads).  If several
-of these expire simultaneously, the cumulative delay is substantial.<a href="#section-3-3.6.1" class="pilcrow">¶</a></p>
+page itself, stylesheets, scripts, images, analytics, ads).
+Often these DNS queries cannot be issued concurrently because
+some of the hostnames are not known until earlier transactions complete.
+For example, the hostnames for stylesheets and images are not known
+until after the base HTML document is fetched.
+If multiple hostnames have expired address records,
+the cumulative delay can be substantial.<a href="#section-3-3.6.1" class="pilcrow">¶</a></p>
 </dd>
         <dd class="break"></dd>
 <dt id="section-3-3.7"><em>First query after sleep.</em></dt>
