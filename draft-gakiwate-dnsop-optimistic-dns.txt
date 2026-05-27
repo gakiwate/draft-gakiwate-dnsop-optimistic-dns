@@ -3,9 +3,9 @@
 
 
 Domain Name System Operations                                 G. Akiwate
-Internet-Draft                                               S. Cheshire
-Intended status: Standards Track                              Apple Inc.
-Expires: 28 November 2026                                       P. Flack
+Internet-Draft                                                  P. Flack
+Intended status: Standards Track                             S. Cheshire
+Expires: 28 November 2026                                     Apple Inc.
                                                              27 May 2026
 
 
@@ -1168,12 +1168,17 @@ Authors' Addresses
    Email: gakiwate@apple.com
 
 
+   Phil Flack
+   Apple Inc.
+   One Apple Park Way
+   Cupertino, CA 95014
+   United States of America
+   Email: pf-ietf@flacko.com
+
+
    Stuart Cheshire
    Apple Inc.
    One Apple Park Way
    Cupertino, CA 95014
    United States of America
    Email: cheshire@apple.com
-
-
-   Phil Flack
