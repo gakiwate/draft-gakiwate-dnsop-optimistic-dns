@@ -72,8 +72,6 @@ informative:
      - org: NLnet Labs, Sinodun and No Mountain Software
     target: https://getdnsapi.net/
 
-  Stretch: I-D.draft-wkumari-dnsop-ttl-stretching
-
 --- abstract
 
 DNS lookups introduce user-visible latency, particularly when cached records
@@ -222,12 +220,6 @@ local API matter.
   opposed to a record served from the local cache.
   Fresh answers reflect the data known by the upstream recursive
   resolver, which may be more recent than the data in the local cache.
-
-*TTL Stretching.*
-: A stub resolver technique that transparently extends the effective
-  lifetime of cached records beyond their original TTL.  The resolver continues
-  to serve expired records to applications. Unlike Optimistic DNS, no background
-  query is initiated and the application cannot opt-out.
 
 *Asynchronous DNS Resolution.*
 : A DNS resolution model where the application initiates a query and
@@ -477,57 +469,6 @@ the record expire, and then suffer a latency spike on the very next query.
 With the current behavior of recursive resolvers, strictly
 respecting a record’s TTL and avoiding predictable latency
 spikes are incompatible goals. It is impossible to do both.
-
-# TTL Stretching
-
-Note: We should consider if we need this text.
-If we are going to contrast Optimistic DNS with TTL Stretching
-and say that Optimistic DNS is better, that’s only relevant
-if there are people actually doing TTL Stretching.
-Otherwise we are making a hypothetical argument and then
-criticizing our own hypothetical argument.
-Possibly we could present this like the “Zeno’s Paradox” example
-above, as a seemingly attractive approach that has problems.
-Warren Kumari’s draft {{Stretch}} refers
-to recursive resolver behavior, not stub resolvers.
-
-TTL Stretching is a simple modification to the stub resolver behavior where it
-unilaterally extends the effective lifetime of cached records.  When a record's
-TTL expires, instead of immediately discarding it or refusing to serve it, the
-resolver continues to return it to applications for a brief grace period --
-seconds to minutes.  The application receives the record as if it were still
-fresh.  No background query is initiated.  No new API is involved.  From the
-application's perspective, the record simply has a longer TTL than the
-authoritative server originally specified.
-
-TTL stretching is attractive because it is entirely transparent.  Every
-application benefits automatically, with no code changes.
-However, the latency spike still occurs; it just occurs at a different time.
-
-*No application opt-out.*
-: All applications receive stretched TTLs whether they want them or not.  An
-application that specifically needs authoritative-fresh data (for example, to
-verify that a DNS-based access control record has been updated) has no way to
-bypass the stretched cache. As such, in absence of this visibility applications
-are unable to make risk-appropriate decisions.
-
-*Bounded effectiveness.*
-: TTL stretching is practical only for brief periods of staleness.  A stretch
-window of a few minutes handles the common case of a record expiring between
-successive page loads.  Extending the stretch window significantly increases the
-risk of returning incorrect data with no way for the application to detect it.
-
-With Optimistic DNS, the application receives expired records quickly,
-but since applications choose whether to opt in for Optimistic DNS results
-depending on their ability to handle occasional stale results,
-Optimistic DNS is able to to extend the mechanism to much
-longer time horizons.
-
-TTL stretching can be viewed as a simpler version of Optimistic DNS: one where
-the application has no visibility, no background query is initiated, and the
-stretch window must remain short because there is no mechanism for the
-application to handle stale data
-intelligently.
 
 # Enabling Technologies {#enabling-technologies}
 
@@ -854,9 +795,7 @@ tolerance:
    data rather than returning SERVFAIL.
 
 RFC 8767 serves stale data without any provision for a future
-asynchronous notification when the desired data becomes available,
-making it more similar to TTL
-stretching ({{ttl-stretching}}) than to Optimistic DNS.
+asynchronous notification when the desired data becomes available.
 
 In contrast, Optimistic DNS delivers the data it has immediately, while
 also delivering updated data the moment it becomes available. It gives
