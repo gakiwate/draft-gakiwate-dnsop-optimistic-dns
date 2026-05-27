@@ -82,27 +82,26 @@ Table of Contents
    2.  Conventions and Definitions
    3.  Problem Statement
    4.  Zeno’s Paradox
-   5.  TTL Stretching
-   6.  Enabling Technologies
-     6.1.  Asynchronous DNS Resolution
-     6.2.  Happy Eyeballs
-     6.3.  Combined Effect
-   7.  Optimistic DNS Overview
-   8.  Implementation Details
-     8.1.  Query Initiation
-     8.2.  Cache Lookup with Expired Records
-     8.3.  Parallel Network Query
-     8.4.  CNAME Handling
-     8.5.  Search Domains
-   9.  Interaction with Other DNS Features
-     9.1.  DNSSEC
-     9.2.  Encrypted DNS Transports
-     9.3.  Relationship to RFC 8767
-   10. Security Considerations
-   11. IANA Considerations
-   12. References
-     12.1.  Normative References
-     12.2.  Informative References
+   5.  Enabling Technologies
+     5.1.  Asynchronous DNS Resolution
+     5.2.  Happy Eyeballs
+     5.3.  Combined Effect
+   6.  Optimistic DNS Overview
+   7.  Implementation Details
+     7.1.  Query Initiation
+     7.2.  Cache Lookup with Expired Records
+     7.3.  Parallel Network Query
+     7.4.  CNAME Handling
+     7.5.  Search Domains
+   8.  Interaction with Other DNS Features
+     8.1.  DNSSEC
+     8.2.  Encrypted DNS Transports
+     8.3.  Relationship to RFC 8767
+   9.  Security Considerations
+   10. IANA Considerations
+   11. References
+     11.1.  Normative References
+     11.2.  Informative References
    Appendix A.  Deployment History
      A.1.  Optimistic DNS in mDNSResponder
        A.1.1.  Signaling
@@ -166,7 +165,7 @@ Table of Contents
    continue to pay attention to asynchronous notifications of new
    addresses as they are learned, and the networking library code MUST
    react gracefully if, occasionally, some of the candidate addresses
-   do, in fact, prove to be actually stale and incorrect (Section 6).
+   do, in fact, prove to be actually stale and incorrect (Section 5).
 
    The following diagram illustrates the timing difference between
    conventional DNS resolution and Optimistic DNS:
@@ -242,12 +241,6 @@ Table of Contents
       Fresh answers reflect the data known by the upstream recursive
       resolver, which may be more recent than the data in the local
       cache.
-
-   _TTL Stretching._  A stub resolver technique that transparently
-      extends the effective lifetime of cached records beyond their
-      original TTL.  The resolver continues to serve expired records to
-      applications.  Unlike Optimistic DNS, no background query is
-      initiated and the application cannot opt-out.
 
    _Asynchronous DNS Resolution._  A DNS resolution model where the
       application initiates a query and receives results through
@@ -433,7 +426,7 @@ Table of Contents
    other candidate addresses while it was waiting.
 
    Applications using Optimistic DNS and Happy Eyeballs SHOULD follow
-   appropriate security practices (Section 10) to ensure that they are
+   appropriate security practices (Section 9) to ensure that they are
    connecting to the intended host or service on the network.
    Applications that do not have application-layer security and simply
    expect the Internet to connect them to right host every time SHOULD
@@ -491,59 +484,7 @@ Table of Contents
    a record’s TTL and avoiding predictable latency spikes are
    incompatible goals.  It is impossible to do both.
 
-5.  TTL Stretching
-
-   Note: We should consider if we need this text.  If we are going to
-   contrast Optimistic DNS with TTL Stretching and say that Optimistic
-   DNS is better, that’s only relevant if there are people actually
-   doing TTL Stretching.  Otherwise we are making a hypothetical
-   argument and then criticizing our own hypothetical argument.
-   Possibly we could present this like the “Zeno’s Paradox” example
-   above, as a seemingly attractive approach that has problems.  Warren
-   Kumari’s draft [Stretch] refers to recursive resolver behavior, not
-   stub resolvers.
-
-   TTL Stretching is a simple modification to the stub resolver behavior
-   where it unilaterally extends the effective lifetime of cached
-   records.  When a record's TTL expires, instead of immediately
-   discarding it or refusing to serve it, the resolver continues to
-   return it to applications for a brief grace period -- seconds to
-   minutes.  The application receives the record as if it were still
-   fresh.  No background query is initiated.  No new API is involved.
-   From the application's perspective, the record simply has a longer
-   TTL than the authoritative server originally specified.
-
-   TTL stretching is attractive because it is entirely transparent.
-   Every application benefits automatically, with no code changes.
-   However, the latency spike still occurs; it just occurs at a
-   different time.
-
-   _No application opt-out._  All applications receive stretched TTLs
-      whether they want them or not.  An application that specifically
-      needs authoritative-fresh data (for example, to verify that a DNS-
-      based access control record has been updated) has no way to bypass
-      the stretched cache.  As such, in absence of this visibility
-      applications are unable to make risk-appropriate decisions.
-
-   _Bounded effectiveness._  TTL stretching is practical only for brief
-      periods of staleness.  A stretch window of a few minutes handles
-      the common case of a record expiring between successive page
-      loads.  Extending the stretch window significantly increases the
-      risk of returning incorrect data with no way for the application
-      to detect it.
-
-   With Optimistic DNS, the application receives expired records
-   quickly, but since applications choose whether to opt in for
-   Optimistic DNS results depending on their ability to handle
-   occasional stale results, Optimistic DNS is able to to extend the
-   mechanism to much longer time horizons.
-
-   TTL stretching can be viewed as a simpler version of Optimistic DNS:
-   one where the application has no visibility, no background query is
-   initiated, and the stretch window must remain short because there is
-   no mechanism for the application to handle stale data intelligently.
-
-6.  Enabling Technologies
+5.  Enabling Technologies
 
    When an application receives an expired address and immediately
    begins connecting to it, two things need to happen:
@@ -555,7 +496,7 @@ Table of Contents
    *  If the expired address is found to be wrong, the application needs
       a way to continue gracefully.
 
-6.1.  Asynchronous DNS Resolution
+5.1.  Asynchronous DNS Resolution
 
    Traditional synchronous DNS APIs typically block until the complete
    set of answers is available.  The caller issues a query, waits,
@@ -579,7 +520,7 @@ Table of Contents
    updated address.  If the address is the same, the connection is
    already established and the fresh answer serves as confirmation.
 
-6.2.  Happy Eyeballs
+5.2.  Happy Eyeballs
 
    Happy Eyeballs [async] [RFC6555] [RFC8305] [HEv3] defines algorithms
    for racing connection attempts across multiple addresses and address
@@ -606,7 +547,7 @@ Table of Contents
    Without Happy Eyeballs, a wrong expired address would mean a failed
    connection and user frustration.
 
-6.3.  Combined Effect
+5.3.  Combined Effect
 
    Asynchronous DNS resolution makes Optimistic DNS _possible_.  It
    provides the delivery mechanism for multiple waves of results.  Happy
@@ -617,7 +558,7 @@ Table of Contents
    gracefully, and the fresh DNS answer arrives as an update confirming
    or correcting the initial result.
 
-7.  Optimistic DNS Overview
+6.  Optimistic DNS Overview
 
    Building on the asynchronous resolution model and connection racing
    described above, Optimistic DNS introduces a specific modification to
@@ -692,9 +633,9 @@ Table of Contents
    support Happy Eyeballs and application-layer security SHOULD NOT use
    Optimistic DNS.
 
-8.  Implementation Details
+7.  Implementation Details
 
-8.1.  Query Initiation
+7.1.  Query Initiation
 
    To use Optimistic DNS, an application signals its willingness to
    receive expired answers when it issues a DNS query.  This signaling
@@ -705,7 +646,7 @@ Table of Contents
    indicates that the application is prepared to handle expired answers
    and will treat them appropriately.
 
-8.2.  Cache Lookup with Expired Records
+7.2.  Cache Lookup with Expired Records
 
    When the stub resolver processes a query, it iterates through its
    cache looking for records that match the query's name, type, and
@@ -727,7 +668,7 @@ Table of Contents
       negatives (telling the application a name does not exist when it
       now does) would not benefit the application.
 
-8.3.  Parallel Network Query
+7.3.  Parallel Network Query
 
    If no unexpired records are found, the stub resolver issues a
    standard DNS query on the network.  This query proceeds through the
@@ -743,7 +684,7 @@ Table of Contents
    networking code MUST use these fresh answers to update the list of
    answers it received earlier.
 
-8.4.  CNAME Handling
+7.4.  CNAME Handling
 
    CNAME records introduce a complication for Optimistic DNS.  When a
    DNS query encounters a CNAME record, the resolver must follow one or
@@ -783,7 +724,7 @@ Table of Contents
    network query, even if the CNAME chain has changed since the cached
    records were stored.
 
-8.5.  Search Domains
+7.5.  Search Domains
 
    When the stub resolver appends search domains to unqualified domain
    names, Optimistic DNS interacts with the search domain iteration
@@ -823,7 +764,7 @@ Table of Contents
    inherently ambiguous, and security does not fit well with ambiguity.
 
    If an optimistic query encounters an expired CNAME while using a
-   particular search domain, the query restart described in Section 8.4
+   particular search domain, the query restart described in Section 7.4
    preserves the current search domain.  The restart does not advance to
    the next search domain in the list, because the current search domain
    may still be the correct one -- the expired CNAME merely prevented
@@ -842,9 +783,9 @@ Table of Contents
 
    4.  The fresh network query resolves mail.corp.example.com normally.
 
-9.  Interaction with Other DNS Features
+8.  Interaction with Other DNS Features
 
-9.1.  DNSSEC
+8.1.  DNSSEC
 
    Optimistic DNS extends the cache lifetime for DNS records, as
    signalled by the TTL values.
@@ -856,7 +797,7 @@ Table of Contents
    lifetime has expired, but recipients MUST respect the validity
    periods of cryptographic signatures.
 
-9.2.  Encrypted DNS Transports
+8.2.  Encrypted DNS Transports
 
    Optimistic DNS is transport-agnostic.  It operates entirely within
    the stub resolver's cache layer, which sits above the transport
@@ -865,7 +806,7 @@ Table of Contents
    [RFC7858], DNS over HTTPS (DoH) [RFC8484], or DNS over QUIC (DoQ)
    [RFC9250], the Optimistic DNS mechanism functions identically.
 
-9.3.  Relationship to RFC 8767
+8.3.  Relationship to RFC 8767
 
    Serving Stale Data to Improve DNS Resiliency [RFC8767] describes a
    mechanism for recursive resolvers to serve stale cached data when
@@ -894,9 +835,7 @@ Table of Contents
        serve its own stale data rather than returning SERVFAIL.
 
    RFC 8767 serves stale data without any provision for a future
-   asynchronous notification when the desired data becomes available,
-   making it more similar to TTL stretching (Section 5) than to
-   Optimistic DNS.
+   asynchronous notification when the desired data becomes available.
 
    In contrast, Optimistic DNS delivers the data it has immediately,
    while also delivering updated data the moment it becomes available.
@@ -905,7 +844,7 @@ Table of Contents
    receiving the exact data it would have received with a traditional
    non-optimistic DNS query, at the time it would have received it.
 
-10.  Security Considerations
+9.  Security Considerations
 
    Optimistic DNS introduces a tradeoff between speed and freshness.
    Applications that use expired answers must be prepared for those
@@ -942,13 +881,13 @@ Table of Contents
       stale data but also reduce the effectiveness of Optimistic DNS for
       infrequently-accessed names.
 
-11.  IANA Considerations
+10.  IANA Considerations
 
    This document has no IANA actions.
 
-12.  References
+11.  References
 
-12.1.  Normative References
+11.1.  Normative References
 
    [HEv3]     Pauly, T., Schinazi, D., Jaju, N., and K. Ishibashi,
               "Happy Eyeballs Version 3: Better Connectivity Using
@@ -1006,18 +945,13 @@ Table of Contents
               DOI 10.17487/RFC9250, May 2022,
               <https://www.rfc-editor.org/rfc/rfc9250>.
 
-12.2.  Informative References
+11.2.  Informative References
 
    [async]    Cheshire, S., "Stuart Cheshire on IPv6 Adoption", 2008,
               <https://www.stuartcheshire.org/IETF72/>.
 
    [getdns]   NLnet Labs, Sinodun and No Mountain Software, "Welcome to
               getdns!", n.d., <https://getdnsapi.net/>.
-
-   [Stretch]  Kumari, W., "Stretching DNS TTLs", Work in Progress,
-              Internet-Draft, draft-wkumari-dnsop-ttl-stretching-00, 13
-              November 2016, <https://datatracker.ietf.org/doc/html/
-              draft-wkumari-dnsop-ttl-stretching-00>.
 
 Appendix A.  Deployment History
 
