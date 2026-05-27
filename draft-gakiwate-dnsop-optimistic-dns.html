@@ -1216,9 +1216,6 @@ between the stub resolver and applications about answer freshness.<a href="#sect
               <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.4">
                 <p id="section-toc.1-1.7.2.4.1"><a href="#section-7.4" class="auto internal xref">7.4</a>.  <a href="#name-cname-handling" class="internal xref">CNAME Handling</a></p>
 </li>
-              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.5">
-                <p id="section-toc.1-1.7.2.5.1"><a href="#section-7.5" class="auto internal xref">7.5</a>.  <a href="#name-search-domains" class="internal xref">Search Domains</a></p>
-</li>
             </ul>
 </li>
           <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8">
@@ -1972,74 +1969,6 @@ calling application.<a href="#section-7.4-6.3.1" class="pilcrow">¶</a></p>
 <p id="section-7.4-7">This rewind-and-restart approach ensures that the application eventually
 receives a complete, consistent answer from the fresh network query, even
 if the CNAME chain has changed since the cached records were stored.<a href="#section-7.4-7" class="pilcrow">¶</a></p>
-</section>
-</div>
-<div id="search-domains">
-<section id="section-7.5">
-        <h3 id="name-search-domains">
-<a href="#section-7.5" class="section-number selfRef">7.5. </a><a href="#name-search-domains" class="section-name selfRef">Search Domains</a>
-        </h3>
-<p id="section-7.5-1">When the stub resolver appends search domains to unqualified domain
-names, Optimistic DNS interacts with the search domain iteration process.<a href="#section-7.5-1" class="pilcrow">¶</a></p>
-<p id="section-7.5-2">Note: This section needs to be updated to discuss domain search lists.
-Right now it is just focussed on CNAME following.
-Using domain search lists is tricky.
-Using domain search lists requires negative answers.
-If the search list is “search1.example.com” and “search2.example.com”,
-and “examplename.search2.example.com” exists, then the stub resolver
-cannot conclude that it should use “examplename.search2.example.com”
-until it has confirmed that “examplename.search1.example.com” does not exist.
-This requires an authoritative confirmation that
-“examplename.search1.example.com” does not exist,
-but even without Optimistic DNS this is fragile
-in a world where DNS records can change.
-A DNS resolution of “examplename” might result in “examplename.search2.example.com”
-one time, and then one minute later, after a DNS change,
-it might then result in “examplename.search1.example.com”.
-Even in that case, the client will not learn about this change until after
-its cached negative answer for “examplename.search1.example.com” has expired.
-Optimistic DNS could speed up handling of domain search lists
-if it tried all the queries in parallel instead of sequentially.
-Optimistic DNS could use available expired records as a hint
-to guide it in deciding which records it thinks it will need
-to query, but not return the results to the caller until all
-the unexpired answers have been received.
-We could also decide to allow Optimistic DNS to trust
-expired negative answers and return them to the client
-(while re-querying them in parallel, and delivering
-notifications if the answer changes).
-In principle this is in keeping with the philosophy of
-Optimistic DNS, that answers can change over time and it is the
-client’s job verify correctness, but it is tricky in this case.
-If the user types “ssh examplename”, then how would the ssh
-client know that the user intended to connect to
-“examplename.search1.example.com” instead of
-“examplename.search2.example.com”?
-Unqualified domain names are inherently ambiguous,
-and security does not fit well with ambiguity.<a href="#section-7.5-2" class="pilcrow">¶</a></p>
-<p id="section-7.5-3">If an optimistic query encounters an expired CNAME while using a particular
-search domain, the query restart described in <a href="#cname-handling" class="auto internal xref">Section 7.4</a> preserves
-the current search domain.  The restart does not advance to the next search
-domain in the list, because the current search domain may still be the
-correct one -- the expired CNAME merely prevented the resolver from
-following the chain to a fresh answer.<a href="#section-7.5-3" class="pilcrow">¶</a></p>
-<p id="section-7.5-4">For example, if the user queries for "mail" and the search domain list is
-[corp.example.com, example.com]:<a href="#section-7.5-4" class="pilcrow">¶</a></p>
-<ol start="1" type="1" class="normal type-1" id="section-7.5-5">
-<li id="section-7.5-5.1">
-            <p id="section-7.5-5.1.1">The resolver tries mail.corp.example.com with Optimistic DNS.<a href="#section-7.5-5.1.1" class="pilcrow">¶</a></p>
-</li>
-          <li id="section-7.5-5.2">
-            <p id="section-7.5-5.2.1">An expired CNAME is found for mail.corp.example.com pointing to
-mailserver.corp.example.com.<a href="#section-7.5-5.2.1" class="pilcrow">¶</a></p>
-</li>
-          <li id="section-7.5-5.3">
-            <p id="section-7.5-5.3.1">The resolver restarts at mail.corp.example.com (not mail.example.com).<a href="#section-7.5-5.3.1" class="pilcrow">¶</a></p>
-</li>
-          <li id="section-7.5-5.4">
-            <p id="section-7.5-5.4.1">The fresh network query resolves mail.corp.example.com normally.<a href="#section-7.5-5.4.1" class="pilcrow">¶</a></p>
-</li>
-        </ol>
 </section>
 </div>
 </section>
