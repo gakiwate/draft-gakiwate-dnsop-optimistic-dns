@@ -179,7 +179,7 @@ conventional DNS resolution and Optimistic DNS:
 ~~~
 
 Optimistic DNS is complementary to Serving Stale Data to Improve DNS
-Resiliency {{!RFC8767}}, which allows recursive resolvers to serve stale data
+Resiliency {{?RFC8767}}, which allows recursive resolvers to serve stale data
 during upstream failures. The two mechanisms differ in their focus.
 As reflected in the document title, the specification for serving stale
 data from recursive resolvers was focussed on improving resiliency
@@ -433,7 +433,7 @@ positive.
 # Zeno’s Paradox
 
 One seemingly attractive approach to avoiding the latency spike
-might be to take inspiration from DHCP {{!RFC2131}} {{!RFC2132}},
+might be to take inspiration from DHCP {{?RFC2131}} {{?RFC2132}},
 and renew a record before it expires, instead of waiting until
 after it is already expired before requesting an update.
 DHCP typically renews an address lease when half of the lease
@@ -499,7 +499,7 @@ update it with newer answers shortly afterwards.
 With Asynchronous DNS APIs, the application registers a callback and receives
 results as they become available.  The query remains active, and the resolver
 delivers additional results through subsequent callbacks.  This is the
-resolution model defined by Multicast DNS {{!RFC6762}}
+resolution model defined by Multicast DNS {{?RFC6762}}
 and is valuable for unicast DNS too.
 
 This model naturally supports the two-wave delivery that Optimistic DNS
@@ -719,13 +719,13 @@ the validity periods of cryptographic signatures.
 Optimistic DNS is transport-agnostic.  It operates entirely within the stub
 resolver's cache layer, which sits above the transport layer.  Whether the
 stub resolver communicates with recursive resolvers using classic DNS over
-UDP/TCP, DNS over TLS (DoT) {{!RFC7858}}, DNS over HTTPS (DoH)
-{{!RFC8484}}, or DNS over QUIC (DoQ) {{!RFC9250}}, the Optimistic DNS
+UDP/TCP, DNS over TLS (DoT) {{?RFC7858}}, DNS over HTTPS (DoH)
+{{?RFC8484}}, or DNS over QUIC (DoQ) {{?RFC9250}}, the Optimistic DNS
 mechanism functions identically.
 
 ## Relationship to RFC 8767
 
-Serving Stale Data to Improve DNS Resiliency {{!RFC8767}} describes a
+Serving Stale Data to Improve DNS Resiliency {{?RFC8767}} describes a
 mechanism for recursive resolvers to serve stale cached data when they are
 unable to refresh it from authoritative servers.  Optimistic DNS and
 RFC 8767 address different levels of the DNS resolution chain:
