@@ -1426,18 +1426,24 @@ receives results through callbacks or event notifications as they
 become available, rather than blocking until a single atomic set of answers is
 returned all at once.  This model supports receiving multiple answers over time,
 including updated answers that supersede earlier ones.
-The mental model of asynchronous DNS resolution is that
-it is a performance optimization over rapid polling.
+The operational model of asynchronous DNS resolution is
+that it is a performance optimization over rapid polling.
 If an application were to call an API like getaddrinfo()
 as fast as it can in a tight loop, then the application
 would always have the latest information available from the local
 stub resolver, but it would be inefficient and wasteful of CPU time.
-Most consecutive calls to getaddrinfo() would return the same information.
+Most consecutive calls to getaddrinfo() would return unchanged information.
 The guiding principle of an asynchronous DNS resolution API is
 that it gives the application the exact same information as repeated
 calls to the equivalent synchronous API, but more efficiently.
-The application is notified via an asynchronous notification
-only when the set of answers changes.
+If a fresh new query would yield different results,
+then the client’s asynchronous DNS operation <span class="bcp14">MUST</span> be given
+asynchronous notifications to deliver the new set of results.
+This avoids the temptation for clients to resort to polling,
+in the belief that polling gives them better results
+than trusting the asynchronous notification mechanism.
+For efficiency, the application is notified via an asynchronous
+notification only when the set of answers changes.
 This is similar to the efficiency trade-offs present in other APIs,
 where asynchronous notification is more efficient that polling.
 For example, an application can repeatedly poll to find if
@@ -1948,27 +1954,35 @@ the expired A record, the application receives a result.  But if the CNAME
 has changed (www.example.com now points to cdn2.example.net instead), the
 resolver has followed a stale chain and returned a record for the wrong
 name.<a href="#section-7.4-4" class="pilcrow">¶</a></p>
-<p id="section-7.4-5">To handle this safely, when the stub resolver encounters an expired CNAME
-record during optimistic resolution, it takes the following steps:<a href="#section-7.4-5" class="pilcrow">¶</a></p>
+<p id="section-7.4-5">To handle this correctly, when the stub resolver encounters CNAME
+records during optimistic resolution, it takes the following steps:<a href="#section-7.4-5" class="pilcrow">¶</a></p>
 <ol start="1" type="1" class="normal type-1" id="section-7.4-6">
 <li id="section-7.4-6.1">
-            <p id="section-7.4-6.1.1">The stub resolver returns the expired result to the calling application and
-continues following the CNAME chain and returning expired and unexpired
-results from the cache.<a href="#section-7.4-6.1.1" class="pilcrow">¶</a></p>
+            <p id="section-7.4-6.1.1">If the record is expired, and a background query is not already in
+progress for this record name, then a background query is initiated,
+as for any other expired record.<a href="#section-7.4-6.1.1" class="pilcrow">¶</a></p>
 </li>
           <li id="section-7.4-6.2">
-            <p id="section-7.4-6.2.1">While returning results from the cache,
-it simultaneously performs a standard DNS query on the network for
-the first expired CNAME result encountered.<a href="#section-7.4-6.2.1" class="pilcrow">¶</a></p>
+            <p id="section-7.4-6.2.1">The CNAME referral is followed.
+(If the target of the CNAME referral is another CNAME record,
+then this process repeats until a non-CNAME record is found.)<a href="#section-7.4-6.2.1" class="pilcrow">¶</a></p>
 </li>
           <li id="section-7.4-6.3">
-            <p id="section-7.4-6.3.1">As fresh results are received from the DNS query they are returned to the
-calling application.<a href="#section-7.4-6.3.1" class="pilcrow">¶</a></p>
+            <p id="section-7.4-6.3.1">If, at any time while a asynchronous DNS query is active,
+the record data for any of the names in the CNAME chain changes,
+then the query is re-evaluated starting from the original query name,
+as if it were a fresh query.
+This maintains the operational model of asynchronous DNS resolution,
+that it is simply a more efficient equivalent to repeated polling.
+If a fresh new query would yield different results, then the client’s
+asynchronous DNS operation receives asynchronous notifications
+to deliver the new set of results, giving it the exact same
+information that a fresh query at that time would receive.<a href="#section-7.4-6.3.1" class="pilcrow">¶</a></p>
 </li>
         </ol>
-<p id="section-7.4-7">This rewind-and-restart approach ensures that the application eventually
-receives a complete, consistent answer from the fresh network query, even
-if the CNAME chain has changed since the cached records were stored.<a href="#section-7.4-7" class="pilcrow">¶</a></p>
+<p id="section-7.4-7">This rewind-and-restart approach ensures that the application continues
+to receive a complete, consistent answer for its query, even as DNS record
+changes may mean that the CNAME chain for a given name changes over time.<a href="#section-7.4-7" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
