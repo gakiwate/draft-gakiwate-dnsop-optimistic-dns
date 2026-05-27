@@ -685,64 +685,6 @@ This rewind-and-restart approach ensures that the application eventually
 receives a complete, consistent answer from the fresh network query, even
 if the CNAME chain has changed since the cached records were stored.
 
-## Search Domains
-
-When the stub resolver appends search domains to unqualified domain
-names, Optimistic DNS interacts with the search domain iteration process.
-
-Note: This section needs to be updated to discuss domain search lists.
-Right now it is just focussed on CNAME following.
-Using domain search lists is tricky.
-Using domain search lists requires negative answers.
-If the search list is “search1.example.com” and “search2.example.com”,
-and “examplename.search2.example.com” exists, then the stub resolver
-cannot conclude that it should use “examplename.search2.example.com”
-until it has confirmed that “examplename.search1.example.com” does not exist.
-This requires an authoritative confirmation that
-“examplename.search1.example.com” does not exist,
-but even without Optimistic DNS this is fragile
-in a world where DNS records can change.
-A DNS resolution of “examplename” might result in “examplename.search2.example.com”
-one time, and then one minute later, after a DNS change,
-it might then result in “examplename.search1.example.com”.
-Even in that case, the client will not learn about this change until after
-its cached negative answer for “examplename.search1.example.com” has expired.
-Optimistic DNS could speed up handling of domain search lists
-if it tried all the queries in parallel instead of sequentially.
-Optimistic DNS could use available expired records as a hint
-to guide it in deciding which records it thinks it will need
-to query, but not return the results to the caller until all
-the unexpired answers have been received.
-We could also decide to allow Optimistic DNS to trust
-expired negative answers and return them to the client
-(while re-querying them in parallel, and delivering
-notifications if the answer changes).
-In principle this is in keeping with the philosophy of
-Optimistic DNS, that answers can change over time and it is the
-client’s job verify correctness, but it is tricky in this case.
-If the user types “ssh examplename”, then how would the ssh
-client know that the user intended to connect to
-“examplename.search1.example.com” instead of
-“examplename.search2.example.com”?
-Unqualified domain names are inherently ambiguous,
-and security does not fit well with ambiguity.
-
-If an optimistic query encounters an expired CNAME while using a particular
-search domain, the query restart described in {{cname-handling}} preserves
-the current search domain.  The restart does not advance to the next search
-domain in the list, because the current search domain may still be the
-correct one -- the expired CNAME merely prevented the resolver from
-following the chain to a fresh answer.
-
-For example, if the user queries for "mail" and the search domain list is
-\[corp.example.com, example.com\]:
-
-1. The resolver tries mail.corp.example.com with Optimistic DNS.
-2. An expired CNAME is found for mail.corp.example.com pointing to
-   mailserver.corp.example.com.
-3. The resolver restarts at mail.corp.example.com (not mail.example.com).
-4. The fresh network query resolves mail.corp.example.com normally.
-
 # Interaction with Other DNS Features
 
 ## DNSSEC {#dnssec}
