@@ -5,8 +5,8 @@
 Domain Name System Operations                                 G. Akiwate
 Internet-Draft                                               S. Cheshire
 Intended status: Standards Track                              Apple Inc.
-Expires: 27 November 2026                                       P. Flack
-                                                             26 May 2026
+Expires: 28 November 2026                                       P. Flack
+                                                             27 May 2026
 
 
                              Optimistic DNS
@@ -60,7 +60,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 27 November 2026.
+   This Internet-Draft will expire on 28 November 2026.
 
 Copyright Notice
 
@@ -255,10 +255,12 @@ Table of Contents
       than blocking until a single atomic set of answers is returned all
       at once.  This model supports receiving multiple answers over
       time, including updated answers that supersede earlier ones.
+      Asynchronous DNS Resolution is supported in Apple’s networking
+      APIs, and in other DNS stub resolver code like getdns [getdns].
 
    _Happy Eyeballs._  A client-side connection establishment algorithm
-      [RFC6555] [RFC8305] [HEv3] that races connection attempts across
-      multiple addresses and address families, using whichever
+      [async] [RFC6555] [RFC8305] [HEv3] that races connection attempts
+      across multiple addresses and address families, using whichever
       connection succeeds first.  Failed connection attempts to
       individual addresses are absorbed within the algorithm's normal
       timeout budget.
@@ -372,7 +374,7 @@ Table of Contents
    than its TTL is not a guarantee that it is still correct, and data
    being older than its TTL is not a guarantee that it is wrong.
 
-   Happy Eyeballs [RFC6555] [RFC8305] [HEv3] is the asynchronous
+   Happy Eyeballs [async] [RFC6555] [RFC8305] [HEv3] is the asynchronous
    connection racing technology that makes Optimistic DNS possible.
    Optimistic DNS delivers DNS answers quickly, with the caveat that, on
    rare occasions, some of those answers might be stale, in which case
@@ -562,8 +564,8 @@ Table of Contents
 
 6.2.  Happy Eyeballs
 
-   Happy Eyeballs [RFC6555] [RFC8305] [HEv3] defines algorithms for
-   racing connection attempts across multiple addresses and address
+   Happy Eyeballs [async] [RFC6555] [RFC8305] [HEv3] defines algorithms
+   for racing connection attempts across multiple addresses and address
    families.  When a client has several candidate addresses for a
    destination, Happy Eyeballs staggers connection attempts, in order of
    expected likelihood of success, with short delays, and uses whichever
@@ -989,6 +991,12 @@ Table of Contents
 
 12.2.  Informative References
 
+   [async]    Cheshire, S., "Stuart Cheshire on IPv6 Adoption", 2008,
+              <https://www.stuartcheshire.org/IETF72/>.
+
+   [getdns]   NLnet Labs, Sinodun and No Mountain Software, "Welcome to
+              getdns!", n.d., <https://getdnsapi.net/>.
+
    [Stretch]  Kumari, W., "Stretching DNS TTLs", Work in Progress,
               Internet-Draft, draft-wkumari-dnsop-ttl-stretching-00, 13
               November 2016, <https://datatracker.ietf.org/doc/html/
@@ -996,13 +1004,48 @@ Table of Contents
 
 Appendix A.  Deployment History
 
+   Prior to implementing Optimistic DNS, the mDNSResponder code
+   addressed the Zeno’s paradox problem (Section 4) by implementing a
+   modest form of DNS TTL stretching.  The mDNSResponder code stretches
+   TTLs by 25%, plus two seconds to account for minor clock variations.
+   This results in the situation where, when the age of the record as
+   viewed by the stub resolver reaches 80% of its stretched TTL, the
+   actual TTL of the record as viewed by the recursive resolver has
+   expired.
+
+   If a client performs a new DNS query for a record within the time
+   window of 80-100% of the stretched TTL, then the mDNSResponder stub
+   resolver code will return the available answer to the client
+   immediately, while in parallel simultaneously sending a query to the
+   recursive resolver.
+
+   If an asynchronous query is active on the client at the time the
+   record age reaches 80% of its stretched TTL, then the mDNSResponder
+   stub resolver code will send a DNS query to the recursive resolver to
+   fetch fresh data, and will update the client with fresh information
+   if new data is received.
+
+   This DNS query to the recursive resolver happens after the recursive
+   resolver’s copy of the record has expired, causing the recursive
+   resolver to fetch a new fresh copy of the authoritative record, but
+   because available answers are delivered to DNS clients immediately,
+   DNS clients do not experience a latency spike while waiting for the
+   recursive resolver to refresh the record.  Thus, traditional DNS
+   queries using the mDNSResponder stub resolver may receive answers
+   that are up to 25% beyond their original lifetime.
+
+   The development of Happy Eyeballs in 2008 [async] [RFC6555] [RFC8305]
+   [HEv3] made it feasible to increase effective record lifetimes beyond
+   a modest extension of just 25%, and this new capability is what made
+   Optimistic DNS possible.
+
+A.1.  Optimistic DNS in mDNSResponder
+
    Optimistic DNS in Apple’s mDNSResponder code was first shipped
    enabled by default in macOS 10.14 (Mojave) and iOS 12 in September
    2018.  It has been active on all Apple platforms since that release,
    serving as the default stub resolver behavior for all applications
    that use Apple’s recommended networking APIs.
-
-A.1.  Optimistic DNS in mDNSResponder
 
    The mDNSResponder project is an open source system stub resolver, and
    runs on macOS, iOS, tvOS, watchOS, Microsoft Windows, Android, Linux,
@@ -1110,21 +1153,6 @@ A.1.2.  Record Lifecycle
    This creates a virtuous cycle: the more frequently a name is queried
    with Optimistic DNS, the more likely the cache will contain a ghost
    record for it the next time the TTL expires.
-
-   The mDNSResponder code addresses the Zeno’s paradox problem
-   (Section 4) by implementing a modest form of TTL stretching.  The
-   mDNSResponder code stretches TTLs by 25% plus two seconds, and will
-   re-query for nearly-expired records at 80% of their stretched TTL.
-   With this calculation, the refresh query happens just after the
-   record at the recursive resolver has expired, causing the recursive
-   resolver to fetch a new fresh copy of the authoritative record.
-   Because the stretched TTL still has 20% of its life remaining,
-   traditional DNS clients do not experience a latency spike while
-   waiting for the recursive resolver to refresh the record.  Thus,
-   traditional DNS queries using the mDNSResponder stub resolver may
-   receive answers that are up to 25% beyond their original lifetime;
-   only clients that opt-in for Optimistic DNS will receive answers that
-   are more than 25% beyond their original lifetime.
 
 Acknowledgments
 
