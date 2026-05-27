@@ -32,6 +32,17 @@ author:
     email: gakiwate@apple.com
 
  -
+    ins: P. Flack
+    name: Phil Flack
+    org: Apple Inc.
+    street: One Apple Park Way
+    city: Cupertino
+    region: CA
+    code: "95014"
+    country: USA
+    email: pf-ietf@flacko.com
+
+ -
     ins: S. Cheshire
     name: Stuart Cheshire
     org: Apple Inc.
@@ -41,10 +52,6 @@ author:
     code: "95014"
     country: USA
     email: cheshire@apple.com
-
- -
-    ins: P. Flack
-    name: Phil Flack
 
 normative:
 
