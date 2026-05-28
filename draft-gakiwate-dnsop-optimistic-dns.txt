@@ -5,8 +5,8 @@
 Domain Name System Operations                                 G. Akiwate
 Internet-Draft                                                  P. Flack
 Intended status: Standards Track                             S. Cheshire
-Expires: 28 November 2026                                     Apple Inc.
-                                                             27 May 2026
+Expires: 29 November 2026                                     Apple Inc.
+                                                             28 May 2026
 
 
                              Optimistic DNS
@@ -60,7 +60,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 28 November 2026.
+   This Internet-Draft will expire on 29 November 2026.
 
 Copyright Notice
 
@@ -91,7 +91,8 @@ Table of Contents
      7.1.  Query Initiation
      7.2.  Cache Lookup with Expired Records
      7.3.  Parallel Network Query
-     7.4.  CNAME Handling
+     7.4.  Cache Management
+     7.5.  CNAME Handling
    8.  Interaction with Other DNS Features
      8.1.  DNSSEC
      8.2.  Encrypted DNS Transports
@@ -689,7 +690,24 @@ Table of Contents
    networking code MUST use these fresh answers to update the list of
    answers it received earlier.
 
-7.4.  CNAME Handling
+7.4.  Cache Management
+
+   Storing expired records forever could consume an unbounded amount of
+   memory, and return egregiously old records.
+
+   For this reason, stub resolvers SHOULD NOT store records for more
+   than one week after the TTL has expired.
+
+   The time limit of one week is selected so that a user could go home
+   from work on a Thursday night, take a four-day long weekend break,
+   return to work the next Tuesday, and still benefit from using expired
+   cached records for faster performance.  Storing expired records for
+   less time risks eliminating the benefit of Optimistic DNS in many
+   cases; storing expired records for more time is currently considered
+   to offer little additional benefit, and using excessively old data
+   could lead to unexpected undesirable consequences.
+
+7.5.  CNAME Handling
 
    CNAME records introduce a complication for Optimistic DNS.  When a
    DNS query encounters a CNAME record, the resolver must follow one or

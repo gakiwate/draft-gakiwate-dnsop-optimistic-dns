@@ -1058,7 +1058,7 @@ svg {
 </tr></thead>
 <tfoot><tr>
 <td class="left">Akiwate, et al.</td>
-<td class="center">Expires 28 November 2026</td>
+<td class="center">Expires 29 November 2026</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -1071,12 +1071,12 @@ svg {
 <dd class="internet-draft">draft-gakiwate-dnsop-optimistic-dns-latest</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2026-05-27" class="published">27 May 2026</time>
+<time datetime="2026-05-28" class="published">28 May 2026</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Standards Track</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2026-11-28">28 November 2026</time></dd>
+<dd class="expires"><time datetime="2026-11-29">29 November 2026</time></dd>
 <dt class="label-authors">Authors:</dt>
 <dd class="authors">
 <div class="author">
@@ -1143,7 +1143,7 @@ between the stub resolver and applications about answer freshness.<a href="#sect
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 28 November 2026.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 29 November 2026.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -1214,7 +1214,10 @@ between the stub resolver and applications about answer freshness.<a href="#sect
                 <p id="section-toc.1-1.7.2.3.1"><a href="#section-7.3" class="auto internal xref">7.3</a>.  <a href="#name-parallel-network-query" class="internal xref">Parallel Network Query</a></p>
 </li>
               <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.4">
-                <p id="section-toc.1-1.7.2.4.1"><a href="#section-7.4" class="auto internal xref">7.4</a>.  <a href="#name-cname-handling" class="internal xref">CNAME Handling</a></p>
+                <p id="section-toc.1-1.7.2.4.1"><a href="#section-7.4" class="auto internal xref">7.4</a>.  <a href="#name-cache-management" class="internal xref">Cache Management</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.5">
+                <p id="section-toc.1-1.7.2.5.1"><a href="#section-7.5" class="auto internal xref">7.5</a>.  <a href="#name-cname-handling" class="internal xref">CNAME Handling</a></p>
 </li>
             </ul>
 </li>
@@ -1931,44 +1934,64 @@ an asynchronous callback mechanism.  The application’s networking code <span c
 use these fresh answers to update the list of answers it received earlier.<a href="#section-7.3-2" class="pilcrow">¶</a></p>
 </section>
 </div>
-<div id="cname-handling">
+<div id="cache-management">
 <section id="section-7.4">
-        <h3 id="name-cname-handling">
-<a href="#section-7.4" class="section-number selfRef">7.4. </a><a href="#name-cname-handling" class="section-name selfRef">CNAME Handling</a>
+        <h3 id="name-cache-management">
+<a href="#section-7.4" class="section-number selfRef">7.4. </a><a href="#name-cache-management" class="section-name selfRef">Cache Management</a>
         </h3>
-<p id="section-7.4-1">CNAME records introduce a complication for Optimistic DNS.
+<p id="section-7.4-1">Storing expired records forever could consume an unbounded amount of memory,
+and return egregiously old records.<a href="#section-7.4-1" class="pilcrow">¶</a></p>
+<p id="section-7.4-2">For this reason, stub resolvers <span class="bcp14">SHOULD NOT</span> store records
+for more than one week after the TTL has expired.<a href="#section-7.4-2" class="pilcrow">¶</a></p>
+<p id="section-7.4-3">The time limit of one week is selected so that a user could
+go home from work on a Thursday night, take a four-day long
+weekend break, return to work the next Tuesday, and still
+benefit from using expired cached records for faster performance.
+Storing expired records for less time
+risks eliminating the benefit of Optimistic DNS in many cases;
+storing expired records for more time
+is currently considered to offer little additional benefit, and using
+excessively old data could lead to unexpected undesirable consequences.<a href="#section-7.4-3" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="cname-handling">
+<section id="section-7.5">
+        <h3 id="name-cname-handling">
+<a href="#section-7.5" class="section-number selfRef">7.5. </a><a href="#name-cname-handling" class="section-name selfRef">CNAME Handling</a>
+        </h3>
+<p id="section-7.5-1">CNAME records introduce a complication for Optimistic DNS.
 When a DNS query encounters a CNAME record, the resolver must follow
 one or more records in a CNAME chain to find the ultimate answer.
-If a CNAME record itself is expired, it may no longer be correct.<a href="#section-7.4-1" class="pilcrow">¶</a></p>
-<p id="section-7.4-2">Consider the following example.  An application queries for
+If a CNAME record itself is expired, it may no longer be correct.<a href="#section-7.5-1" class="pilcrow">¶</a></p>
+<p id="section-7.5-2">Consider the following example.  An application queries for
 www.example.com, which has a CNAME record pointing to cdn.example.net.
-Both records are in the cache but expired:<a href="#section-7.4-2" class="pilcrow">¶</a></p>
-<div class="alignLeft art-text artwork" id="section-7.4-3">
+Both records are in the cache but expired:<a href="#section-7.5-2" class="pilcrow">¶</a></p>
+<div class="alignLeft art-text artwork" id="section-7.5-3">
 <pre>
   www.example.com.   CNAME  cdn.example.net.  (expired)
   cdn.example.net.   A      198.51.100.42     (expired)
-</pre><a href="#section-7.4-3" class="pilcrow">¶</a>
+</pre><a href="#section-7.5-3" class="pilcrow">¶</a>
 </div>
-<p id="section-7.4-4">If the resolver follows the expired CNAME to cdn.example.net and returns
+<p id="section-7.5-4">If the resolver follows the expired CNAME to cdn.example.net and returns
 the expired A record, the application receives a result.  But if the CNAME
 has changed (www.example.com now points to cdn2.example.net instead), the
 resolver has followed a stale chain and returned a record for the wrong
-name.<a href="#section-7.4-4" class="pilcrow">¶</a></p>
-<p id="section-7.4-5">To handle this correctly, when the stub resolver encounters CNAME
-records during optimistic resolution, it takes the following steps:<a href="#section-7.4-5" class="pilcrow">¶</a></p>
-<ol start="1" type="1" class="normal type-1" id="section-7.4-6">
-<li id="section-7.4-6.1">
-            <p id="section-7.4-6.1.1">If the record is expired, and a background query is not already in
+name.<a href="#section-7.5-4" class="pilcrow">¶</a></p>
+<p id="section-7.5-5">To handle this correctly, when the stub resolver encounters CNAME
+records during optimistic resolution, it takes the following steps:<a href="#section-7.5-5" class="pilcrow">¶</a></p>
+<ol start="1" type="1" class="normal type-1" id="section-7.5-6">
+<li id="section-7.5-6.1">
+            <p id="section-7.5-6.1.1">If the record is expired, and a background query is not already in
 progress for this record name, then a background query is initiated,
-as for any other expired record.<a href="#section-7.4-6.1.1" class="pilcrow">¶</a></p>
+as for any other expired record.<a href="#section-7.5-6.1.1" class="pilcrow">¶</a></p>
 </li>
-          <li id="section-7.4-6.2">
-            <p id="section-7.4-6.2.1">The CNAME referral is followed.
+          <li id="section-7.5-6.2">
+            <p id="section-7.5-6.2.1">The CNAME referral is followed.
 (If the target of the CNAME referral is another CNAME record,
-then this process repeats until a non-CNAME record is found.)<a href="#section-7.4-6.2.1" class="pilcrow">¶</a></p>
+then this process repeats until a non-CNAME record is found.)<a href="#section-7.5-6.2.1" class="pilcrow">¶</a></p>
 </li>
-          <li id="section-7.4-6.3">
-            <p id="section-7.4-6.3.1">If, at any time while a asynchronous DNS query is active,
+          <li id="section-7.5-6.3">
+            <p id="section-7.5-6.3.1">If, at any time while a asynchronous DNS query is active,
 the record data for any of the names in the CNAME chain changes,
 then the query is re-evaluated starting from the original query name,
 as if it were a fresh query.
@@ -1977,12 +2000,12 @@ that it is simply a more efficient equivalent to repeated polling.
 If a fresh new query would yield different results, then the client’s
 asynchronous DNS operation receives asynchronous notifications
 to deliver the new set of results, giving it the exact same
-information that a fresh query at that time would receive.<a href="#section-7.4-6.3.1" class="pilcrow">¶</a></p>
+information that a fresh query at that time would receive.<a href="#section-7.5-6.3.1" class="pilcrow">¶</a></p>
 </li>
         </ol>
-<p id="section-7.4-7">This rewind-and-restart approach ensures that the application continues
+<p id="section-7.5-7">This rewind-and-restart approach ensures that the application continues
 to receive a complete, consistent answer for its query, even as DNS record
-changes may mean that the CNAME chain for a given name changes over time.<a href="#section-7.4-7" class="pilcrow">¶</a></p>
+changes may mean that the CNAME chain for a given name changes over time.<a href="#section-7.5-7" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
