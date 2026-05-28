@@ -9,7 +9,7 @@
 <meta content="Phil Flack" name="author">
 <meta content="Stuart Cheshire" name="author">
 <meta content="
-       DNS lookups introduce user-visible latency, particularly when cached records
+       DNS lookups introduce user-visible delay, particularly when cached records
 have expired and must be refreshed from the network.  This document describes
 Optimistic DNS, a client-side stub resolver mechanism that immediately returns
 expired cached DNS records to applications while simultaneously refreshing them
@@ -21,7 +21,7 @@ exclusively on client-side stub resolver behavior, including explicit signaling
 between the stub resolver and applications about answer freshness. 
     " name="description">
 <meta content="xml2rfc 3.33.0" name="generator">
-<meta content="DNS, caching, latency, stub resolver" name="keyword">
+<meta content="DNS, caching, stub resolver, latency, delay" name="keyword">
 <meta content="draft-gakiwate-dnsop-optimistic-dns-latest" name="ietf.draft">
 <!-- Generator version information:
   xml2rfc 3.33.0
@@ -1097,7 +1097,7 @@ svg {
 <h1 id="title">Optimistic DNS</h1>
 <section id="section-abstract">
       <h2 id="abstract"><a href="#abstract" class="selfRef">Abstract</a></h2>
-<p id="section-abstract-1">DNS lookups introduce user-visible latency, particularly when cached records
+<p id="section-abstract-1">DNS lookups introduce user-visible delay, particularly when cached records
 have expired and must be refreshed from the network.  This document describes
 Optimistic DNS, a client-side stub resolver mechanism that immediately returns
 expired cached DNS records to applications while simultaneously refreshing them
@@ -1305,7 +1305,7 @@ but the speed of light isn’t changing.<a href="#section-1-1" class="pilcrow">�
 is typically a DNS lookup to translate the hostname into an IP address.  If
 the laptop's DNS cache contains a record for that hostname, the answer is
 returned almost instantly and the user perceives no delay.  But if the
-record's TTL has expired, even by a single second, the laptop must perform
+record's TTL has expired, by even a single second, the laptop must perform
 a fresh DNS lookup.  On a wired connection this might take 50 to 200
 milliseconds.  On a cellular connection, particularly at the edge of
 coverage, it can take several seconds.<a href="#section-1-2" class="pilcrow">¶</a></p>
@@ -1337,7 +1337,7 @@ While connecting, the networking library code <span class="bcp14">MUST</span> co
 to asynchronous notifications of new addresses as they are learned,
 and the networking library code <span class="bcp14">MUST</span> react gracefully if,
 occasionally, some of the candidate addresses do, in fact,
-prove to be actually stale and incorrect (<a href="#enabling-technologies" class="auto internal xref">Section 5</a>).<a href="#section-1-5" class="pilcrow">¶</a></p>
+prove to be stale and incorrect (<a href="#enabling-technologies" class="auto internal xref">Section 5</a>).<a href="#section-1-5" class="pilcrow">¶</a></p>
 <p id="section-1-6">The following diagram illustrates the timing difference between
 conventional DNS resolution and Optimistic DNS:<a href="#section-1-6" class="pilcrow">¶</a></p>
 <p id="section-1-7"><strong>Conventional DNS (after cache expiry):</strong><a href="#section-1-7" class="pilcrow">¶</a></p>
@@ -1353,7 +1353,7 @@ conventional DNS resolution and Optimistic DNS:<a href="#section-1-6" class="pil
       |                    |&lt;-- Response -------|
       |&lt;-- Fresh Answer ---|                    |
       |                    |                    |
-      [====== 150ms+ latency ======]
+      [====== 150ms+ delay ======]
 </pre><a href="#section-1-8" class="pilcrow">¶</a>
 </div>
 <p id="section-1-9"><strong>Optimistic DNS (after cache expiry):</strong><a href="#section-1-9" class="pilcrow">¶</a></p>
@@ -1363,7 +1363,7 @@ conventional DNS resolution and Optimistic DNS:<a href="#section-1-6" class="pil
       |                    |                    |
       |--- Query ---------&gt;|                    |
       |&lt;- Expired Answer --|--- Query ---------&gt;|
-      |   (~0ms latency)   |                    |
+      |   (~0ms delay)     |                    |
       |                    |                    |
       |  (app can start    |                    |
       |  connecting now)   |                    |
@@ -1376,9 +1376,9 @@ conventional DNS resolution and Optimistic DNS:<a href="#section-1-6" class="pil
 Resiliency <span>[<a href="#RFC8767" class="cite xref">RFC8767</a>]</span>, which allows recursive resolvers to serve stale data
 during upstream failures. The two mechanisms differ in their focus.
 As reflected in the document title, the specification for serving stale
-data from recursive resolvers was focussed on improving resiliency
+data from recursive resolvers was focused on improving resiliency
 in situations where the authoritative servers are down or unreachable.
-Optimistic DNS is focussed on enhancements to the stub resolver
+Optimistic DNS is focused on enhancements to the stub resolver
 on the end-user's device, to reduce delays even in cases
 where the authoritative servers are functioning perfectly well.
 Both can be deployed simultaneously for layered staleness tolerance.<a href="#section-1-11" class="pilcrow">¶</a></p>
@@ -1454,7 +1454,7 @@ than trusting the asynchronous notification mechanism.
 For efficiency, the application is notified via an asynchronous
 notification only when the set of answers changes.
 This is similar to the efficiency trade-offs present in other APIs,
-where asynchronous notification is more efficient that polling.
+where asynchronous notification is more efficient than polling.
 For example, an application can repeatedly poll to find if
 the content of a directory has changed, but using asynchronous
 filesystem notifications gives the same effect more efficiently.
@@ -1465,7 +1465,7 @@ and in other DNS stub resolver code like getdns <span>[<a href="#getdns" class="
 <dt id="section-2-2.11"><em>Happy Eyeballs.</em></dt>
         <dd style="margin-left: 1.5em" id="section-2-2.12">
           <p id="section-2-2.12.1">A client-side connection establishment
-algorithm <span>[<a href="#async" class="cite xref">async</a>]</span> <span>[<a href="#RFC6555" class="cite xref">RFC6555</a>]</span> <span>[<a href="#RFC8305" class="cite xref">RFC8305</a>]</span> <span>[<a href="#HEv3" class="cite xref">HEv3</a>]</span>
+algorithm <span>[<a href="#IETF72" class="cite xref">IETF72</a>]</span> <span>[<a href="#RFC6555" class="cite xref">RFC6555</a>]</span> <span>[<a href="#RFC8305" class="cite xref">RFC8305</a>]</span> <span>[<a href="#HEv3" class="cite xref">HEv3</a>]</span>
 that races connection
 attempts across multiple addresses and address families, using whichever
 connection succeeds first.  Failed connection attempts to individual addresses
@@ -1491,7 +1491,7 @@ network round trip. This is not a graceful degradation.  It is a dramatic spike.
         <dd style="margin-left: 1.5em" id="section-3-3.2">
           <p id="section-3-3.2.1">Many content delivery networks and cloud services use TTLs of 60 seconds
 or less to facilitate rapid failover and load balancing.  Short TTLs mean
-more frequent cache expiration events, which means users hit the latency
+more frequent cache expiration events, which means users hit the delay
 spike more often.<a href="#section-3-3.2.1" class="pilcrow">¶</a></p>
 </dd>
         <dd class="break"></dd>
@@ -1516,10 +1516,12 @@ the cumulative delay can be substantial.<a href="#section-3-3.6.1" class="pilcro
         <dd class="break"></dd>
 <dt id="section-3-3.7"><em>First query after sleep.</em></dt>
         <dd style="margin-left: 1.5em" id="section-3-3.8">
-          <p id="section-3-3.8.1">When a laptop or phone wakes from sleep, many cached records will have
-expired during the sleep period.  The first network operation after
-waking pays the maximum penalty, precisely when the user is most
-impatient.<a href="#section-3-3.8.1" class="pilcrow">¶</a></p>
+          <p id="section-3-3.8.1">While a computer or smartphone is sleeping,
+normal wall-clock time continues to elapse,
+and by the time the device awakes,
+many cached records may have expired.
+Optimistic DNS avoids the delay penalty when a device is
+used after sleep or any other extended period of inactivity.<a href="#section-3-3.8.1" class="pilcrow">¶</a></p>
 </dd>
       <dd class="break"></dd>
 </dl>
@@ -1537,7 +1539,7 @@ they present a different view to their clients.
 A client querying Recursive A at time T=80 will cause a DNS
 request to the authoritative DNS server to retrieve fresh data.
 A client querying Recursive B twenty seconds later at time T=100
-will received cached data because Recursive B considers it still valid.<a href="#section-3-5" class="pilcrow">¶</a></p>
+will receive cached data because Recursive B considers it still valid.<a href="#section-3-5" class="pilcrow">¶</a></p>
 <div class="alignLeft art-text artwork" id="section-3-6">
 <pre>
 Time:
@@ -1577,7 +1579,7 @@ Recursive B queries at T=45:
 <p id="section-3-7">Client 1 issued a query at time T=80 and suffered a delay waiting
 for “fresh” data, even though, at that time,
 the data on the authoritative nameserver had not yet changed.
-In this case, using the expired cached data would have fine,
+In this case, using the expired cached data would have been fine,
 because it was still correct.<a href="#section-3-7" class="pilcrow">¶</a></p>
 <p id="section-3-8">Client 2 issued a query twenty seconds later at time T=100,
 yet Recursive B happily sent it cached data that was no longer correct.<a href="#section-3-8" class="pilcrow">¶</a></p>
@@ -1588,13 +1590,13 @@ Statistically, averaged over a large set of queries, records
 that are older relative to their published TTL are more
 likely to be considered expired, but for a specific
 individual query the results are much less deterministic.<a href="#section-3-9" class="pilcrow">¶</a></p>
-<p id="section-3-10">Thus, clients should not to attach too much importance to the
+<p id="section-3-10">Thus, clients should not attach too much importance to the
 absolute value of a record’s age relative to its declared TTL.
 The age of a record is a valuable hint as to whether it should
 be assumed to be still valid, but it is not a guarantee.
 Data being younger than its TTL is not a guarantee that it is still correct,
 and data being older than its TTL is not a guarantee that it is wrong.<a href="#section-3-10" class="pilcrow">¶</a></p>
-<p id="section-3-11">Happy Eyeballs <span>[<a href="#async" class="cite xref">async</a>]</span> <span>[<a href="#RFC6555" class="cite xref">RFC6555</a>]</span> <span>[<a href="#RFC8305" class="cite xref">RFC8305</a>]</span> <span>[<a href="#HEv3" class="cite xref">HEv3</a>]</span>
+<p id="section-3-11">Happy Eyeballs <span>[<a href="#IETF72" class="cite xref">IETF72</a>]</span> <span>[<a href="#RFC6555" class="cite xref">RFC6555</a>]</span> <span>[<a href="#RFC8305" class="cite xref">RFC8305</a>]</span> <span>[<a href="#HEv3" class="cite xref">HEv3</a>]</span>
 is the asynchronous connection racing technology
 that makes Optimistic DNS possible.
 Optimistic DNS delivers DNS answers quickly, with the caveat that,
@@ -1614,7 +1616,7 @@ In the rare cases where the first connection attempt does not
 succeed within the expected network round-trip time, a connection
 is initiated to the next address in order of preference.
 The first connection attempt is not abandoned when the second one starts
--- its ususal schedule of retransmissions is still followed --
+-- its usual schedule of retransmissions is still followed --
 and the two connection attempts proceed in parallel.
 Running connection attempts in parallel instead of sequentially
 prevents long stalls waiting for a connection to time-out and fail
@@ -1639,7 +1641,7 @@ without trying other candidate addresses while it was waiting.<a href="#section-
 appropriate security practices (<a href="#security-considerations" class="auto internal xref">Section 10</a>) to ensure
 that they are connecting to the intended host or service on the network.
 Applications that do not have application-layer security
-and simply expect the Internet to connect them to right host every time
+and simply expect the Internet to connect them to the right host every time
 <span class="bcp14">SHOULD NOT</span> use Optimistic DNS.<a href="#section-3-14" class="pilcrow">¶</a></p>
 <p id="section-3-15">The cost of waiting for a fresh answer that confirms what the cache already had
 is a guaranteed delay of the full network round-trip time on every cache expiry.
@@ -1652,13 +1654,13 @@ positive.<a href="#section-3-15" class="pilcrow">¶</a></p>
       <h2 id="name-zenos-paradox">
 <a href="#section-4" class="section-number selfRef">4. </a><a href="#name-zenos-paradox" class="section-name selfRef">Zeno’s Paradox</a>
       </h2>
-<p id="section-4-1">One seemingly attractive approach to avoiding the latency spike
+<p id="section-4-1">One seemingly attractive approach to avoiding the delay spike
 might be to take inspiration from DHCP <span>[<a href="#RFC2131" class="cite xref">RFC2131</a>]</span> <span>[<a href="#RFC2132" class="cite xref">RFC2132</a>]</span>,
 and renew a record before it expires, instead of waiting until
 after it is already expired before requesting an update.
 DHCP typically renews an address lease when half of the lease
-lifetime has elapsed, rather than waiting for the lease to
-actually expire and then briefly losing the right to use that
+lifetime has elapsed, rather than waiting for the lease
+to expire and then briefly losing the right to use that
 IP address while a new request is processed.<a href="#section-4-1" class="pilcrow">¶</a></p>
 <p id="section-4-2">Unfortunately, because of the way DNS works, the DHCP-inspired approach
 of refreshing records in advance of their expiration does not work.<a href="#section-4-2" class="pilcrow">¶</a></p>
@@ -1676,16 +1678,16 @@ has a remaining TTL of 6 hours.<a href="#section-4-5" class="pilcrow">¶</a></p>
 as the remaining TTL continues to count down towards zero,
 without the stub resolver learning anything new.<a href="#section-4-6" class="pilcrow">¶</a></p>
 <p id="section-4-7">Eventually, the record finally expires from the recursive resolver’s
-cache, and the stub resolver then suffers a latency spike waiting
+cache, and the stub resolver then suffers a delay spike waiting
 for the recursive resolver to fetch the authoritative record.<a href="#section-4-7" class="pilcrow">¶</a></p>
 <p id="section-4-8">Currently, recursive resolvers will continue to return a cached record
 down to the last second of its lifetime. Even for a record that is the
 subject of a large volume of queries, recursive resolvers will not take
 the initiative of refreshing that record prior to its inevitable and
 entirely predictable expiration. Instead, recursive resolvers will let
-the record expire, and then suffer a latency spike on the very next query.<a href="#section-4-8" class="pilcrow">¶</a></p>
+the record expire, and then suffer a delay spike on the very next query.<a href="#section-4-8" class="pilcrow">¶</a></p>
 <p id="section-4-9">With the current behavior of recursive resolvers, strictly
-respecting a record’s TTL and avoiding predictable latency
+respecting a record’s TTL and avoiding predictable delay
 spikes are incompatible goals. It is impossible to do both.<a href="#section-4-9" class="pilcrow">¶</a></p>
 </section>
 </div>
@@ -1704,7 +1706,7 @@ support delivering asynchronous results as they arrive<a href="#section-5-2.1.1"
 </li>
         <li class="normal" id="section-5-2.2">
           <p id="section-5-2.2.1">If the expired address is found to be wrong,
-the application needs a way to continue gracefully.<a href="#section-5-2.2.1" class="pilcrow">¶</a></p>
+the application needs to continue gracefully.<a href="#section-5-2.2.1" class="pilcrow">¶</a></p>
 </li>
       </ul>
 <div id="asynchronous-dns-resolution">
@@ -1737,7 +1739,7 @@ established and the fresh answer serves as confirmation.<a href="#section-5.1-3"
         <h3 id="name-happy-eyeballs">
 <a href="#section-5.2" class="section-number selfRef">5.2. </a><a href="#name-happy-eyeballs" class="section-name selfRef">Happy Eyeballs</a>
         </h3>
-<p id="section-5.2-1">Happy Eyeballs <span>[<a href="#async" class="cite xref">async</a>]</span> <span>[<a href="#RFC6555" class="cite xref">RFC6555</a>]</span> <span>[<a href="#RFC8305" class="cite xref">RFC8305</a>]</span> <span>[<a href="#HEv3" class="cite xref">HEv3</a>]</span>
+<p id="section-5.2-1">Happy Eyeballs <span>[<a href="#IETF72" class="cite xref">IETF72</a>]</span> <span>[<a href="#RFC6555" class="cite xref">RFC6555</a>]</span> <span>[<a href="#RFC8305" class="cite xref">RFC8305</a>]</span> <span>[<a href="#HEv3" class="cite xref">HEv3</a>]</span>
 defines algorithms for racing
 connection attempts across multiple addresses and address families.  When a
 client has several candidate addresses for a destination, Happy Eyeballs
@@ -1997,7 +1999,7 @@ as for any other expired record.<a href="#section-7.5-6.1.1" class="pilcrow">¶<
 then this process repeats until a non-CNAME record is found.)<a href="#section-7.5-6.2.1" class="pilcrow">¶</a></p>
 </li>
           <li id="section-7.5-6.3">
-            <p id="section-7.5-6.3.1">If, at any time while a asynchronous DNS query is active,
+            <p id="section-7.5-6.3.1">If, at any time while an asynchronous DNS query is active,
 the record data for any of the names in the CNAME chain changes,
 then the query is re-evaluated starting from the original query name,
 as if it were a fresh query.
@@ -2040,8 +2042,10 @@ subsequent queries for these records always result in a new network request.<a h
 <p id="section-8.2-1">Optimistic DNS extends the cache lifetime for DNS records,
 as signalled by the TTL values.<a href="#section-8.2-1" class="pilcrow">¶</a></p>
 <p id="section-8.2-2">Optimistic DNS does not extend the validity periods of cryptographic signatures.<a href="#section-8.2-2" class="pilcrow">¶</a></p>
-<p id="section-8.2-3">Optimistic DNS will deliver DNS records like RRSIG after their cache
-lifetime has expired, but recipients <span class="bcp14">MUST</span> respect
+<p id="section-8.2-3">Optimistic DNS does not interpret the content of any records,
+including cryptographic records like RRSIG,
+and will deliver DNS records after their cache lifetime has expired.
+Clients are responsible for checking and respecting
 the validity periods of cryptographic signatures.<a href="#section-8.2-3" class="pilcrow">¶</a></p>
 </section>
 </div>
@@ -2079,8 +2083,7 @@ maintaining DNS service during outages.<a href="#section-8.4-2.2.1" class="pilcr
           <dd style="margin-left: 1.5em" id="section-8.4-2.4">
             <p id="section-8.4-2.4.1">Operates at the stub resolver on the end-user's device.  Serves expired
 cached data proactively, while simultaneously initiating a network query.
-The primary
-goal is latency reduction -- eliminating the TTL expiry spike.<a href="#section-8.4-2.4.1" class="pilcrow">¶</a></p>
+The primary goal is delay reduction -- eliminating the TTL expiry spike.<a href="#section-8.4-2.4.1" class="pilcrow">¶</a></p>
 </dd>
         <dd class="break"></dd>
 </dl>
@@ -2090,7 +2093,7 @@ tolerance:<a href="#section-8.4-3" class="pilcrow">¶</a></p>
 <ol start="1" type="1" class="normal type-1" id="section-8.4-4">
 <li id="section-8.4-4.1">
             <p id="section-8.4-4.1.1">The stub resolver returns expired records optimistically, eliminating
-client-perceived latency.<a href="#section-8.4-4.1.1" class="pilcrow">¶</a></p>
+client-perceived delay.<a href="#section-8.4-4.1.1" class="pilcrow">¶</a></p>
 </li>
           <li id="section-8.4-4.2">
             <p id="section-8.4-4.2.1">If the recursive resolver's cache has also expired and the authoritative
@@ -2258,10 +2261,6 @@ DNS for infrequently-accessed names.<a href="#section-10-3.6.1" class="pilcrow">
         <dd>
 <span class="refAuthor">Bradner, S.</span>, <span class="refTitle">"Key words for use in RFCs to Indicate Requirement Levels"</span>, <span class="seriesInfo">BCP 14</span>, <span class="seriesInfo">RFC 2119</span>, <span class="seriesInfo">DOI 10.17487/RFC2119</span>, <time datetime="1997-03" class="refDate">March 1997</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc2119">https://www.rfc-editor.org/rfc/rfc2119</a>&gt;</span>. </dd>
 <dd class="break"></dd>
-<dt id="RFC6555">[RFC6555]</dt>
-        <dd>
-<span class="refAuthor">Wing, D.</span> and <span class="refAuthor">A. Yourtchenko</span>, <span class="refTitle">"Happy Eyeballs: Success with Dual-Stack Hosts"</span>, <span class="seriesInfo">RFC 6555</span>, <span class="seriesInfo">DOI 10.17487/RFC6555</span>, <time datetime="2012-04" class="refDate">April 2012</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc6555">https://www.rfc-editor.org/rfc/rfc6555</a>&gt;</span>. </dd>
-<dd class="break"></dd>
 <dt id="RFC8174">[RFC8174]</dt>
         <dd>
 <span class="refAuthor">Leiba, B.</span>, <span class="refTitle">"Ambiguity of Uppercase vs Lowercase in RFC 2119 Key Words"</span>, <span class="seriesInfo">BCP 14</span>, <span class="seriesInfo">RFC 8174</span>, <span class="seriesInfo">DOI 10.17487/RFC8174</span>, <time datetime="2017-05" class="refDate">May 2017</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8174">https://www.rfc-editor.org/rfc/rfc8174</a>&gt;</span>. </dd>
@@ -2279,13 +2278,14 @@ DNS for infrequently-accessed names.<a href="#section-10-3.6.1" class="pilcrow">
 <a href="#section-12.2" class="section-number selfRef">12.2. </a><a href="#name-informative-references" class="section-name selfRef">Informative References</a>
         </h3>
 <dl class="references">
-<dt id="async">[async]</dt>
-        <dd>
-<span class="refAuthor">Cheshire, S.</span>, <span class="refTitle">"Stuart Cheshire on IPv6 Adoption"</span>, <time datetime="2008" class="refDate">2008</time>, <span>&lt;<a href="https://www.stuartcheshire.org/IETF72/">https://www.stuartcheshire.org/IETF72/</a>&gt;</span>. </dd>
-<dd class="break"></dd>
 <dt id="getdns">[getdns]</dt>
         <dd>
 <span class="refAuthor">NLnet Labs, Sinodun and No Mountain Software</span>, <span class="refTitle">"Welcome to getdns!"</span>, <span>n.d.</span>, <span>&lt;<a href="https://getdnsapi.net/">https://getdnsapi.net/</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="IETF72">[IETF72]</dt>
+        <dd>
+<span class="refAuthor">Cheshire, S.</span>, <span class="refTitle">"Stuart Cheshire on IPv6 Adoption"</span>, <time datetime="2008" class="refDate">2008</time>, <span>&lt;<a href="https://www.stuartcheshire.org/IETF72/">https://www.stuartcheshire.org/IETF72/</a>&gt;</span>. <span class="annotation">This presentation introduced the concept of asynchronous concurrent connection racing, later known as Happy Eyeballs.</span>
+        </dd>
 <dd class="break"></dd>
 <dt id="RFC2131">[RFC2131]</dt>
         <dd>
@@ -2294,6 +2294,10 @@ DNS for infrequently-accessed names.<a href="#section-10-3.6.1" class="pilcrow">
 <dt id="RFC2132">[RFC2132]</dt>
         <dd>
 <span class="refAuthor">Alexander, S.</span> and <span class="refAuthor">R. Droms</span>, <span class="refTitle">"DHCP Options and BOOTP Vendor Extensions"</span>, <span class="seriesInfo">RFC 2132</span>, <span class="seriesInfo">DOI 10.17487/RFC2132</span>, <time datetime="1997-03" class="refDate">March 1997</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc2132">https://www.rfc-editor.org/rfc/rfc2132</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC6555">[RFC6555]</dt>
+        <dd>
+<span class="refAuthor">Wing, D.</span> and <span class="refAuthor">A. Yourtchenko</span>, <span class="refTitle">"Happy Eyeballs: Success with Dual-Stack Hosts"</span>, <span class="seriesInfo">RFC 6555</span>, <span class="seriesInfo">DOI 10.17487/RFC6555</span>, <time datetime="2012-04" class="refDate">April 2012</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc6555">https://www.rfc-editor.org/rfc/rfc6555</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="RFC6762">[RFC6762]</dt>
         <dd>
@@ -2349,12 +2353,12 @@ and will update the client with fresh information if new data is received.<a hre
 recursive resolver’s copy of the record has expired, causing the
 recursive resolver to fetch a new fresh copy of the authoritative record,
 but because available answers are delivered to DNS clients immediately,
-DNS clients do not experience a latency spike while
+DNS clients do not experience a delay spike while
 waiting for the recursive resolver to refresh the record.
 Thus, traditional DNS queries using the mDNSResponder stub resolver
 may receive answers that are up to 25% beyond their original lifetime.<a href="#appendix-A-4" class="pilcrow">¶</a></p>
 <p id="appendix-A-5">The development of
-Happy Eyeballs in 2008 <span>[<a href="#async" class="cite xref">async</a>]</span> <span>[<a href="#RFC6555" class="cite xref">RFC6555</a>]</span> <span>[<a href="#RFC8305" class="cite xref">RFC8305</a>]</span> <span>[<a href="#HEv3" class="cite xref">HEv3</a>]</span>
+Happy Eyeballs in 2008 <span>[<a href="#IETF72" class="cite xref">IETF72</a>]</span> <span>[<a href="#RFC6555" class="cite xref">RFC6555</a>]</span> <span>[<a href="#RFC8305" class="cite xref">RFC8305</a>]</span> <span>[<a href="#HEv3" class="cite xref">HEv3</a>]</span>
 made it feasible to increase
 effective record lifetimes beyond a modest extension of just 25%,
 and this new capability is what made Optimistic DNS possible.<a href="#appendix-A-5" class="pilcrow">¶</a></p>
@@ -2395,7 +2399,7 @@ applications.
 Providing an equivalent indication in other implementations is not recommended,
 because, as mentioned earlier, the notion of record expiry is subjective,
 and this flag is easily misunderstood and misused by developers who
-think it carries more significance that it really does.<a href="#appendix-A.1.1-2.4.1" class="pilcrow">¶</a></p>
+think it carries more significance than it really does.<a href="#appendix-A.1.1-2.4.1" class="pilcrow">¶</a></p>
 </dd>
             <dd class="break"></dd>
 <dt id="appendix-A.1.1-2.5">kDNSServiceFlagsAnsweredFromCache</dt>
@@ -2406,7 +2410,7 @@ whether the record is expired, allowing the application to distinguish
 cached answers (immediate) from network answers (delayed).
 Providing an equivalent indication in other implementations is not recommended,
 because this flag is easily misunderstood and misused by developers who
-think it carries more significance that it really does.
+think it carries more significance than it really does.
 If two clients happen to query for the same domain name at almost
 exactly the same time then one will get told that the answer
 came from the cache and the other will be told that it did not.
@@ -2516,7 +2520,7 @@ it the next time the TTL expires.<a href="#appendix-A.1.2-5" class="pilcrow">¶<
       <h2 id="name-acknowledgments">
 <a href="#name-acknowledgments" class="section-name selfRef">Acknowledgments</a>
       </h2>
-<p id="appendix-B-1">TODO acknowledge.<a href="#appendix-B-1" class="pilcrow">¶</a></p>
+<p id="appendix-B-1">TODO: Acknowledgments.<a href="#appendix-B-1" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="authors-addresses">
