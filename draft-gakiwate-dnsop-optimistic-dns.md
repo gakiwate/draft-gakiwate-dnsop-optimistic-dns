@@ -787,6 +787,24 @@ wrong, without depriving the application of also receiving the exact
 data it would have received with a traditional non-optimistic DNS query,
 at the time it would have received it.
 
+Optimistic DNS is not applicable to recursive resolvers because
+Optimistic DNS relies on the ability to deliver its best available
+information immediately, and then asynchronously update that
+information promptly if newer information becomes available.
+Stub resolvers that provide Asynchronous DNS resolution APIs to client
+applications are able to deliver these essential asynchronous updates.
+Recursive resolvers do not currently have any good way
+to issue asynchronous updates to correct an earlier
+answer that is subsequently discovered to be wrong.
+In principle, stub resolvers could use DNS Push Notifications {{?RFC8765}}
+to receive asynchronous updates from a recursive resolver, but
+in practice this mught place too much load on recursive resolvers.
+The current recommended solution for recursive resolvers returning
+stale data is that the TTL is reported as being 30 seconds {{?RFC8767}}.
+This has the effect of instructing stub resolvers to poll
+the recursive resolver, no more than once every 30 seconds,
+to ascertain if newer data has become available.
+
 # Security Considerations {#security-considerations}
 
 Optimistic DNS introduces a tradeoff between speed and freshness.
