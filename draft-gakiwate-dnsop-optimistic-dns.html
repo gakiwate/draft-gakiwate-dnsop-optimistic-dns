@@ -1225,13 +1225,16 @@ between the stub resolver and applications about answer freshness.<a href="#sect
             <p id="section-toc.1-1.8.1"><a href="#section-8" class="auto internal xref">8</a>.  <a href="#name-interaction-with-other-dns-" class="internal xref">Interaction with Other DNS Features</a></p>
 <ul class="compact toc ulBare ulEmpty">
 <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8.2.1">
-                <p id="section-toc.1-1.8.2.1.1"><a href="#section-8.1" class="auto internal xref">8.1</a>.  <a href="#name-dnssec" class="internal xref">DNSSEC</a></p>
+                <p id="section-toc.1-1.8.2.1.1"><a href="#section-8.1" class="auto internal xref">8.1</a>.  <a href="#name-uncacheable-records" class="internal xref">Uncacheable Records</a></p>
 </li>
               <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8.2.2">
-                <p id="section-toc.1-1.8.2.2.1"><a href="#section-8.2" class="auto internal xref">8.2</a>.  <a href="#name-encrypted-dns-transports" class="internal xref">Encrypted DNS Transports</a></p>
+                <p id="section-toc.1-1.8.2.2.1"><a href="#section-8.2" class="auto internal xref">8.2</a>.  <a href="#name-dnssec" class="internal xref">DNSSEC</a></p>
 </li>
               <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8.2.3">
-                <p id="section-toc.1-1.8.2.3.1"><a href="#section-8.3" class="auto internal xref">8.3</a>.  <a href="#name-relationship-to-rfc-8767" class="internal xref">Relationship to RFC 8767</a></p>
+                <p id="section-toc.1-1.8.2.3.1"><a href="#section-8.3" class="auto internal xref">8.3</a>.  <a href="#name-encrypted-dns-transports" class="internal xref">Encrypted DNS Transports</a></p>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8.2.4">
+                <p id="section-toc.1-1.8.2.4.1"><a href="#section-8.4" class="auto internal xref">8.4</a>.  <a href="#name-relationship-to-rfc-8767" class="internal xref">Relationship to RFC 8767</a></p>
 </li>
             </ul>
 </li>
@@ -2015,80 +2018,91 @@ changes may mean that the CNAME chain for a given name changes over time.<a href
       <h2 id="name-interaction-with-other-dns-">
 <a href="#section-8" class="section-number selfRef">8. </a><a href="#name-interaction-with-other-dns-" class="section-name selfRef">Interaction with Other DNS Features</a>
       </h2>
-<div id="dnssec">
+<div id="uncacheable-records">
 <section id="section-8.1">
-        <h3 id="name-dnssec">
-<a href="#section-8.1" class="section-number selfRef">8.1. </a><a href="#name-dnssec" class="section-name selfRef">DNSSEC</a>
+        <h3 id="name-uncacheable-records">
+<a href="#section-8.1" class="section-number selfRef">8.1. </a><a href="#name-uncacheable-records" class="section-name selfRef">Uncacheable Records</a>
         </h3>
-<p id="section-8.1-1">Optimistic DNS extends the cache lifetime for DNS records,
-as signalled by the TTL values.<a href="#section-8.1-1" class="pilcrow">¶</a></p>
-<p id="section-8.1-2">Optimistic DNS does not extend the validity periods of cryptographic signatures.<a href="#section-8.1-2" class="pilcrow">¶</a></p>
-<p id="section-8.1-3">Optimistic DNS will deliver DNS records like RRSIG after their cache
+<p id="section-8.1-1">The DNS specifications require that DNS records
+with a TTL of zero <span class="bcp14">MUST NOT</span> be cached <span>[<a href="#RFC1035" class="cite xref">RFC1035</a>]</span>.
+This document does not change that requirement;
+subsequent queries for these records always result in a new network request.<a href="#section-8.1-1" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="dnssec">
+<section id="section-8.2">
+        <h3 id="name-dnssec">
+<a href="#section-8.2" class="section-number selfRef">8.2. </a><a href="#name-dnssec" class="section-name selfRef">DNSSEC</a>
+        </h3>
+<p id="section-8.2-1">Optimistic DNS extends the cache lifetime for DNS records,
+as signalled by the TTL values.<a href="#section-8.2-1" class="pilcrow">¶</a></p>
+<p id="section-8.2-2">Optimistic DNS does not extend the validity periods of cryptographic signatures.<a href="#section-8.2-2" class="pilcrow">¶</a></p>
+<p id="section-8.2-3">Optimistic DNS will deliver DNS records like RRSIG after their cache
 lifetime has expired, but recipients <span class="bcp14">MUST</span> respect
-the validity periods of cryptographic signatures.<a href="#section-8.1-3" class="pilcrow">¶</a></p>
+the validity periods of cryptographic signatures.<a href="#section-8.2-3" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="encrypted-dns-transports">
-<section id="section-8.2">
+<section id="section-8.3">
         <h3 id="name-encrypted-dns-transports">
-<a href="#section-8.2" class="section-number selfRef">8.2. </a><a href="#name-encrypted-dns-transports" class="section-name selfRef">Encrypted DNS Transports</a>
+<a href="#section-8.3" class="section-number selfRef">8.3. </a><a href="#name-encrypted-dns-transports" class="section-name selfRef">Encrypted DNS Transports</a>
         </h3>
-<p id="section-8.2-1">Optimistic DNS is transport-agnostic.  It operates entirely within the stub
+<p id="section-8.3-1">Optimistic DNS is transport-agnostic.  It operates entirely within the stub
 resolver's cache layer, which sits above the transport layer.  Whether the
 stub resolver communicates with recursive resolvers using classic DNS over
 UDP/TCP, DNS over TLS (DoT) <span>[<a href="#RFC7858" class="cite xref">RFC7858</a>]</span>, DNS over HTTPS (DoH)
 <span>[<a href="#RFC8484" class="cite xref">RFC8484</a>]</span>, or DNS over QUIC (DoQ) <span>[<a href="#RFC9250" class="cite xref">RFC9250</a>]</span>, the Optimistic DNS
-mechanism functions identically.<a href="#section-8.2-1" class="pilcrow">¶</a></p>
+mechanism functions identically.<a href="#section-8.3-1" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="relationship-to-rfc-8767">
-<section id="section-8.3">
+<section id="section-8.4">
         <h3 id="name-relationship-to-rfc-8767">
-<a href="#section-8.3" class="section-number selfRef">8.3. </a><a href="#name-relationship-to-rfc-8767" class="section-name selfRef">Relationship to RFC 8767</a>
+<a href="#section-8.4" class="section-number selfRef">8.4. </a><a href="#name-relationship-to-rfc-8767" class="section-name selfRef">Relationship to RFC 8767</a>
         </h3>
-<p id="section-8.3-1">Serving Stale Data to Improve DNS Resiliency <span>[<a href="#RFC8767" class="cite xref">RFC8767</a>]</span> describes a
+<p id="section-8.4-1">Serving Stale Data to Improve DNS Resiliency <span>[<a href="#RFC8767" class="cite xref">RFC8767</a>]</span> describes a
 mechanism for recursive resolvers to serve stale cached data when they are
 unable to refresh it from authoritative servers.  Optimistic DNS and
-RFC 8767 address different levels of the DNS resolution chain:<a href="#section-8.3-1" class="pilcrow">¶</a></p>
-<span class="break"></span><dl class="dlParallel" id="section-8.3-2">
-          <dt id="section-8.3-2.1">RFC 8767</dt>
-          <dd style="margin-left: 1.5em" id="section-8.3-2.2">
-            <p id="section-8.3-2.2.1">Operates at the recursive resolver.  Serves stale data when upstream
+RFC 8767 address different levels of the DNS resolution chain:<a href="#section-8.4-1" class="pilcrow">¶</a></p>
+<span class="break"></span><dl class="dlParallel" id="section-8.4-2">
+          <dt id="section-8.4-2.1">RFC 8767</dt>
+          <dd style="margin-left: 1.5em" id="section-8.4-2.2">
+            <p id="section-8.4-2.2.1">Operates at the recursive resolver.  Serves stale data when upstream
 authoritative servers are unreachable.  The primary goal is resiliency --
-maintaining DNS service during outages.<a href="#section-8.3-2.2.1" class="pilcrow">¶</a></p>
+maintaining DNS service during outages.<a href="#section-8.4-2.2.1" class="pilcrow">¶</a></p>
 </dd>
           <dd class="break"></dd>
-<dt id="section-8.3-2.3">Optimistic DNS</dt>
-          <dd style="margin-left: 1.5em" id="section-8.3-2.4">
-            <p id="section-8.3-2.4.1">Operates at the stub resolver on the end-user's device.  Serves expired
+<dt id="section-8.4-2.3">Optimistic DNS</dt>
+          <dd style="margin-left: 1.5em" id="section-8.4-2.4">
+            <p id="section-8.4-2.4.1">Operates at the stub resolver on the end-user's device.  Serves expired
 cached data proactively, while simultaneously initiating a network query.
 The primary
-goal is latency reduction -- eliminating the TTL expiry spike.<a href="#section-8.3-2.4.1" class="pilcrow">¶</a></p>
+goal is latency reduction -- eliminating the TTL expiry spike.<a href="#section-8.4-2.4.1" class="pilcrow">¶</a></p>
 </dd>
         <dd class="break"></dd>
 </dl>
-<p id="section-8.3-3">The two mechanisms are complementary and can be deployed simultaneously.
+<p id="section-8.4-3">The two mechanisms are complementary and can be deployed simultaneously.
 When both are active, the resolution chain has two layers of staleness
-tolerance:<a href="#section-8.3-3" class="pilcrow">¶</a></p>
-<ol start="1" type="1" class="normal type-1" id="section-8.3-4">
-<li id="section-8.3-4.1">
-            <p id="section-8.3-4.1.1">The stub resolver returns expired records optimistically, eliminating
-client-perceived latency.<a href="#section-8.3-4.1.1" class="pilcrow">¶</a></p>
+tolerance:<a href="#section-8.4-3" class="pilcrow">¶</a></p>
+<ol start="1" type="1" class="normal type-1" id="section-8.4-4">
+<li id="section-8.4-4.1">
+            <p id="section-8.4-4.1.1">The stub resolver returns expired records optimistically, eliminating
+client-perceived latency.<a href="#section-8.4-4.1.1" class="pilcrow">¶</a></p>
 </li>
-          <li id="section-8.3-4.2">
-            <p id="section-8.3-4.2.1">If the recursive resolver's cache has also expired and the authoritative
+          <li id="section-8.4-4.2">
+            <p id="section-8.4-4.2.1">If the recursive resolver's cache has also expired and the authoritative
 server is unreachable, the recursive resolver can serve its own stale
-data rather than returning SERVFAIL.<a href="#section-8.3-4.2.1" class="pilcrow">¶</a></p>
+data rather than returning SERVFAIL.<a href="#section-8.4-4.2.1" class="pilcrow">¶</a></p>
 </li>
         </ol>
-<p id="section-8.3-5">RFC 8767 serves stale data without any provision for a future
-asynchronous notification when the desired data becomes available.<a href="#section-8.3-5" class="pilcrow">¶</a></p>
-<p id="section-8.3-6">In contrast, Optimistic DNS delivers the data it has immediately, while
+<p id="section-8.4-5">RFC 8767 serves stale data without any provision for a future
+asynchronous notification when the desired data becomes available.<a href="#section-8.4-5" class="pilcrow">¶</a></p>
+<p id="section-8.4-6">In contrast, Optimistic DNS delivers the data it has immediately, while
 also delivering updated data the moment it becomes available. It gives
 the application the benefit of timely data, which could occasionally be
 wrong, without depriving the application of also receiving the exact
 data it would have received with a traditional non-optimistic DNS query,
-at the time it would have received it.<a href="#section-8.3-6" class="pilcrow">¶</a></p>
+at the time it would have received it.<a href="#section-8.4-6" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
@@ -2165,6 +2179,10 @@ DNS for infrequently-accessed names.<a href="#section-9-3.6.1" class="pilcrow">�
 <dt id="HEv3">[HEv3]</dt>
         <dd>
 <span class="refAuthor">Pauly, T.</span>, <span class="refAuthor">Schinazi, D.</span>, <span class="refAuthor">Jaju, N.</span>, and <span class="refAuthor">K. Ishibashi</span>, <span class="refTitle">"Happy Eyeballs Version 3: Better Connectivity Using Concurrency"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-ietf-happy-happyeyeballs-v3-03</span>, <time datetime="2026-03-02" class="refDate">2 March 2026</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-ietf-happy-happyeyeballs-v3-03">https://datatracker.ietf.org/doc/html/draft-ietf-happy-happyeyeballs-v3-03</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC1035">[RFC1035]</dt>
+        <dd>
+<span class="refAuthor">Mockapetris, P.</span>, <span class="refTitle">"Domain names - implementation and specification"</span>, <span class="seriesInfo">STD 13</span>, <span class="seriesInfo">RFC 1035</span>, <span class="seriesInfo">DOI 10.17487/RFC1035</span>, <time datetime="1987-11" class="refDate">November 1987</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc1035">https://www.rfc-editor.org/rfc/rfc1035</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="RFC2119">[RFC2119]</dt>
         <dd>

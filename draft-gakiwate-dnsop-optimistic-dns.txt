@@ -94,9 +94,10 @@ Table of Contents
      7.4.  Cache Management
      7.5.  CNAME Handling
    8.  Interaction with Other DNS Features
-     8.1.  DNSSEC
-     8.2.  Encrypted DNS Transports
-     8.3.  Relationship to RFC 8767
+     8.1.  Uncacheable Records
+     8.2.  DNSSEC
+     8.3.  Encrypted DNS Transports
+     8.4.  Relationship to RFC 8767
    9.  Security Considerations
    10. IANA Considerations
    11. References
@@ -756,7 +757,14 @@ Table of Contents
 
 8.  Interaction with Other DNS Features
 
-8.1.  DNSSEC
+8.1.  Uncacheable Records
+
+   The DNS specifications require that DNS records with a TTL of zero
+   MUST NOT be cached [RFC1035].  This document does not change that
+   requirement; subsequent queries for these records always result in a
+   new network request.
+
+8.2.  DNSSEC
 
    Optimistic DNS extends the cache lifetime for DNS records, as
    signalled by the TTL values.
@@ -768,7 +776,7 @@ Table of Contents
    lifetime has expired, but recipients MUST respect the validity
    periods of cryptographic signatures.
 
-8.2.  Encrypted DNS Transports
+8.3.  Encrypted DNS Transports
 
    Optimistic DNS is transport-agnostic.  It operates entirely within
    the stub resolver's cache layer, which sits above the transport
@@ -777,7 +785,7 @@ Table of Contents
    [RFC7858], DNS over HTTPS (DoH) [RFC8484], or DNS over QUIC (DoQ)
    [RFC9250], the Optimistic DNS mechanism functions identically.
 
-8.3.  Relationship to RFC 8767
+8.4.  Relationship to RFC 8767
 
    Serving Stale Data to Improve DNS Resiliency [RFC8767] describes a
    mechanism for recursive resolvers to serve stale cached data when
@@ -866,6 +874,10 @@ Table of Contents
               ietf-happy-happyeyeballs-v3-03, 2 March 2026,
               <https://datatracker.ietf.org/doc/html/draft-ietf-happy-
               happyeyeballs-v3-03>.
+
+   [RFC1035]  Mockapetris, P., "Domain names - implementation and
+              specification", STD 13, RFC 1035, DOI 10.17487/RFC1035,
+              November 1987, <https://www.rfc-editor.org/rfc/rfc1035>.
 
    [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
               Requirement Levels", BCP 14, RFC 2119,
