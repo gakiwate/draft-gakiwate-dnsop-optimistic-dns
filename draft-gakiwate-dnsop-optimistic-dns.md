@@ -653,6 +653,24 @@ Fresh answers from the network are delivered to the application through
 an asynchronous callback mechanism.  The application’s networking code MUST
 use these fresh answers to update the list of answers it received earlier.
 
+## Cache Management
+
+Storing expired records forever could consume an unbounded amount of memory,
+and return egregiously old records.
+
+For this reason, stub resolvers SHOULD NOT store records
+for more than one week after the TTL has expired.
+
+The time limit of one week is selected so that a user could
+go home from work on a Thursday night, take a four-day long
+weekend break, return to work the next Tuesday, and still
+benefit from using expired cached records for faster performance.
+Storing expired records for less time
+risks eliminating the benefit of Optimistic DNS in many cases;
+storing expired records for more time
+is currently considered to offer little additional benefit, and using
+excessively old data could lead to unexpected undesirable consequences.
+
 ## CNAME Handling {#cname-handling}
 
 CNAME records introduce a complication for Optimistic DNS.
