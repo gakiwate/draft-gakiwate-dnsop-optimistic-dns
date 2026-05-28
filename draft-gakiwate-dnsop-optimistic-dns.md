@@ -805,6 +805,56 @@ This has the effect of instructing stub resolvers to poll
 the recursive resolver, no more than once every 30 seconds,
 to ascertain if newer data has become available.
 
+# Operational Considerations
+
+A consequence of Optimistic DNS is that clients may continue
+to use an old IP address longer than expected.
+There are other reasons that stale addresses may persist and
+cause clients to use an old IP address longer than expected,
+but Optimistic DNS adds a new way that this can happen.
+
+Suppose a server operator has a DNS address record for
+website.example.com with a TTL of 24 hours, and the operator
+updates that address record to point to a new IP address.
+Depending on when that address record was cached at various recursive
+resolvers around the world, the operator may expect to see a roughly
+linear decrease in new incoming connection requests to the old
+IP address in the 24 hours after the address record was updated, ending
+with no new connection requests being received after 24 hours has passed.
+In reality there are various reasons that some clients may still attempt
+to use a stale address, but in practice there should be very few
+incoming connection requests to the old IP address after 24 hours.
+The server operator has to keep the website available at the old address
+for at least 24 hours, to accommodate clients using the old address.
+
+Optimistic DNS changes this assumption.
+Using the same 24-hour TTL, the decrease in incoming connection rate
+will not be quite as fast, and incoming connection requests
+may continue to be received for a week after the TTL has elapsed.
+
+However, Optimistic DNS does not mean that the server operator
+is forced to maintain the availability of their web site
+at the old IP address for a week after the address change.
+Because clients using the expired IP address are using Optimistic DNS,
+they have the benefit of asynchronous DNS and Happy Eyeballs,
+which means that they will promptly switch to the new IP address,
+and the brief failed attempt to use the old IP address is inconsequential.
+
+Moreover, Optimistic DNS gives server operators
+the freedom to use shorter DNS TTLs safely.
+One of the reasons why server operators may choose
+to use long TTLs is to avoid their users experiencing
+the periodic delay spikes caused by short TTLs.
+When Optimistic DNS eliminates the concerns about periodic delay spikes,
+it becomes reasonable to use shorter DNS TTLs.
+With widespread use of Optimistic DNS, server operators
+are free to use much shorter DNS TTLs, like five minutes.
+Optimistic DNS clients will suffer no periodic delay spikes
+because of the short DNS TTLs, and when the time comes
+that it is necessary to update the server address for
+website.example.com, the transition to the new server
+can be completed in minutes, rather than hours.
+
 # Security Considerations {#security-considerations}
 
 Optimistic DNS introduces a tradeoff between speed and freshness.
