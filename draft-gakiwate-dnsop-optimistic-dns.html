@@ -2103,6 +2103,23 @@ the application the benefit of timely data, which could occasionally be
 wrong, without depriving the application of also receiving the exact
 data it would have received with a traditional non-optimistic DNS query,
 at the time it would have received it.<a href="#section-8.4-6" class="pilcrow">¶</a></p>
+<p id="section-8.4-7">Optimistic DNS is not applicable to recursive resolvers because
+Optimistic DNS relies on the ability to deliver its best available
+information immediately, and then asynchronously update that
+information promptly if newer information becomes available.
+Stub resolvers that provide Asynchronous DNS resolution APIs to client
+applications are able to deliver these essential asynchronous updates.
+Recursive resolvers do not currently have any good way
+to issue asynchronous updates to correct an earlier
+answer that is subsequently discovered to be wrong.
+In principle, stub resolvers could use DNS Push Notifications <span>[<a href="#RFC8765" class="cite xref">RFC8765</a>]</span>
+to receive asynchronous updates from a recursive resolver, but
+in practice this mught place too much load on recursive resolvers.
+The current recommended solution for recursive resolvers returning
+stale data is that the TTL is reported as being 30 seconds <span>[<a href="#RFC8767" class="cite xref">RFC8767</a>]</span>.
+This has the effect of instructing stub resolvers to poll
+the recursive resolver, no more than once every 30 seconds,
+to ascertain if newer data has become available.<a href="#section-8.4-7" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
@@ -2236,6 +2253,10 @@ DNS for infrequently-accessed names.<a href="#section-9-3.6.1" class="pilcrow">�
 <dt id="RFC8484">[RFC8484]</dt>
         <dd>
 <span class="refAuthor">Hoffman, P.</span> and <span class="refAuthor">P. McManus</span>, <span class="refTitle">"DNS Queries over HTTPS (DoH)"</span>, <span class="seriesInfo">RFC 8484</span>, <span class="seriesInfo">DOI 10.17487/RFC8484</span>, <time datetime="2018-10" class="refDate">October 2018</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8484">https://www.rfc-editor.org/rfc/rfc8484</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC8765">[RFC8765]</dt>
+        <dd>
+<span class="refAuthor">Pusateri, T.</span> and <span class="refAuthor">S. Cheshire</span>, <span class="refTitle">"DNS Push Notifications"</span>, <span class="seriesInfo">RFC 8765</span>, <span class="seriesInfo">DOI 10.17487/RFC8765</span>, <time datetime="2020-06" class="refDate">June 2020</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8765">https://www.rfc-editor.org/rfc/rfc8765</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="RFC8767">[RFC8767]</dt>
         <dd>
