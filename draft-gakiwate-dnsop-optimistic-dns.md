@@ -10,7 +10,7 @@ consensus: true
 v: 3
 area: "Operations and Management"
 workgroup: "Domain Name System Operations"
-keyword: DNS, caching, latency, stub resolver
+keyword: DNS, caching, stub resolver, latency, delay
 venue:
   group: "Domain Name System Operations"
   type: "Working Group"
@@ -59,12 +59,14 @@ normative:
 
 informative:
 
-  async:
+  IETF72:
     title: "Stuart Cheshire on IPv6 Adoption"
     author:
      - ins: S. Cheshire
     date: 2008
     target: https://www.stuartcheshire.org/IETF72/
+    annotation: "This presentation introduced the concept of asynchronous
+    concurrent connection racing, later known as Happy Eyeballs."
 
   getdns:
     title: "Welcome to getdns!"
@@ -74,7 +76,7 @@ informative:
 
 --- abstract
 
-DNS lookups introduce user-visible latency, particularly when cached records
+DNS lookups introduce user-visible delay, particularly when cached records
 have expired and must be refreshed from the network.  This document describes
 Optimistic DNS, a client-side stub resolver mechanism that immediately returns
 expired cached DNS records to applications while simultaneously refreshing them
@@ -106,7 +108,7 @@ When a user opens their laptop and navigates to a website, the first step
 is typically a DNS lookup to translate the hostname into an IP address.  If
 the laptop's DNS cache contains a record for that hostname, the answer is
 returned almost instantly and the user perceives no delay.  But if the
-record's TTL has expired, even by a single second, the laptop must perform
+record's TTL has expired, by even a single second, the laptop must perform
 a fresh DNS lookup.  On a wired connection this might take 50 to 200
 milliseconds.  On a cellular connection, particularly at the edge of
 coverage, it can take several seconds.
@@ -141,7 +143,7 @@ While connecting, the networking library code MUST continue to pay attention
 to asynchronous notifications of new addresses as they are learned,
 and the networking library code MUST react gracefully if,
 occasionally, some of the candidate addresses do, in fact,
-prove to be actually stale and incorrect ({{enabling-technologies}}).
+prove to be stale and incorrect ({{enabling-technologies}}).
 
 The following diagram illustrates the timing difference between
 conventional DNS resolution and Optimistic DNS:
@@ -159,7 +161,7 @@ conventional DNS resolution and Optimistic DNS:
       |                    |<-- Response -------|
       |<-- Fresh Answer ---|                    |
       |                    |                    |
-      [====== 150ms+ latency ======]
+      [====== 150ms+ delay ======]
 ~~~
 
 **Optimistic DNS (after cache expiry):**
@@ -169,7 +171,7 @@ conventional DNS resolution and Optimistic DNS:
       |                    |                    |
       |--- Query --------->|                    |
       |<- Expired Answer --|--- Query --------->|
-      |   (~0ms latency)   |                    |
+      |   (~0ms delay)     |                    |
       |                    |                    |
       |  (app can start    |                    |
       |  connecting now)   |                    |
@@ -182,9 +184,9 @@ Optimistic DNS is complementary to Serving Stale Data to Improve DNS
 Resiliency {{?RFC8767}}, which allows recursive resolvers to serve stale data
 during upstream failures. The two mechanisms differ in their focus.
 As reflected in the document title, the specification for serving stale
-data from recursive resolvers was focussed on improving resiliency
+data from recursive resolvers was focused on improving resiliency
 in situations where the authoritative servers are down or unreachable.
-Optimistic DNS is focussed on enhancements to the stub resolver
+Optimistic DNS is focused on enhancements to the stub resolver
 on the end-user's device, to reduce delays even in cases
 where the authoritative servers are functioning perfectly well.
 Both can be deployed simultaneously for layered staleness tolerance.
@@ -246,7 +248,7 @@ local API matter.
   For efficiency, the application is notified via an asynchronous
   notification only when the set of answers changes.
   This is similar to the efficiency trade-offs present in other APIs,
-  where asynchronous notification is more efficient that polling.
+  where asynchronous notification is more efficient than polling.
   For example, an application can repeatedly poll to find if
   the content of a directory has changed, but using asynchronous
   filesystem notifications gives the same effect more efficiently.
@@ -255,7 +257,7 @@ local API matter.
 
 *Happy Eyeballs.*
 : A client-side connection establishment
-algorithm {{async}} {{!RFC6555}} {{!RFC8305}} {{HEv3}}
+algorithm {{IETF72}} {{?RFC6555}} {{!RFC8305}} {{HEv3}}
 that races connection
 attempts across multiple addresses and address families, using whichever
 connection succeeds first.  Failed connection attempts to individual addresses
@@ -274,7 +276,7 @@ This problem is compounded by several factors:
 *Short TTLs.*
 : Many content delivery networks and cloud services use TTLs of 60 seconds
   or less to facilitate rapid failover and load balancing.  Short TTLs mean
-  more frequent cache expiration events, which means users hit the latency
+  more frequent cache expiration events, which means users hit the delay
   spike more often.
 
 *High-latency networks.*
@@ -293,10 +295,12 @@ This problem is compounded by several factors:
   the cumulative delay can be substantial.
 
 *First query after sleep.*
-: When a laptop or phone wakes from sleep, many cached records will have
-  expired during the sleep period.  The first network operation after
-  waking pays the maximum penalty, precisely when the user is most
-  impatient.
+: While a computer or smartphone is sleeping,
+  normal wall-clock time continues to elapse,
+  and by the time the device awakes,
+  many cached records may have expired.
+  Optimistic DNS avoids the delay penalty when a device is
+  used after sleep or any other extended period of inactivity.
 
 The fundamental observation behind Optimistic DNS is that in most cases, a
 DNS record that expired a little while ago usually still contains the correct data.
@@ -313,7 +317,7 @@ they present a different view to their clients.
 A client querying Recursive A at time T=80 will cause a DNS
 request to the authoritative DNS server to retrieve fresh data.
 A client querying Recursive B twenty seconds later at time T=100
-will received cached data because Recursive B considers it still valid.
+will receive cached data because Recursive B considers it still valid.
 
 ~~~
 Time:
@@ -353,7 +357,7 @@ Recursive B queries at T=45:
 Client 1 issued a query at time T=80 and suffered a delay waiting
 for “fresh” data, even though, at that time,
 the data on the authoritative nameserver had not yet changed.
-In this case, using the expired cached data would have fine,
+In this case, using the expired cached data would have been fine,
 because it was still correct.
 
 Client 2 issued a query twenty seconds later at time T=100,
@@ -367,14 +371,14 @@ that are older relative to their published TTL are more
 likely to be considered expired, but for a specific
 individual query the results are much less deterministic.
 
-Thus, clients should not to attach too much importance to the
+Thus, clients should not attach too much importance to the
 absolute value of a record’s age relative to its declared TTL.
 The age of a record is a valuable hint as to whether it should
 be assumed to be still valid, but it is not a guarantee.
 Data being younger than its TTL is not a guarantee that it is still correct,
 and data being older than its TTL is not a guarantee that it is wrong.
 
-Happy Eyeballs {{async}} {{!RFC6555}} {{!RFC8305}} {{HEv3}}
+Happy Eyeballs {{IETF72}} {{?RFC6555}} {{!RFC8305}} {{HEv3}}
 is the asynchronous connection racing technology
 that makes Optimistic DNS possible.
 Optimistic DNS delivers DNS answers quickly, with the caveat that,
@@ -395,7 +399,7 @@ In the rare cases where the first connection attempt does not
 succeed within the expected network round-trip time, a connection
 is initiated to the next address in order of preference.
 The first connection attempt is not abandoned when the second one starts
--- its ususal schedule of retransmissions is still followed --
+-- its usual schedule of retransmissions is still followed --
 and the two connection attempts proceed in parallel.
 Running connection attempts in parallel instead of sequentially
 prevents long stalls waiting for a connection to time-out and fail
@@ -422,7 +426,7 @@ Applications using Optimistic DNS and Happy Eyeballs SHOULD follow
 appropriate security practices ({{security-considerations}}) to ensure
 that they are connecting to the intended host or service on the network.
 Applications that do not have application-layer security
-and simply expect the Internet to connect them to right host every time
+and simply expect the Internet to connect them to the right host every time
 SHOULD NOT use Optimistic DNS.
 
 The cost of waiting for a fresh answer that confirms what the cache already had
@@ -430,15 +434,15 @@ is a guaranteed delay of the full network round-trip time on every cache expiry.
 For most applications, the expected value of the optimistic approach is clearly
 positive.
 
-# Zeno’s Paradox
+# Zeno’s Paradox {#zenos-paradox}
 
-One seemingly attractive approach to avoiding the latency spike
+One seemingly attractive approach to avoiding the delay spike
 might be to take inspiration from DHCP {{?RFC2131}} {{?RFC2132}},
 and renew a record before it expires, instead of waiting until
 after it is already expired before requesting an update.
 DHCP typically renews an address lease when half of the lease
-lifetime has elapsed, rather than waiting for the lease to
-actually expire and then briefly losing the right to use that
+lifetime has elapsed, rather than waiting for the lease
+to expire and then briefly losing the right to use that
 IP address while a new request is processed.
 
 Unfortunately, because of the way DNS works, the DHCP-inspired approach
@@ -462,7 +466,7 @@ as the remaining TTL continues to count down towards zero,
 without the stub resolver learning anything new.
 
 Eventually, the record finally expires from the recursive resolver’s
-cache, and the stub resolver then suffers a latency spike waiting
+cache, and the stub resolver then suffers a delay spike waiting
 for the recursive resolver to fetch the authoritative record.
 
 Currently, recursive resolvers will continue to return a cached record
@@ -470,10 +474,10 @@ down to the last second of its lifetime. Even for a record that is the
 subject of a large volume of queries, recursive resolvers will not take
 the initiative of refreshing that record prior to its inevitable and
 entirely predictable expiration. Instead, recursive resolvers will let
-the record expire, and then suffer a latency spike on the very next query.
+the record expire, and then suffer a delay spike on the very next query.
 
 With the current behavior of recursive resolvers, strictly
-respecting a record’s TTL and avoiding predictable latency
+respecting a record’s TTL and avoiding predictable delay
 spikes are incompatible goals. It is impossible to do both.
 
 # Enabling Technologies {#enabling-technologies}
@@ -486,7 +490,7 @@ needs a way to receive it -- which means the DNS API has to
 support delivering asynchronous results as they arrive
 
 - If the expired address is found to be wrong,
-the application needs a way to continue gracefully.
+the application needs to continue gracefully.
 
 ## Asynchronous DNS Resolution
 
@@ -513,7 +517,7 @@ established and the fresh answer serves as confirmation.
 
 ## Happy Eyeballs
 
-Happy Eyeballs {{async}} {{!RFC6555}} {{!RFC8305}} {{HEv3}}
+Happy Eyeballs {{IETF72}} {{?RFC6555}} {{!RFC8305}} {{HEv3}}
 defines algorithms for racing
 connection attempts across multiple addresses and address families.  When a
 client has several candidate addresses for a destination, Happy Eyeballs
@@ -704,7 +708,7 @@ records during optimistic resolution, it takes the following steps:
    (If the target of the CNAME referral is another CNAME record,
    then this process repeats until a non-CNAME record is found.)
 
-3. If, at any time while a asynchronous DNS query is active,
+3. If, at any time while an asynchronous DNS query is active,
    the record data for any of the names in the CNAME chain changes,
    then the query is re-evaluated starting from the original query name,
    as if it were a fresh query.
@@ -735,8 +739,10 @@ as signalled by the TTL values.
 
 Optimistic DNS does not extend the validity periods of cryptographic signatures.
 
-Optimistic DNS will deliver DNS records like RRSIG after their cache
-lifetime has expired, but recipients MUST respect
+Optimistic DNS does not interpret the content of any records,
+including cryptographic records like RRSIG,
+and will deliver DNS records after their cache lifetime has expired.
+Clients are responsible for checking and respecting
 the validity periods of cryptographic signatures.
 
 ## Encrypted DNS Transports
@@ -763,15 +769,14 @@ RFC 8767
 Optimistic DNS
 : Operates at the stub resolver on the end-user's device.  Serves expired
   cached data proactively, while simultaneously initiating a network query.
-  The primary
-  goal is latency reduction -- eliminating the TTL expiry spike.
+  The primary goal is delay reduction -- eliminating the TTL expiry spike.
 
 The two mechanisms are complementary and can be deployed simultaneously.
 When both are active, the resolution chain has two layers of staleness
 tolerance:
 
 1. The stub resolver returns expired records optimistically, eliminating
-   client-perceived latency.
+   client-perceived delay.
 
 2. If the recursive resolver's cache has also expired and the authoritative
    server is unreachable, the recursive resolver can serve its own stale
@@ -925,13 +930,13 @@ This DNS query to the recursive resolver happens after the
 recursive resolver’s copy of the record has expired, causing the
 recursive resolver to fetch a new fresh copy of the authoritative record,
 but because available answers are delivered to DNS clients immediately,
-DNS clients do not experience a latency spike while
+DNS clients do not experience a delay spike while
 waiting for the recursive resolver to refresh the record.
 Thus, traditional DNS queries using the mDNSResponder stub resolver
 may receive answers that are up to 25% beyond their original lifetime.
 
 The development of
-Happy Eyeballs in 2008 {{async}} {{!RFC6555}} {{!RFC8305}} {{HEv3}}
+Happy Eyeballs in 2008 {{IETF72}} {{?RFC6555}} {{!RFC8305}} {{HEv3}}
 made it feasible to increase
 effective record lifetimes beyond a modest extension of just 25%,
 and this new capability is what made Optimistic DNS possible.
@@ -966,7 +971,7 @@ kDNSServiceFlagsExpiredAnswer
   Providing an equivalent indication in other implementations is not recommended,
   because, as mentioned earlier, the notion of record expiry is subjective,
   and this flag is easily misunderstood and misused by developers who
-  think it carries more significance that it really does.
+  think it carries more significance than it really does.
 
 kDNSServiceFlagsAnsweredFromCache
 : Set by the resolver to indicate that the record was served from the
@@ -975,7 +980,7 @@ kDNSServiceFlagsAnsweredFromCache
   cached answers (immediate) from network answers (delayed).
   Providing an equivalent indication in other implementations is not recommended,
   because this flag is easily misunderstood and misused by developers who
-  think it carries more significance that it really does.
+  think it carries more significance than it really does.
   If two clients happen to query for the same domain name at almost
   exactly the same time then one will get told that the answer
   came from the cache and the other will be told that it did not.
@@ -1065,4 +1070,4 @@ it the next time the TTL expires.
 # Acknowledgments
 {:numbered="false"}
 
-TODO acknowledge.
+TODO: Acknowledgments.
