@@ -911,9 +911,10 @@ The server operator has to keep the website available at the old address
 for at least 24 hours, to accommodate clients using the old address.
 
 Optimistic DNS changes this assumption.
-Using the same 24-hour TTL, the decrease in incoming connection rate
-will not be quite as fast, and incoming connection requests
-may continue to be received for a week after the TTL has elapsed.
+Using the same 24-hour TTL, the decline in the incoming connection
+rate will not be quite as rapid, and incoming connection requests
+to the old IP address may continue to be received for a week
+after the TTL has elapsed ({{cache-management}}).
 
 However, Optimistic DNS does not mean that the server operator
 is forced to maintain the availability of their web site
@@ -971,11 +972,11 @@ Poisoning Amplification
   answer, giving the application an opportunity to detect the discrepancy.
 
 Expired Records Retention Period
-: The retention period (recommended maximum of one week) bounds the
-  maximum time a stale record can be served.  Implementations SHOULD allow
-  this period to be configured.  Shorter periods reduce the window of
-  exposure to stale data but also reduce the effectiveness of Optimistic
-  DNS for infrequently-accessed names.
+: The recommended maximum retention period of one week ({{cache-management}})
+  bounds the maximum time a stale record can be served.
+  Implementations SHOULD allow this period to be configured.
+  Shorter periods reduce the window of exposure to stale data but also
+  reduce the effectiveness of Optimistic DNS for infrequently-accessed names.
 
 # IANA Considerations
 
