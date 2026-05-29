@@ -196,7 +196,6 @@ not define any new DNS wire-protocol messages, opcodes, or EDNS options.
 The signaling between the stub resolver and the application is purely a
 local API matter.
 
-
 # Conventions and Definitions
 
 {::boilerplate bcp14-tagged}
@@ -632,16 +631,32 @@ elapsed since the record was received against the record's original TTL.
 If unexpired records are found in the cache, they are returned to the
 application as a normal cache hit and no network query is needed.
 
-If a matching record has expired:
+If a matching cache entry (positive or negative) has expired, then
+this Optimistic Answer is delivered to the Optimistic DNS client.
 
-- If the record is a positive record (contains actual resource record
-  data), it is returned to the application.
+Optimistic Answers are subject to
+concurrent verification ({{parallel-network-query}})
+and may subsequently result in an asynchronous update to
+the client if newer information is discovered from the network.
 
-- If the record is a negative cache entry (representing a previous
-  NXDOMAIN or NODATA response), it is NOT returned.  Negative cache
-  entries are excluded from Optimistic DNS. Delivering false
-  negatives (telling the application a name does not exist when it now
-  does) would not benefit the application.
+Optimistic Positive Answers indicate the stub resolver’s
+optimistic best guess of the answer.
+
+Optimistic Negative Answers
+(resulting from a previous NXDOMAIN or NODATA response)
+indicate the stub resolver’s best guess that the
+requested record probably still doesn’t exist.
+Optimistic Negative Answers SHOULD NOT be used to generate
+error messages to the user.
+Such error messages should only be generated after a network
+query has confirmed that the named record still does not exist.
+Optimistic Negative Answers can be useful in certain
+search scenarios (like applying DNS domain name search lists)
+where the nonexistence of a certain record is a prerequisite
+for using some other record, and the tentatively presumed
+nonexistence of a certain record can serve as a useful hint that
+the client should begin work speculatively looking up other names
+that may be required by the search algorithm (see {{search}}).
 
 ## Parallel Network Query
 
@@ -744,6 +759,69 @@ including cryptographic records like RRSIG,
 and will deliver DNS records after their cache lifetime has expired.
 Clients are responsible for checking and respecting
 the validity periods of cryptographic signatures.
+
+## DNS Domain Name Search Lists {#search}
+
+Most DNS stub resolvers support domain name search lists {{?RFC1034}}.
+Domain name search lists can be configured manually, or learned
+automatically from the network using DHCP {{?RFC3397}} {{?RFC3646}}
+or IPv6 Router Advertisements {{?RFC8106}}.
+
+Applying domain name search lists can be thought
+of as an iterative search algorithm that operates
+at a layer above the stub resolver’s query mechanism.
+Each query made in the course of executing the domain
+name search algorithm is a normal query for a fully
+qualified domain name, and is subject to all the
+usual procedures like following CNAME referrals.
+Optimistic DNS can be used to speed up the
+process of handling domain name search lists.
+
+When a client issues a query for a name that is not
+considered fully qualified, the stub resolver applies each
+of the names from the domain name search list, in order,
+and uses the first name that returns a positive answer.
+The user expectation is that the order of the
+domain name search list will be respected strictly.
+This means that results from a later name in the search list
+cannot be used until negative answers have been confirmed
+for all the earlier entries in the search list.
+The network queries do not need to be performed sequentially,
+one at a time (intelligently performing queries in parallel
+can result in a faster result for the user),
+but the final determination of which name to use
+cannot be made until all the necessary
+Optimistic Negative Answers have been confirmed.
+
+For this reason, Optimistic DNS can use
+Optimistic Negative Answers as a performance
+hint to tell it that it should start a parallel query
+for the next name in the search list, but the decision
+to use a particular answer needs to wait until all
+earlier Optimistic Negative Answers have been confirmed.
+
+If a stub resolver were to issue parallel queries
+for all names in the domain name search list this
+could result in a lot of unnecessary network traffic,
+particularly for users with many names in their search lists.
+If a stub resolver were to issue its queries sequentially,
+this could result in poor performance for the user.
+Optimistic DNS provides a good balance between these two extremes.
+Optimistic DNS allows the stub resolver to issue parallel
+queries for all the names it reasonably expects it will
+need to check, without generating wasteful traffic for
+names near the end of the domain name search list that
+come after a name that is believed to have a positive answer.
+Optimistic DNS rapidly performs all the queries it needs
+to do to confirm record nonexistence, and then returns
+the first positive answer, whether fresh or expired.
+If an expired positive answer turns out to be wrong when
+confirmed with a query on the network, then the newly
+updated answer is delivered asynchronously to the client.
+If the newly updated answer is negative, then the
+domain name search algorithm resumes, continuing with
+the next untried name in the list, and continues until
+some positive answer, if any, is returned.
 
 ## Encrypted DNS Transports
 
@@ -1019,8 +1097,6 @@ Immortal
   for this DNS name, then that is a sign that whatever applications
   are resolving this DNS name do not yet support Optimistic DNS,
   so saving these records for a long time would be a waste of memory.
-  To be marked immortal, the record has to be a
-  positive record (not a negative cache entry).
   Successful subsequent queries for these records
   will refresh their lifetime.
   If not refreshed, then when the TTL expires
