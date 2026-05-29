@@ -5,8 +5,8 @@
 Domain Name System Operations                                 G. Akiwate
 Internet-Draft                                                  P. Flack
 Intended status: Standards Track                             S. Cheshire
-Expires: 29 November 2026                                     Apple Inc.
-                                                             28 May 2026
+Expires: 30 November 2026                                     Apple Inc.
+                                                             29 May 2026
 
 
                              Optimistic DNS
@@ -60,7 +60,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 29 November 2026.
+   This Internet-Draft will expire on 30 November 2026.
 
 Copyright Notice
 
@@ -96,8 +96,9 @@ Table of Contents
    8.  Interaction with Other DNS Features
      8.1.  Uncacheable Records
      8.2.  DNSSEC
-     8.3.  Encrypted DNS Transports
-     8.4.  Relationship to RFC 8767
+     8.3.  DNS Domain Name Search Lists
+     8.4.  Encrypted DNS Transports
+     8.5.  Relationship to RFC 8767
    9.  Operational Considerations
    10. Security Considerations
    11. IANA Considerations
@@ -666,16 +667,29 @@ Table of Contents
    If unexpired records are found in the cache, they are returned to the
    application as a normal cache hit and no network query is needed.
 
-   If a matching record has expired:
+   If a matching cache entry (positive or negative) has expired, then
+   this Optimistic Answer is delivered to the Optimistic DNS client.
 
-   *  If the record is a positive record (contains actual resource
-      record data), it is returned to the application.
+   Optimistic Answers are subject to concurrent verification
+   (Section 7.3) and may subsequently result in an asynchronous update
+   to the client if newer information is discovered from the network.
 
-   *  If the record is a negative cache entry (representing a previous
-      NXDOMAIN or NODATA response), it is NOT returned.  Negative cache
-      entries are excluded from Optimistic DNS.  Delivering false
-      negatives (telling the application a name does not exist when it
-      now does) would not benefit the application.
+   Optimistic Positive Answers indicate the stub resolver’s optimistic
+   best guess of the answer.
+
+   Optimistic Negative Answers (resulting from a previous NXDOMAIN or
+   NODATA response) indicate the stub resolver’s best guess that the
+   requested record probably still doesn’t exist.  Optimistic Negative
+   Answers SHOULD NOT be used to generate error messages to the user.
+   Such error messages should only be generated after a network query
+   has confirmed that the named record still does not exist.  Optimistic
+   Negative Answers can be useful in certain search scenarios (like
+   applying DNS domain name search lists) where the nonexistence of a
+   certain record is a prerequisite for using some other record, and the
+   tentatively presumed nonexistence of a certain record can serve as a
+   useful hint that the client should begin work speculatively looking
+   up other names that may be required by the search algorithm (see
+   Section 8.3).
 
 7.3.  Parallel Network Query
 
@@ -780,7 +794,61 @@ Table of Contents
    responsible for checking and respecting the validity periods of
    cryptographic signatures.
 
-8.3.  Encrypted DNS Transports
+8.3.  DNS Domain Name Search Lists
+
+   Most DNS stub resolvers support domain name search lists [RFC1034].
+   Domain name search lists can be configured manually, or learned
+   automatically from the network using DHCP [RFC3397] [RFC3646] or IPv6
+   Router Advertisements [RFC8106].
+
+   Applying domain name search lists can be thought of as an iterative
+   search algorithm that operates at a layer above the stub resolver’s
+   query mechanism.  Each query made in the course of executing the
+   domain name search algorithm is a normal query for a fully qualified
+   domain name, and is subject to all the usual procedures like
+   following CNAME referrals.  Optimistic DNS can be used to speed up
+   the process of handling domain name search lists.
+
+   When a client issues a query for a name that is not considered fully
+   qualified, the stub resolver applies each of the names from the
+   domain name search list, in order, and uses the first name that
+   returns a positive answer.  The user expectation is that the order of
+   the domain name search list will be respected strictly.  This means
+   that results from a later name in the search list cannot be used
+   until negative answers have been confirmed for all the earlier
+   entries in the search list.  The network queries do not need to be
+   performed sequentially, one at a time (intelligently performing
+   queries in parallel can result in a faster result for the user), but
+   the final determination of which name to use cannot be made until all
+   the necessary Optimistic Negative Answers have been confirmed.
+
+   For this reason, Optimistic DNS can use Optimistic Negative Answers
+   as a performance hint to tell it that it should start a parallel
+   query for the next name in the search list, but the decision to use a
+   particular answer needs to wait until all earlier Optimistic Negative
+   Answers have been confirmed.
+
+   If a stub resolver were to issue parallel queries for all names in
+   the domain name search list this could result in a lot of unnecessary
+   network traffic, particularly for users with many names in their
+   search lists.  If a stub resolver were to issue its queries
+   sequentially, this could result in poor performance for the user.
+   Optimistic DNS provides a good balance between these two extremes.
+   Optimistic DNS allows the stub resolver to issue parallel queries for
+   all the names it reasonably expects it will need to check, without
+   generating wasteful traffic for names near the end of the domain name
+   search list that come after a name that is believed to have a
+   positive answer.  Optimistic DNS rapidly performs all the queries it
+   needs to do to confirm record nonexistence, and then returns the
+   first positive answer, whether fresh or expired.  If an expired
+   positive answer turns out to be wrong when confirmed with a query on
+   the network, then the newly updated answer is delivered
+   asynchronously to the client.  If the newly updated answer is
+   negative, then the domain name search algorithm resumes, continuing
+   with the next untried name in the list, and continues until some
+   positive answer, if any, is returned.
+
+8.4.  Encrypted DNS Transports
 
    Optimistic DNS is transport-agnostic.  It operates entirely within
    the stub resolver's cache layer, which sits above the transport
@@ -789,7 +857,7 @@ Table of Contents
    [RFC7858], DNS over HTTPS (DoH) [RFC8484], or DNS over QUIC (DoQ)
    [RFC9250], the Optimistic DNS mechanism functions identically.
 
-8.4.  Relationship to RFC 8767
+8.5.  Relationship to RFC 8767
 
    Serving Stale Data to Improve DNS Resiliency [RFC8767] describes a
    mechanism for recursive resolvers to serve stale cached data when
@@ -975,6 +1043,10 @@ Table of Contents
               concurrent connection racing, later known as Happy
               Eyeballs.
 
+   [RFC1034]  Mockapetris, P., "Domain names - concepts and facilities",
+              STD 13, RFC 1034, DOI 10.17487/RFC1034, November 1987,
+              <https://www.rfc-editor.org/rfc/rfc1034>.
+
    [RFC2131]  Droms, R., "Dynamic Host Configuration Protocol",
               RFC 2131, DOI 10.17487/RFC2131, March 1997,
               <https://www.rfc-editor.org/rfc/rfc2131>.
@@ -982,6 +1054,16 @@ Table of Contents
    [RFC2132]  Alexander, S. and R. Droms, "DHCP Options and BOOTP Vendor
               Extensions", RFC 2132, DOI 10.17487/RFC2132, March 1997,
               <https://www.rfc-editor.org/rfc/rfc2132>.
+
+   [RFC3397]  Aboba, B. and S. Cheshire, "Dynamic Host Configuration
+              Protocol (DHCP) Domain Search Option", RFC 3397,
+              DOI 10.17487/RFC3397, November 2002,
+              <https://www.rfc-editor.org/rfc/rfc3397>.
+
+   [RFC3646]  Droms, R., Ed., "DNS Configuration options for Dynamic
+              Host Configuration Protocol for IPv6 (DHCPv6)", RFC 3646,
+              DOI 10.17487/RFC3646, December 2003,
+              <https://www.rfc-editor.org/rfc/rfc3646>.
 
    [RFC6555]  Wing, D. and A. Yourtchenko, "Happy Eyeballs: Success with
               Dual-Stack Hosts", RFC 6555, DOI 10.17487/RFC6555, April
@@ -995,6 +1077,11 @@ Table of Contents
               and P. Hoffman, "Specification for DNS over Transport
               Layer Security (TLS)", RFC 7858, DOI 10.17487/RFC7858, May
               2016, <https://www.rfc-editor.org/rfc/rfc7858>.
+
+   [RFC8106]  Jeong, J., Park, S., Beloeil, L., and S. Madanapalli,
+              "IPv6 Router Advertisement Options for DNS Configuration",
+              RFC 8106, DOI 10.17487/RFC8106, March 2017,
+              <https://www.rfc-editor.org/rfc/rfc8106>.
 
    [RFC8484]  Hoffman, P. and P. McManus, "DNS Queries over HTTPS
               (DoH)", RFC 8484, DOI 10.17487/RFC8484, October 2018,
@@ -1125,11 +1212,9 @@ A.1.2.  Record Lifecycle
       query for this DNS name, then that is a sign that whatever
       applications are resolving this DNS name do not yet support
       Optimistic DNS, so saving these records for a long time would be a
-      waste of memory.  To be marked immortal, the record has to be a
-      positive record (not a negative cache entry).  Successful
-      subsequent queries for these records will refresh their lifetime.
-      If not refreshed, then when the TTL expires an immortal record
-      becomes a ghost record.
+      waste of memory.  Successful subsequent queries for these records
+      will refresh their lifetime.  If not refreshed, then when the TTL
+      expires an immortal record becomes a ghost record.
 
    Ghost  An immortal record whose TTL has expired.  Ghost records
       linger in the cache, available to serve future Optimistic DNS
