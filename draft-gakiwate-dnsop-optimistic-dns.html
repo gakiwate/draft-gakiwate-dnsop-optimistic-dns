@@ -2229,9 +2229,10 @@ incoming connection requests to the old IP address after 24 hours.
 The server operator has to keep the website available at the old address
 for at least 24 hours, to accommodate clients using the old address.<a href="#section-9-2" class="pilcrow">¶</a></p>
 <p id="section-9-3">Optimistic DNS changes this assumption.
-Using the same 24-hour TTL, the decrease in incoming connection rate
-will not be quite as fast, and incoming connection requests
-may continue to be received for a week after the TTL has elapsed.<a href="#section-9-3" class="pilcrow">¶</a></p>
+Using the same 24-hour TTL, the decline in the incoming connection
+rate will not be quite as rapid, and incoming connection requests
+to the old IP address may continue to be received for a week
+after the TTL has elapsed (<a href="#cache-management" class="auto internal xref">Section 7.4</a>).<a href="#section-9-3" class="pilcrow">¶</a></p>
 <p id="section-9-4">However, Optimistic DNS does not mean that the server operator
 is forced to maintain the availability of their web site
 at the old IP address for a week after the address change.
@@ -2295,11 +2296,11 @@ answer, giving the application an opportunity to detect the discrepancy.<a href=
         <dd class="break"></dd>
 <dt id="section-10-3.5">Expired Records Retention Period</dt>
         <dd style="margin-left: 1.5em" id="section-10-3.6">
-          <p id="section-10-3.6.1">The retention period (recommended maximum of one week) bounds the
-maximum time a stale record can be served.  Implementations <span class="bcp14">SHOULD</span> allow
-this period to be configured.  Shorter periods reduce the window of
-exposure to stale data but also reduce the effectiveness of Optimistic
-DNS for infrequently-accessed names.<a href="#section-10-3.6.1" class="pilcrow">¶</a></p>
+          <p id="section-10-3.6.1">The recommended maximum retention period of one week (<a href="#cache-management" class="auto internal xref">Section 7.4</a>)
+bounds the maximum time a stale record can be served.
+Implementations <span class="bcp14">SHOULD</span> allow this period to be configured.
+Shorter periods reduce the window of exposure to stale data but also
+reduce the effectiveness of Optimistic DNS for infrequently-accessed names.<a href="#section-10-3.6.1" class="pilcrow">¶</a></p>
 </dd>
       <dd class="break"></dd>
 </dl>

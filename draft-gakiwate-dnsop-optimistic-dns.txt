@@ -933,9 +933,10 @@ Table of Contents
    address.
 
    Optimistic DNS changes this assumption.  Using the same 24-hour TTL,
-   the decrease in incoming connection rate will not be quite as fast,
-   and incoming connection requests may continue to be received for a
-   week after the TTL has elapsed.
+   the decline in the incoming connection rate will not be quite as
+   rapid, and incoming connection requests to the old IP address may
+   continue to be received for a week after the TTL has elapsed
+   (Section 7.4).
 
    However, Optimistic DNS does not mean that the server operator is
    forced to maintain the availability of their web site at the old IP
@@ -988,10 +989,10 @@ Table of Contents
       network query will obtain and deliver the correct answer, giving
       the application an opportunity to detect the discrepancy.
 
-   Expired Records Retention Period  The retention period (recommended
-      maximum of one week) bounds the maximum time a stale record can be
-      served.  Implementations SHOULD allow this period to be
-      configured.  Shorter periods reduce the window of exposure to
+   Expired Records Retention Period  The recommended maximum retention
+      period of one week (Section 7.4) bounds the maximum time a stale
+      record can be served.  Implementations SHOULD allow this period to
+      be configured.  Shorter periods reduce the window of exposure to
       stale data but also reduce the effectiveness of Optimistic DNS for
       infrequently-accessed names.
 
