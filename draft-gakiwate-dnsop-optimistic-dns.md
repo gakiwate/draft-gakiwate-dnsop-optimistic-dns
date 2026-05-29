@@ -255,12 +255,10 @@ local API matter.
   and in other DNS stub resolver code like getdns {{getdns}}.
 
 *Happy Eyeballs.*
-: A client-side connection establishment
-algorithm {{IETF72}} {{?RFC6555}} {{!RFC8305}} {{HEv3}}
-that races connection
-attempts across multiple addresses and address families, using whichever
-connection succeeds first.  Failed connection attempts to individual addresses
-are absorbed within the algorithm's normal timeout budget.
+: A client-side connection establishment algorithm
+{{IETF72}} {{?RFC6555}} {{!RFC8305}} {{HEv3}} ({{happy-eyeballs}})
+that races connection attempts across multiple addresses and
+address families, using whichever connection succeeds first.
 
 # Problem Statement
 
@@ -377,61 +375,11 @@ be assumed to be still valid, but it is not a guarantee.
 Data being younger than its TTL is not a guarantee that it is still correct,
 and data being older than its TTL is not a guarantee that it is wrong.
 
-Happy Eyeballs {{IETF72}} {{?RFC6555}} {{!RFC8305}} {{HEv3}}
-is the asynchronous connection racing technology
-that makes Optimistic DNS possible.
-Optimistic DNS delivers DNS answers quickly, with the caveat that,
-on rare occasions, some of those answers might be stale, in which case
-updated answers will be delivered as soon as they are available.
-To make this optimistic approach viable, it MUST be coupled
-with networking code that is designed to embrace this uncertainty,
-and account for the fact that all data received from a network
-is necessarily at least a little stale by the time it arrives,
-and may subsequently be found to be incorrect.
-
-With Happy Eyeballs, the networking code takes the set of
-answers immediately available in the local cache and selects
-the address it predicts is most likely to succeed.
-If it predicts correctly, as it should at least 99% of the time,
-and the connection succeeds, then no additional traffic is generated.
-In the rare cases where the first connection attempt does not
-succeed within the expected network round-trip time, a connection
-is initiated to the next address in order of preference.
-The first connection attempt is not abandoned when the second one starts
--- its usual schedule of retransmissions is still followed --
-and the two connection attempts proceed in parallel.
-Running connection attempts in parallel instead of sequentially
-prevents long stalls waiting for a connection to time-out and fail
-before the next attempt is started.
-Staggering the start times by the expected response time means that
-in the majority of cases only a single connection attempt (the first one)
-is needed, which avoids generating excessive extra network traffic
-or excessive extra load on servers.
-If, during this procedure, new DNS results are received,
-the list of candidate addresses is updated accordingly,
-for use in subsequent connection requests.
-
-Using Optimistic DNS in conjunction with Happy Eyeballs means that,
-in the common case, a connection to the correct server is made faster,
-with no additional network traffic.
-In the rare case when a server address has actually changed, the cost is
-a small amount of wasted network traffic while waiting for the DNS reply.
-Once the reply arrives the Happy Eyeballs algorithm can immediately
-connect to the correct server, with no additional delay beyond what
-it would have experienced had it just waited for the DNS reply
-without trying other candidate addresses while it was waiting.
-
-Applications using Optimistic DNS and Happy Eyeballs SHOULD follow
-appropriate security practices ({{security-considerations}}) to ensure
-that they are connecting to the intended host or service on the network.
-Applications that do not have application-layer security
-and simply expect the Internet to connect them to the right host every time
-SHOULD NOT use Optimistic DNS.
-
-The cost of waiting for a fresh answer that confirms what the cache already had
-is a guaranteed delay of the full network round-trip time on every cache expiry.
-For most applications, the expected value of the optimistic approach is clearly
-positive.
+The asynchronous connection-racing mechanism known as Happy Eyeballs
+{{IETF72}} {{?RFC6555}} {{!RFC8305}} {{HEv3}} ({{happy-eyeballs}})
+is a key technology that makes Optimistic DNS useful,
+because it makes makes applications more robust in occasional
+situations where they may briefly receive incorrect information.
 
 # Zeno’s Paradox {#zenos-paradox}
 
@@ -516,25 +464,76 @@ established and the fresh answer serves as confirmation.
 
 ## Happy Eyeballs
 
+Optimistic DNS delivers DNS answers quickly, with the caveat that,
+on rare occasions, some of those answers might be stale, in which case
+updated answers will be delivered as soon as they are available.
+To make this optimistic approach viable, it MUST be coupled
+with networking code that is designed to embrace this uncertainty,
+and account for the fact that all data received from a network
+is necessarily at least a little stale by the time it arrives,
+and may subsequently be found to be incorrect.
+
 Happy Eyeballs {{IETF72}} {{?RFC6555}} {{!RFC8305}} {{HEv3}}
-defines algorithms for racing
-connection attempts across multiple addresses and address families.  When a
-client has several candidate addresses for a destination, Happy Eyeballs
-staggers connection attempts, in order of expected likelihood of success,
+defines algorithms for racing connection attempts across multiple
+addresses and address families. When a client has several
+candidate addresses for a destination, Happy Eyeballs staggers
+connection attempts, in order of expected likelihood of success,
 with short delays, and uses whichever connection succeeds first.
 
-This mechanism pairs naturally with Optimistic DNS.  When the resolver
-returns expired addresses, Happy Eyeballs can begin racing connections to
-those addresses immediately, rather than waiting for DNS resolution to
-complete before starting any connection attempt.
+The Happy Eyeballs mechanism pairs naturally with Optimistic DNS.
 
-When the expired addresses are still correct (the most common scenario) a
-connection may succeed before the fresh DNS answer even arrives.  When an expired
-address is wrong (the rare scenario) the failed connection attempt is simply one
-candidate among several.  Happy Eyeballs is already designed to tolerate some
-addresses failing.  When the fresh DNS answer arrives with the correct address,
-it enters the ongoing connection race.  The cost of wrong expired addresses is
-occasional failed attempts and their associated network costs.
+With Happy Eyeballs, the networking code takes the set of
+answers immediately available in the local cache and selects
+the address it predicts is most likely to succeed.
+If it predicts correctly, as it should at least 99% of the time,
+and the connection succeeds, then no additional traffic is generated.
+The connection may succeed before the fresh
+DNS answer from the network even arrives.
+In the rare cases where the first connection attempt does not
+succeed within the expected network round-trip time,
+the TCP SYN (or equivalent connection request packet)
+is retransmitted and then immediately a connection attempt
+is initiated to the next address in order of preference.
+The first connection attempt is not abandoned when the second one starts
+-- its usual schedule of retransmissions is still followed --
+and the two connection attempts proceed in parallel.
+If the second connection attempt does not succeed within the
+expected time then a third attempt is initiated, and so on.
+Running connection attempts in parallel instead of sequentially
+prevents long stalls waiting for a connection to time-out and fail
+before the next attempt is started.
+Staggering the start times by the expected response time means that
+in the majority of cases only a single connection attempt (the first one)
+is needed, which avoids generating excessive extra network traffic
+or excessive extra load on servers.
+If, during this procedure, new DNS results are received,
+the list of candidate addresses is updated accordingly,
+for use in subsequent connection requests.
+
+Using Optimistic DNS in conjunction with Happy Eyeballs means that,
+in the common case, a connection to the correct server is made faster,
+with no additional network traffic.
+In the rare case when a server address has actually changed, the cost is
+a small amount of wasted network traffic while waiting for the DNS reply.
+Once the reply arrives the Happy Eyeballs algorithm can immediately
+connect to the correct server, with no additional delay beyond what
+it would have experienced had it just waited for the DNS reply
+without trying other candidate addresses while it was waiting.
+
+Applications using Optimistic DNS and Happy Eyeballs SHOULD follow
+appropriate security practices ({{security-considerations}}) to ensure
+that they are connecting to the intended host or service on the network.
+Applications that do not support both Happy Eyeballs
+and appropriate application-layer security
+SHOULD NOT use Optimistic DNS.
+These applications are very dependent on always getting
+the right answers from DNS every time, and do not recover
+gracefully when delivered stale data by Optimistic DNS.
+
+Waiting for a fresh answer that confirms what the cache already
+had would result in a guaranteed delay of the full network
+round-trip time on every cache expiry. For most applications,
+the expected value of the optimistic approach is clearly positive.
 
 Without Happy Eyeballs, a wrong expired address would mean a failed connection and
 user frustration.
@@ -605,8 +604,9 @@ receive conventional stub resolver behavior: expired records are ignored,
 and only fresh network answers are returned.  This ensures backward
 compatibility and allows applications to choose the tradeoff that suits
 their needs.
-Applications that do not support Happy Eyeballs and
-application-layer security SHOULD NOT use Optimistic DNS.
+Applications that do not support both Happy Eyeballs
+and appropriate application-layer security
+SHOULD NOT use Optimistic DNS.
 
 # Implementation Details
 
