@@ -1058,7 +1058,7 @@ svg {
 </tr></thead>
 <tfoot><tr>
 <td class="left">Akiwate, et al.</td>
-<td class="center">Expires 30 November 2026</td>
+<td class="center">Expires 1 December 2026</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -1071,12 +1071,12 @@ svg {
 <dd class="internet-draft">draft-gakiwate-dnsop-optimistic-dns-latest</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2026-05-29" class="published">29 May 2026</time>
+<time datetime="2026-05-30" class="published">30 May 2026</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Standards Track</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2026-11-30">30 November 2026</time></dd>
+<dd class="expires"><time datetime="2026-12-01">1 December 2026</time></dd>
 <dt class="label-authors">Authors:</dt>
 <dd class="authors">
 <div class="author">
@@ -1143,7 +1143,7 @@ between the stub resolver and applications about answer freshness.<a href="#sect
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 30 November 2026.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 1 December 2026.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -1237,7 +1237,7 @@ between the stub resolver and applications about answer freshness.<a href="#sect
                 <p id="section-toc.1-1.8.2.4.1"><a href="#section-8.4" class="auto internal xref">8.4</a>.  <a href="#name-encrypted-dns-transports" class="internal xref">Encrypted DNS Transports</a></p>
 </li>
               <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.8.2.5">
-                <p id="section-toc.1-1.8.2.5.1"><a href="#section-8.5" class="auto internal xref">8.5</a>.  <a href="#name-relationship-to-rfc-8767" class="internal xref">Relationship to RFC 8767</a></p>
+                <p id="section-toc.1-1.8.2.5.1"><a href="#section-8.5" class="auto internal xref">8.5</a>.  <a href="#name-serving-stale-data-at-recur" class="internal xref">Serving Stale Data at Recursive Resolvers</a></p>
 </li>
             </ul>
 </li>
@@ -1462,7 +1462,7 @@ For example, an application can repeatedly poll to find if
 the content of a directory has changed, but using asynchronous
 filesystem notifications gives the same effect more efficiently.
 Asynchronous DNS resolution is supported in Apple’s networking APIs,
-and in other DNS stub resolver code like getdns <span>[<a href="#getdns" class="cite xref">getdns</a>]</span>.<a href="#section-2-2.10.1" class="pilcrow">¶</a></p>
+and in other DNS stub resolver implementations like getdns <span>[<a href="#getdns" class="cite xref">getdns</a>]</span>.<a href="#section-2-2.10.1" class="pilcrow">¶</a></p>
 </dd>
         <dd class="break"></dd>
 <dt id="section-2-2.11"><em>Happy Eyeballs.</em></dt>
@@ -1679,7 +1679,7 @@ results as they become available.  The query remains active, and the resolver
 delivers additional results through subsequent callbacks.  This is the
 resolution model defined by Multicast DNS <span>[<a href="#RFC6762" class="cite xref">RFC6762</a>]</span>
 and is valuable for unicast DNS too.<a href="#section-5.1-2" class="pilcrow">¶</a></p>
-<p id="section-5.1-3">This model naturally supports the two-wave delivery that Optimistic DNS
+<p id="section-5.1-3">This model naturally supports the incremental delivery that Optimistic DNS
 requires.  Expired records arrive in the first callback, within
 microseconds.  Fresh records from the network arrive in subsequent
 callbacks, within milliseconds.  The application can act on the expired
@@ -1694,9 +1694,9 @@ established and the fresh answer serves as confirmation.<a href="#section-5.1-3"
         <h3 id="name-happy-eyeballs">
 <a href="#section-5.2" class="section-number selfRef">5.2. </a><a href="#name-happy-eyeballs" class="section-name selfRef">Happy Eyeballs</a>
         </h3>
-<p id="section-5.2-1">Optimistic DNS delivers DNS answers quickly, with the caveat that,
-on rare occasions, some of those answers might be stale, in which case
-updated answers will be delivered as soon as they are available.
+<p id="section-5.2-1">Optimistic DNS delivers DNS answers quickly, with the caveat that, on rare
+occasions, some of those answers might be stale and incorrect, in which
+case updated answers will be delivered as soon as they are available.
 To make this optimistic approach viable, it <span class="bcp14">MUST</span> be coupled
 with networking code that is designed to embrace this uncertainty,
 and account for the fact that all data received from a network
@@ -1828,11 +1828,16 @@ returns the same address:<a href="#section-6-3" class="pilcrow">¶</a></p>
           </tr>
         </tbody>
       </table>
-<p id="section-6-5">When the fresh answer matches the expired answer, no second callback is
-delivered. The application that began connecting at T+5us saved 120 milliseconds
-compared to waiting for the fresh answer.<a href="#section-6-5" class="pilcrow">¶</a></p>
-<p id="section-6-6">When the data has changed (for example, if the server moved to a new
-address), the sequence looks like this:<a href="#section-6-6" class="pilcrow">¶</a></p>
+<p id="section-6-5">When a fresh positive answer matches the previous
+Optimistic Positive Answer, no second callback is delivered.
+The application that began connecting at T+5us saved 120
+milliseconds compared to waiting for the fresh answer.<a href="#section-6-5" class="pilcrow">¶</a></p>
+<p id="section-6-6">When the data has changed (for example, if the server moved to a new address),
+or a fresh negative answer confirms a previous Optimistic Negative Answer,
+the application is notified.
+Sending confirmations of Optimistic Negative Answers is
+necessary because the client may be waiting for that negative
+answer confirmation before proceeding with its next steps.<a href="#section-6-6" class="pilcrow">¶</a></p>
 <table class="center" id="table-2">
         <caption><a href="#table-2" class="selfRef">Table 2</a></caption>
 <thead>
@@ -1860,13 +1865,14 @@ address), the sequence looks like this:<a href="#section-6-6" class="pilcrow">¶
           </tr>
         </tbody>
       </table>
-<p id="section-6-8">Here the expired answer contained an old address.  An application that
-connected to 203.0.113.34 may find that the connection fails with
-an ICMP Host Unreachable error, a TCP RST, a TLS failure, or other
-unexpected content.  But the fresh answer arrives 120 milliseconds later,
-and the application can retry with the correct address.  The total time to
-a successful connection is still only about 120 milliseconds -- roughly the same as
-it would have been without Optimistic DNS.<a href="#section-6-8" class="pilcrow">¶</a></p>
+<p id="section-6-8">In this example the expired answer contained a stale and incorrect address.
+An application that connected to 203.0.113.34 may find that
+the connection fails with an ICMP Host Unreachable error,
+a TCP RST, a TLS failure, or other unexpected content.
+But the fresh answer arrives 120 milliseconds later,
+and the application can retry with the correct address.
+The total time to a successful connection is still only about 120 milliseconds
+-- roughly the same as it would have been without Optimistic DNS.<a href="#section-6-8" class="pilcrow">¶</a></p>
 <p id="section-6-9">Optimistic DNS never makes things substantially worse for the application.  In the common
 case where the data has not changed, it makes things dramatically faster.  In
 the uncommon case where the data has changed and the server is no longer
@@ -1942,13 +1948,9 @@ that may be required by the search algorithm (see <a href="#search" class="auto 
         <h3 id="name-parallel-network-query">
 <a href="#section-7.3" class="section-number selfRef">7.3. </a><a href="#name-parallel-network-query" class="section-name selfRef">Parallel Network Query</a>
         </h3>
-<p id="section-7.3-1">If no unexpired records are found, the stub resolver issues a standard DNS
+<p id="section-7.3-1">If no unexpired records are found, the stub resolver <span class="bcp14">MUST</span> issue a standard DNS
 query on the network.  This query proceeds through the normal resolution path:
-contacting configured recursive resolvers, following CNAME chains,
-and so on.  This network query is not optional.
-Even if expired records were already returned from the cache, the network query
-<span class="bcp14">MUST</span> still be issued.  The expired records are a convenience for the
-application, not a substitute for proper DNS resolution.<a href="#section-7.3-1" class="pilcrow">¶</a></p>
+contacting configured recursive resolvers, following CNAME chains, and so on.<a href="#section-7.3-1" class="pilcrow">¶</a></p>
 <p id="section-7.3-2">Fresh answers from the network are delivered to the application through
 an asynchronous callback mechanism.  The application’s networking code <span class="bcp14">MUST</span>
 use these fresh answers to update the list of answers it received earlier.<a href="#section-7.3-2" class="pilcrow">¶</a></p>
@@ -2137,10 +2139,10 @@ UDP/TCP, DNS over TLS (DoT) <span>[<a href="#RFC7858" class="cite xref">RFC7858<
 mechanism functions identically.<a href="#section-8.4-1" class="pilcrow">¶</a></p>
 </section>
 </div>
-<div id="relationship-to-rfc-8767">
+<div id="serving-stale-data-at-recursive-resolvers">
 <section id="section-8.5">
-        <h3 id="name-relationship-to-rfc-8767">
-<a href="#section-8.5" class="section-number selfRef">8.5. </a><a href="#name-relationship-to-rfc-8767" class="section-name selfRef">Relationship to RFC 8767</a>
+        <h3 id="name-serving-stale-data-at-recur">
+<a href="#section-8.5" class="section-number selfRef">8.5. </a><a href="#name-serving-stale-data-at-recur" class="section-name selfRef">Serving Stale Data at Recursive Resolvers</a>
         </h3>
 <p id="section-8.5-1">Serving Stale Data to Improve DNS Resiliency <span>[<a href="#RFC8767" class="cite xref">RFC8767</a>]</span> describes a
 mechanism for recursive resolvers to serve stale cached data when they are
@@ -2195,11 +2197,11 @@ to issue asynchronous updates to correct an earlier
 answer that is subsequently discovered to be wrong.
 In principle, stub resolvers could use DNS Push Notifications <span>[<a href="#RFC8765" class="cite xref">RFC8765</a>]</span>
 to receive asynchronous updates from a recursive resolver, but
-in practice this mught place too much load on recursive resolvers.
+in practice this might place too much load on recursive resolvers.
 The current recommended solution for recursive resolvers returning
 stale data is that the TTL is reported as being 30 seconds <span>[<a href="#RFC8767" class="cite xref">RFC8767</a>]</span>.
 This has the effect of instructing stub resolvers to poll
-the recursive resolver, no more than once every 30 seconds,
+the recursive resolver once every 30 seconds
 to ascertain if newer data has become available.<a href="#section-8.5-7" class="pilcrow">¶</a></p>
 </section>
 </div>
@@ -2297,7 +2299,7 @@ answer, giving the application an opportunity to detect the discrepancy.<a href=
 <dt id="section-10-3.5">Expired Records Retention Period</dt>
         <dd style="margin-left: 1.5em" id="section-10-3.6">
           <p id="section-10-3.6.1">The recommended maximum retention period of one week (<a href="#cache-management" class="auto internal xref">Section 7.4</a>)
-bounds the maximum time a stale record can be served.
+bounds the maximum time an expired record can be served.
 Implementations <span class="bcp14">SHOULD</span> allow this period to be configured.
 Shorter periods reduce the window of exposure to stale data but also
 reduce the effectiveness of Optimistic DNS for infrequently-accessed names.<a href="#section-10-3.6.1" class="pilcrow">¶</a></p>
@@ -2329,6 +2331,10 @@ reduce the effectiveness of Optimistic DNS for infrequently-accessed names.<a hr
         <dd>
 <span class="refAuthor">Pauly, T.</span>, <span class="refAuthor">Schinazi, D.</span>, <span class="refAuthor">Jaju, N.</span>, and <span class="refAuthor">K. Ishibashi</span>, <span class="refTitle">"Happy Eyeballs Version 3: Better Connectivity Using Concurrency"</span>, <span class="refContent">Work in Progress</span>, <span class="seriesInfo">Internet-Draft, draft-ietf-happy-happyeyeballs-v3-03</span>, <time datetime="2026-03-02" class="refDate">2 March 2026</time>, <span>&lt;<a href="https://datatracker.ietf.org/doc/html/draft-ietf-happy-happyeyeballs-v3-03">https://datatracker.ietf.org/doc/html/draft-ietf-happy-happyeyeballs-v3-03</a>&gt;</span>. </dd>
 <dd class="break"></dd>
+<dt id="RFC1034">[RFC1034]</dt>
+        <dd>
+<span class="refAuthor">Mockapetris, P.</span>, <span class="refTitle">"Domain names - concepts and facilities"</span>, <span class="seriesInfo">STD 13</span>, <span class="seriesInfo">RFC 1034</span>, <span class="seriesInfo">DOI 10.17487/RFC1034</span>, <time datetime="1987-11" class="refDate">November 1987</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc1034">https://www.rfc-editor.org/rfc/rfc1034</a>&gt;</span>. </dd>
+<dd class="break"></dd>
 <dt id="RFC1035">[RFC1035]</dt>
         <dd>
 <span class="refAuthor">Mockapetris, P.</span>, <span class="refTitle">"Domain names - implementation and specification"</span>, <span class="seriesInfo">STD 13</span>, <span class="seriesInfo">RFC 1035</span>, <span class="seriesInfo">DOI 10.17487/RFC1035</span>, <time datetime="1987-11" class="refDate">November 1987</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc1035">https://www.rfc-editor.org/rfc/rfc1035</a>&gt;</span>. </dd>
@@ -2338,12 +2344,8 @@ reduce the effectiveness of Optimistic DNS for infrequently-accessed names.<a hr
 <span class="refAuthor">Bradner, S.</span>, <span class="refTitle">"Key words for use in RFCs to Indicate Requirement Levels"</span>, <span class="seriesInfo">BCP 14</span>, <span class="seriesInfo">RFC 2119</span>, <span class="seriesInfo">DOI 10.17487/RFC2119</span>, <time datetime="1997-03" class="refDate">March 1997</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc2119">https://www.rfc-editor.org/rfc/rfc2119</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="RFC8174">[RFC8174]</dt>
-        <dd>
-<span class="refAuthor">Leiba, B.</span>, <span class="refTitle">"Ambiguity of Uppercase vs Lowercase in RFC 2119 Key Words"</span>, <span class="seriesInfo">BCP 14</span>, <span class="seriesInfo">RFC 8174</span>, <span class="seriesInfo">DOI 10.17487/RFC8174</span>, <time datetime="2017-05" class="refDate">May 2017</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8174">https://www.rfc-editor.org/rfc/rfc8174</a>&gt;</span>. </dd>
-<dd class="break"></dd>
-<dt id="RFC8305">[RFC8305]</dt>
       <dd>
-<span class="refAuthor">Schinazi, D.</span> and <span class="refAuthor">T. Pauly</span>, <span class="refTitle">"Happy Eyeballs Version 2: Better Connectivity Using Concurrency"</span>, <span class="seriesInfo">RFC 8305</span>, <span class="seriesInfo">DOI 10.17487/RFC8305</span>, <time datetime="2017-12" class="refDate">December 2017</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8305">https://www.rfc-editor.org/rfc/rfc8305</a>&gt;</span>. </dd>
+<span class="refAuthor">Leiba, B.</span>, <span class="refTitle">"Ambiguity of Uppercase vs Lowercase in RFC 2119 Key Words"</span>, <span class="seriesInfo">BCP 14</span>, <span class="seriesInfo">RFC 8174</span>, <span class="seriesInfo">DOI 10.17487/RFC8174</span>, <time datetime="2017-05" class="refDate">May 2017</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8174">https://www.rfc-editor.org/rfc/rfc8174</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 </dl>
 </section>
@@ -2362,10 +2364,6 @@ reduce the effectiveness of Optimistic DNS for infrequently-accessed names.<a hr
         <dd>
 <span class="refAuthor">Cheshire, S.</span>, <span class="refTitle">"Stuart Cheshire on IPv6 Adoption"</span>, <time datetime="2008" class="refDate">2008</time>, <span>&lt;<a href="https://www.stuartcheshire.org/IETF72/">https://www.stuartcheshire.org/IETF72/</a>&gt;</span>. <span class="annotation">This presentation introduced the concept of asynchronous concurrent connection racing, later known as Happy Eyeballs.</span>
         </dd>
-<dd class="break"></dd>
-<dt id="RFC1034">[RFC1034]</dt>
-        <dd>
-<span class="refAuthor">Mockapetris, P.</span>, <span class="refTitle">"Domain names - concepts and facilities"</span>, <span class="seriesInfo">STD 13</span>, <span class="seriesInfo">RFC 1034</span>, <span class="seriesInfo">DOI 10.17487/RFC1034</span>, <time datetime="1987-11" class="refDate">November 1987</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc1034">https://www.rfc-editor.org/rfc/rfc1034</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="RFC2131">[RFC2131]</dt>
         <dd>
@@ -2398,6 +2396,10 @@ reduce the effectiveness of Optimistic DNS for infrequently-accessed names.<a hr
 <dt id="RFC8106">[RFC8106]</dt>
         <dd>
 <span class="refAuthor">Jeong, J.</span>, <span class="refAuthor">Park, S.</span>, <span class="refAuthor">Beloeil, L.</span>, and <span class="refAuthor">S. Madanapalli</span>, <span class="refTitle">"IPv6 Router Advertisement Options for DNS Configuration"</span>, <span class="seriesInfo">RFC 8106</span>, <span class="seriesInfo">DOI 10.17487/RFC8106</span>, <time datetime="2017-03" class="refDate">March 2017</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8106">https://www.rfc-editor.org/rfc/rfc8106</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="RFC8305">[RFC8305]</dt>
+        <dd>
+<span class="refAuthor">Schinazi, D.</span> and <span class="refAuthor">T. Pauly</span>, <span class="refTitle">"Happy Eyeballs Version 2: Better Connectivity Using Concurrency"</span>, <span class="seriesInfo">RFC 8305</span>, <span class="seriesInfo">DOI 10.17487/RFC8305</span>, <time datetime="2017-12" class="refDate">December 2017</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8305">https://www.rfc-editor.org/rfc/rfc8305</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="RFC8484">[RFC8484]</dt>
         <dd>
@@ -2437,10 +2439,11 @@ actual TTL of the record as viewed by the recursive resolver has expired.<a href
 of 80-100% of the stretched TTL, then the mDNSResponder stub resolver
 code will return the available answer to the client immediately, while
 in parallel simultaneously sending a query to the recursive resolver.<a href="#appendix-A-2" class="pilcrow">¶</a></p>
-<p id="appendix-A-3">If an asynchronous query is active on the client at the time the record
-age reaches 80% of its stretched TTL, then the mDNSResponder stub resolver
-code will send a DNS query to the recursive resolver to fetch fresh data,
-and will update the client with fresh information if new data is received.<a href="#appendix-A-3" class="pilcrow">¶</a></p>
+<p id="appendix-A-3">In addition, if an asynchronous query is active on the client
+at the time the record age reaches 80% of its stretched TTL,
+then the mDNSResponder stub resolver code will send a DNS query
+to the recursive resolver to fetch fresh data, and will update
+the client with fresh information if new data is received.<a href="#appendix-A-3" class="pilcrow">¶</a></p>
 <p id="appendix-A-4">This DNS query to the recursive resolver happens after the
 recursive resolver’s copy of the record has expired, causing the
 recursive resolver to fetch a new fresh copy of the authoritative record,
@@ -2485,10 +2488,15 @@ of expired cached records.<a href="#appendix-A.1.1-2.2.1" class="pilcrow">¶</a>
 <dt id="appendix-A.1.1-2.3">kDNSServiceFlagsExpiredAnswer</dt>
             <dd style="margin-left: 1.5em" id="appendix-A.1.1-2.4">
               <p id="appendix-A.1.1-2.4.1">Set by the resolver on individual answer callbacks to indicate that the
-record being returned is expired.  While this flag is not necessary for
-optimistic DNS to function correctly, mDNSResponder adds this hint for
-applications.
-Providing an equivalent indication in other implementations is not recommended,
+record being returned is expired.
+In the case of Optimistic Negative Answers, the flag is a useful
+hint to the client about how much trust it should place in this answer.
+An expired Optimistic Negative Answer should be quickly updated with
+a fresh confirmation of the negative answer, or a new positive answer.
+In the case of Optimistic Positive Answers, the flag has little
+significance, since the application verifies the validity of
+positive answers by attempting communication with those addresses.
+Developers should take care in how they interpret this answer property
 because, as mentioned earlier, the notion of record expiry is subjective,
 and this flag is easily misunderstood and misused by developers who
 think it carries more significance than it really does.<a href="#appendix-A.1.1-2.4.1" class="pilcrow">¶</a></p>
@@ -2545,11 +2553,12 @@ answer an Optimistic DNS query.
 In addition, promotion from mortal to immortal occurs when a cached
 record is used to answer a query from an application that has opted
 in to Optimistic DNS.
-The logic is that if an application has made an Optimistic DNS query
-for this DNS name, then there may be more such queries in the future.
+The logic is that if an application has made an Optimistic DNS
+query for this DNS name, that is a hint that there may be
+more such Optimistic DNS queries in the future.
 If there has been not even one single Optimistic DNS query
 for this DNS name, then that is a sign that whatever applications
-are resolving this DNS name do not yet support Optimistic DNS,
+are resolving this DNS name do not yet use Optimistic DNS,
 so saving these records for a long time would be a waste of memory.
 Successful subsequent queries for these records
 will refresh their lifetime.
