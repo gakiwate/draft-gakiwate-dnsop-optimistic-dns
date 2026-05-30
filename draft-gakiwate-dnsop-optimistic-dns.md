@@ -888,15 +888,15 @@ mechanism for recursive resolvers to serve stale cached data when they are
 unable to refresh it from authoritative servers.  Optimistic DNS and
 RFC 8767 address different levels of the DNS resolution chain:
 
-RFC 8767
-: Operates at the recursive resolver.  Serves stale data when upstream
-  authoritative servers are unreachable.  The primary goal is resiliency --
-  maintaining DNS service during outages.
-
 Optimistic DNS
 : Operates at the stub resolver on the end-user's device.  Serves expired
   cached data proactively, while simultaneously initiating a network query.
   The primary goal is delay reduction -- eliminating the TTL expiry spike.
+
+RFC 8767
+: Operates at the recursive resolver.
+  Serves stale data when upstream authoritative servers are unreachable.
+  The primary goal is resiliency -- maintaining DNS service during outages.
 
 The two mechanisms are complementary and can be deployed simultaneously.
 When both are active, the resolution chain has two layers of staleness
@@ -909,15 +909,15 @@ tolerance:
    server is unreachable, the recursive resolver can serve its own stale
    data rather than returning SERVFAIL.
 
-RFC 8767 serves stale data without any provision for a future
-asynchronous notification when the desired data becomes available.
-
-In contrast, Optimistic DNS delivers the data it has immediately, while
+Optimistic DNS delivers the data it has immediately, while
 also delivering updated data the moment it becomes available. It gives
 the application the benefit of timely data, which could occasionally be
 wrong, without depriving the application of also receiving the exact
 data it would have received with a traditional non-optimistic DNS query,
 at the time it would have received it.
+
+In contrast, RFC 8767 serves stale data without any provision for a
+future asynchronous notification when the desired data becomes available.
 
 Optimistic DNS is not applicable to recursive resolvers because
 Optimistic DNS relies on the ability to deliver its best available
