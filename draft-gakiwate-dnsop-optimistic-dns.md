@@ -97,7 +97,8 @@ than milliseconds, and if the data has changed receives an updated answer
 shortly thereafter.  Optimistic DNS is complementary to RFC 8767, which
 addresses serving stale data at recursive resolvers.  This document focuses
 exclusively on client-side stub resolver behavior, including explicit signaling
-between the stub resolver and applications about answer freshness.
+from the application to inform the stub resolver that the application
+is able to handle old and possibly incorrect information.
 
 --- middle
 
