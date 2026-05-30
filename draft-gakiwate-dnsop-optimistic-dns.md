@@ -225,34 +225,8 @@ local API matter.
 *Asynchronous DNS Resolution.*
 : A DNS resolution model where the application initiates a query and
   receives results through callbacks or event notifications as they
-  become available, rather than blocking until a single atomic set of answers is
-  returned all at once.  This model supports receiving multiple answers over time,
-  including updated answers that supersede earlier ones.
-  The operational model of asynchronous DNS resolution is
-  that it is a performance optimization over rapid polling.
-  If an application were to call an API like getaddrinfo()
-  as fast as it can in a tight loop, then the application
-  would always have the latest information available from the local
-  stub resolver, but it would be inefficient and wasteful of CPU time.
-  Most consecutive calls to getaddrinfo() would return unchanged information.
-  The guiding principle of an asynchronous DNS resolution API is
-  that it gives the application the exact same information as repeated
-  calls to the equivalent synchronous API, but more efficiently.
-  If a fresh new query would yield different results,
-  then the client’s asynchronous DNS operation MUST be given
-  asynchronous notifications to deliver the new set of results.
-  This avoids the temptation for clients to resort to polling,
-  in the belief that polling gives them better results
-  than trusting the asynchronous notification mechanism.
-  For efficiency, the application is notified via an asynchronous
-  notification only when the set of answers changes.
-  This is similar to the efficiency trade-offs present in other APIs,
-  where asynchronous notification is more efficient than polling.
-  For example, an application can repeatedly poll to find if
-  the content of a directory has changed, but using asynchronous
-  filesystem notifications gives the same effect more efficiently.
-  Asynchronous DNS resolution is supported in Apple’s networking APIs,
-  and in other DNS stub resolver implementations like getdns {{getdns}}.
+  become available, rather than blocking until a single atomic set
+  of answers is returned all at once ({{async}}).
 
 *Happy Eyeballs.*
 : A client-side connection establishment algorithm
@@ -439,7 +413,7 @@ support delivering asynchronous results as they arrive
 - If the expired address is found to be wrong,
 the application needs to continue gracefully.
 
-## Asynchronous DNS Resolution
+## Asynchronous DNS Resolution {#async}
 
 Traditional synchronous DNS APIs typically block until the complete set of answers
 is available.  The caller issues a query, waits, receives one set of results, and
@@ -447,11 +421,37 @@ the call is complete.  Optimistic DNS cannot function with this model since
 there is no mechanism to deliver an expired answer now and
 update it with newer answers shortly afterwards.
 
-With Asynchronous DNS APIs, the application registers a callback and receives
-results as they become available.  The query remains active, and the resolver
-delivers additional results through subsequent callbacks.  This is the
-resolution model defined by Multicast DNS {{?RFC6762}}
+Asynchronous DNS APIs support receiving multiple answers over time,
+including updated answers that supersede earlier ones.
+The operational model of asynchronous DNS resolution is
+that it is a performance optimization over rapid polling.
+If an application were to call an API like getaddrinfo()
+as fast as it can in a tight loop, then the application
+would always have the latest information available from the local
+stub resolver, but it would be inefficient and wasteful of CPU time.
+Most consecutive calls to getaddrinfo() would return unchanged information.
+The guiding principle of an asynchronous DNS resolution API is
+that it gives the application the exact same information as repeated
+calls to the equivalent synchronous API, but more efficiently.
+If a fresh new query would yield different results,
+then the client’s asynchronous DNS operation MUST be given
+asynchronous notifications to deliver the new set of results.
+This avoids the temptation for clients to resort to polling,
+in the belief that polling gives them better results
+than trusting the asynchronous notification mechanism.
+For efficiency, the application is notified via an asynchronous
+notification only when the set of answers changes.
+This is similar to the efficiency trade-offs present in other APIs,
+where asynchronous notification is more efficient than polling.
+For example, an application can repeatedly poll to find if
+the content of a directory has changed, but using asynchronous
+filesystem notifications gives the same effect more efficiently.
+
+This is the resolution model defined by Multicast DNS {{?RFC6762}}
 and is valuable for unicast DNS too.
+Asynchronous DNS resolution is supported in
+Apple’s networking APIs {{ZC}},
+and in other DNS stub resolver implementations like getdns {{getdns}}.
 
 This model naturally supports the incremental delivery that Optimistic DNS
 requires.  Expired records arrive in the first callback, within
@@ -509,6 +509,40 @@ or excessive extra load on servers.
 If, during this procedure, new DNS results are received,
 the list of candidate addresses is updated accordingly,
 for use in subsequent connection requests.
+
+After the Happy Eyeballs algorithm has succeeded in
+establishing a connection to an acceptable destination
+(determined by verifying the TLS certificate, or otherwise,
+as appropriate) the asynchronous DNS operation MUST be stopped.
+Once an application has established a successful connection, the
+application should make its future decisions based on the viability
+of that established connection, rather than any subsequent
+information to the contrary received from asynchronous DNS.
+If a new IP address is established for the server but
+existing connections to the old IP address continue to work,
+then there is no reason for clients to abandon their working connections.
+The decision about if and when to migrate existing clients
+to the new IP address is in the hands of the server operator.
+The server operator might choose to allow those connections to remain.
+If the server operator wishes to have clients reconnect
+using the new IP address, then that could be achieved
+using an in-band message on the existing connection,
+or by simply shutting down the server at the old IP address,
+so that clients receive TCP RST packets (or equivalent),
+causing clients to re-establish their connections
+using the new IP address.
+
+Cancelling the asynchronous DNS operation prematurely,
+before a successful connection has been established,
+would prevent the reception of future updated answers,
+which would defeat the purpose of Optimistic DNS,
+which is to deliver available answers quickly,
+combined with eventual correctness.
+
+Failure to cancel the asynchronous DNS operation after an
+acceptable connection has been made would be a waste of resources.
+In the extreme case, if asynchronous DNS operations are never
+cancelled, this would constitute a resource leak on the client device.
 
 Using Optimistic DNS in conjunction with Happy Eyeballs means that,
 in the common case, a connection to the correct server is made faster,
