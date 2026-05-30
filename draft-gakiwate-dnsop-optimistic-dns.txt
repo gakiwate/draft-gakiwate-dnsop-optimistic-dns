@@ -1237,35 +1237,39 @@ A.1.2.  Record Lifecycle
    three-state record lifecycle:
 
    Mortal (default)  The normal cache state for a record retrieved to
-      answer a traditional (not Optimistic DNS) query.  These records
-      may be refreshed in the course of normal operation.  If
-      subsequently queried by an Optimistic DNS operation, this record
-      gets promoted to immortal.  If not refreshed, then when the TTL
-      expires the record is eligible for immediate removal.
+      answer a traditional (not Optimistic DNS) query.  If subsequently
+      queried by an Optimistic DNS operation, this record gets promoted
+      to immortal.  Mortal records may be refreshed in the course of
+      normal operation, though because of Zeno’s paradox (Section 4)
+      such refreshes are likely to be successful only for records in the
+      final 20% of their stretched TTL lifetime.  When the (stretched)
+      TTL of a mortal record expires the record is eligible for
+      immediate removal.
 
-   Immortal  A record marked to survive past its TTL expiry.  This is
-      the initial cache state for a record retrieved to answer an
-      Optimistic DNS query.  In addition, promotion from mortal to
+   Immortal  A record marked to survive past its (stretched) TTL expiry.
+      This is the initial cache state for a record retrieved to answer
+      an Optimistic DNS query.  In addition, promotion from mortal to
       immortal occurs when a cached record is used to answer a query
-      from an application that has opted in to Optimistic DNS.  The
+      from an application that has opted in to Optimistic DNS.  (The
       logic is that if an application has made an Optimistic DNS query
       for this DNS name, that is a hint that there may be more such
       Optimistic DNS queries in the future.  If there has not been even
       one single Optimistic DNS query for this DNS name, then that is a
       sign that whatever applications are resolving this DNS name do not
       yet use Optimistic DNS, so saving these records for a long time
-      would be a waste of memory.  Successful subsequent queries for
-      these records will refresh their lifetime.  If not refreshed, then
-      when the TTL expires an immortal record becomes a ghost record.
+      would be a waste of memory.)  Successful subsequent queries for
+      immortal records will refresh their lifetime, as it is with mortal
+      records.  When the (stretched) TTL of an immortal record expires
+      the record becomes a ghost record.
 
-   Ghost  An immortal record whose TTL has expired.  Ghost records
-      linger in the cache, available to serve future Optimistic DNS
-      queries.  If an Optimistic DNS query is issued that matches a
+   Ghost  An immortal record whose (stretched) TTL has expired.  Ghost
+      records linger in the cache, available to serve future Optimistic
+      DNS queries.  If an Optimistic DNS query is issued that matches a
       ghost record, then the ghost record data is delivered immediately
       to the application, and the simultaneous DNS query over the
-      network, if successful, will refresh the TTL of the ghost record
-      and restore it to immortal state.  If not refreshed for the ghost
-      retention period (maximum of one week), ghost records are purged.
+      network, if successful, will refresh the ghost record and restore
+      it to immortal state.  If not refreshed for the ghost retention
+      period (maximum of one week), ghost records are purged.
 
    The complete lifecycle:
 
