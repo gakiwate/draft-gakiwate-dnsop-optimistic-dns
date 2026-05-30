@@ -1306,7 +1306,7 @@ we need to identify and reduce the remaining sources of delay, which
 now constitute a larger proportion of the overall web page load time.
 Computer processing speed and network throughput continue to increase,
 but the speed of light isn’t changing.<a href="#section-1-1" class="pilcrow">¶</a></p>
-<p id="section-1-2">When a user opens their laptop and navigates to a website, the first step
+<p id="section-1-2">When a user views a website, the first step
 is typically a DNS lookup to translate the hostname into an IP address.  If
 the laptop's DNS cache contains a record for that hostname, the answer is
 returned almost instantly and the user perceives no delay.  But if the
@@ -1444,9 +1444,10 @@ of answers is returned all at once (<a href="#async" class="auto internal xref">
 <dt id="section-2-2.11"><em>Happy Eyeballs.</em></dt>
         <dd style="margin-left: 1.5em" id="section-2-2.12">
           <p id="section-2-2.12.1">A client-side connection establishment algorithm
-<span>[<a href="#IETF72" class="cite xref">IETF72</a>]</span> <span>[<a href="#RFC6555" class="cite xref">RFC6555</a>]</span> <span>[<a href="#RFC8305" class="cite xref">RFC8305</a>]</span> <span>[<a href="#HEv3" class="cite xref">HEv3</a>]</span> (<a href="#happy-eyeballs" class="auto internal xref">Section 5.2</a>)
+<span>[<a href="#IETF72" class="cite xref">IETF72</a>]</span> <span>[<a href="#RFC6555" class="cite xref">RFC6555</a>]</span> <span>[<a href="#RFC8305" class="cite xref">RFC8305</a>]</span> <span>[<a href="#HEv3" class="cite xref">HEv3</a>]</span>
 that races connection attempts across multiple addresses and
-address families, using whichever connection succeeds first.<a href="#section-2-2.12.1" class="pilcrow">¶</a></p>
+address families, using whichever connection succeeds first
+(<a href="#happy-eyeballs" class="auto internal xref">Section 5.2</a>).<a href="#section-2-2.12.1" class="pilcrow">¶</a></p>
 </dd>
       <dd class="break"></dd>
 </dl>
@@ -1510,7 +1511,7 @@ the resolver decides to refresh, not when the data becomes incorrect.<a href="#s
 <p id="section-3-5">The "stale" state is also subjective.  A user querying the same record at
 two different resolvers can see entirely different views of staleness.
 The diagram below illustrates this: both Recursive A and Recursive B
-cached R1 before the authoritative server replaced it with R2 at T=90.
+cached A1 before the authoritative server replaced it with A2 at T=90.
 But because each resolver started its TTL clock at a different moment,
 they present a different view to their clients.
 A client querying Recursive A at time T=80 will cause a DNS
@@ -1549,7 +1550,7 @@ Recursive B queries at T=45:
                                               v
                                    Client 2 queries at T=100:
                                        A1 TTL still valid
-                                       Returns cached R1
+                                       Returns cached A1
                                         (now incorrect).
 </pre><a href="#section-3-6" class="pilcrow">¶</a>
 </div>
@@ -1574,13 +1575,14 @@ be assumed to be still valid, but it is not a guarantee.
 Data being younger than its TTL is not a guarantee that it is still correct,
 and data being older than its TTL is not a guarantee that it is wrong.<a href="#section-3-10" class="pilcrow">¶</a></p>
 <p id="section-3-11">The asynchronous connection-racing mechanism known as Happy Eyeballs
-<span>[<a href="#IETF72" class="cite xref">IETF72</a>]</span> <span>[<a href="#RFC6555" class="cite xref">RFC6555</a>]</span> <span>[<a href="#RFC8305" class="cite xref">RFC8305</a>]</span> <span>[<a href="#HEv3" class="cite xref">HEv3</a>]</span> (<a href="#happy-eyeballs" class="auto internal xref">Section 5.2</a>)
+<span>[<a href="#IETF72" class="cite xref">IETF72</a>]</span> <span>[<a href="#RFC6555" class="cite xref">RFC6555</a>]</span> <span>[<a href="#RFC8305" class="cite xref">RFC8305</a>]</span> <span>[<a href="#HEv3" class="cite xref">HEv3</a>]</span>
 is a key technology that makes Optimistic DNS useful,
 because it makes makes applications more robust in occasional
-situations where they may briefly receive incorrect information.<a href="#section-3-11" class="pilcrow">¶</a></p>
+situations where they may briefly receive incorrect information
+(<a href="#happy-eyeballs" class="auto internal xref">Section 5.2</a>).<a href="#section-3-11" class="pilcrow">¶</a></p>
 </section>
 </div>
-<div id="zenos-paradox">
+<div id="zeno">
 <section id="section-4">
       <h2 id="name-zenos-paradox">
 <a href="#section-4" class="section-number selfRef">4. </a><a href="#name-zenos-paradox" class="section-name selfRef">Zeno’s Paradox</a>
@@ -1593,7 +1595,7 @@ DHCP typically renews an address lease when half of the lease
 lifetime has elapsed, rather than waiting for the lease
 to expire and then briefly losing the right to use that
 IP address while a new request is processed.<a href="#section-4-1" class="pilcrow">¶</a></p>
-<p id="section-4-2">Unfortunately, because of the way DNS works, the DHCP-inspired approach
+<p id="section-4-2">Unfortunately, because of the way DNS operates, the DHCP-inspired approach
 of refreshing records in advance of their expiration does not work.<a href="#section-4-2" class="pilcrow">¶</a></p>
 <p id="section-4-3">Suppose a DNS stub resolver makes a request for a name
 that is not currently in the recursive resolver’s cache.
@@ -1803,7 +1805,7 @@ user frustration.<a href="#section-5.2-11" class="pilcrow">¶</a></p>
 delivery mechanism for multiple waves of results.  Happy Eyeballs makes Optimistic
 DNS <em>safe</em>.  It ensures that acting on a wrong expired address is not fatal to
 the overall connection attempt.  Together, the application starts connecting
-instantly with best-effort cached addresses, the connection race handles any
+instantly with provisional cached addresses, the connection race handles any
 staleness gracefully, and the fresh DNS answer arrives as an update confirming
 or correcting the initial result.<a href="#section-5.3-1" class="pilcrow">¶</a></p>
 </section>
@@ -1829,12 +1831,16 @@ performs two actions in parallel:<a href="#section-6-1" class="pilcrow">¶</a></
 </li>
       </ol>
 <p id="section-6-3">As fresh answers arrive from the network, the resolver delivers them to
-the application through the asynchronous callback mechanism.  The
-following diagram shows both waves for a query where www.example.com
+the application through the asynchronous callback mechanism.
+<a href="#unchanged-flow" class="auto internal xref">Table 1</a> shows both waves for a query where www.example.com
 has an expired A record (203.0.113.34) in the cache, and the fresh answer
 returns the same address:<a href="#section-6-3" class="pilcrow">¶</a></p>
+<span id="name-optimistic-dns-when-data-is"></span><div id="unchanged-flow">
 <table class="center" id="table-1">
-        <caption><a href="#table-1" class="selfRef">Table 1</a></caption>
+        <caption>
+<a href="#table-1" class="selfRef">Table 1</a>:
+<a href="#name-optimistic-dns-when-data-is" class="selfRef">Optimistic DNS when data is unchanged</a>
+        </caption>
 <thead>
           <tr>
             <th class="text-left" rowspan="1" colspan="1">Time</th>
@@ -1860,6 +1866,7 @@ returns the same address:<a href="#section-6-3" class="pilcrow">¶</a></p>
           </tr>
         </tbody>
       </table>
+</div>
 <p id="section-6-5">When a fresh positive answer matches the previous
 Optimistic Positive Answer, no second callback is delivered.
 The application that began connecting at T+5us saved 120
@@ -1870,8 +1877,12 @@ the application is notified.
 Sending confirmations of Optimistic Negative Answers is
 necessary because the client may be waiting for that negative
 answer confirmation before proceeding with its next steps.<a href="#section-6-6" class="pilcrow">¶</a></p>
+<span id="name-optimistic-dns-when-data-ha"></span><div id="changed-flow">
 <table class="center" id="table-2">
-        <caption><a href="#table-2" class="selfRef">Table 2</a></caption>
+        <caption>
+<a href="#table-2" class="selfRef">Table 2</a>:
+<a href="#name-optimistic-dns-when-data-ha" class="selfRef">Optimistic DNS when data has changed</a>
+        </caption>
 <thead>
           <tr>
             <th class="text-left" rowspan="1" colspan="1">Time</th>
@@ -1897,7 +1908,8 @@ answer confirmation before proceeding with its next steps.<a href="#section-6-6"
           </tr>
         </tbody>
       </table>
-<p id="section-6-8">In this example the expired answer contained a stale and incorrect address.
+</div>
+<p id="section-6-8">In <a href="#changed-flow" class="auto internal xref">Table 2</a> the expired answer contained a stale and incorrect address.
 An application that connected to 203.0.113.34 may find that
 the connection fails with an ICMP Host Unreachable error,
 a TCP RST, a TLS failure, or other unexpected content.
@@ -1972,7 +1984,7 @@ where the nonexistence of a certain record is a prerequisite
 for using some other record, and the tentatively presumed
 nonexistence of a certain record can serve as a useful hint that
 the client should begin work speculatively looking up other names
-that may be required by the search algorithm (see <a href="#search" class="auto internal xref">Section 8.3</a>).<a href="#section-7.2-6" class="pilcrow">¶</a></p>
+that may be required by the search algorithm (<a href="#search" class="auto internal xref">Section 8.3</a>).<a href="#section-7.2-6" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="parallel-network-query">
@@ -2042,7 +2054,7 @@ as for any other expired record.<a href="#section-7.5-6.1.1" class="pilcrow">¶<
           <li id="section-7.5-6.2">
             <p id="section-7.5-6.2.1">The CNAME referral is followed.
 (If the target of the CNAME referral is another CNAME record,
-then this process repeats until a non-CNAME record is found.)<a href="#section-7.5-6.2.1" class="pilcrow">¶</a></p>
+then this process repeats until a non-CNAME answer is found.)<a href="#section-7.5-6.2.1" class="pilcrow">¶</a></p>
 </li>
           <li id="section-7.5-6.3">
             <p id="section-7.5-6.3.1">If, at any time while an asynchronous DNS query is active,
@@ -2166,7 +2178,7 @@ some positive answer, if any, is returned.<a href="#section-8.3-5" class="pilcro
 <p id="section-8.4-1">Optimistic DNS is transport-agnostic.  It operates entirely within the stub
 resolver's cache layer, which sits above the transport layer.  Whether the
 stub resolver communicates with recursive resolvers using classic DNS over
-UDP/TCP, DNS over TLS (DoT) <span>[<a href="#RFC7858" class="cite xref">RFC7858</a>]</span>, DNS over HTTPS (DoH)
+UDP/TCP <span>[<a href="#RFC1035" class="cite xref">RFC1035</a>]</span>, DNS over TLS (DoT) <span>[<a href="#RFC7858" class="cite xref">RFC7858</a>]</span>, DNS over HTTPS (DoH)
 <span>[<a href="#RFC8484" class="cite xref">RFC8484</a>]</span>, or DNS over QUIC (DoQ) <span>[<a href="#RFC9250" class="cite xref">RFC9250</a>]</span>, the Optimistic DNS
 mechanism functions identically.<a href="#section-8.4-1" class="pilcrow">¶</a></p>
 </section>
@@ -2266,7 +2278,7 @@ for at least 24 hours, to accommodate clients using the old address.<a href="#se
 Using the same 24-hour TTL, the decline in the incoming connection
 rate will not be quite as rapid, and incoming connection requests
 to the old IP address may continue to be received for a week
-after the TTL has elapsed (<a href="#cache-management" class="auto internal xref">Section 7.4</a>).<a href="#section-9-3" class="pilcrow">¶</a></p>
+after the TTL has expired (<a href="#cache-management" class="auto internal xref">Section 7.4</a>).<a href="#section-9-3" class="pilcrow">¶</a></p>
 <p id="section-9-4">However, Optimistic DNS does not mean that the server operator
 is forced to maintain the availability of their web site
 at the old IP address for a week after the address change.
@@ -2332,7 +2344,7 @@ answer, giving the application an opportunity to detect the discrepancy.<a href=
         <dd style="margin-left: 1.5em" id="section-10-3.6">
           <p id="section-10-3.6.1">The recommended maximum retention period of one week (<a href="#cache-management" class="auto internal xref">Section 7.4</a>)
 bounds the maximum time an expired record can be served.
-Implementations <span class="bcp14">SHOULD</span> allow this period to be configured.
+Implementations <span class="bcp14">MAY</span> allow this period to be configured.
 Shorter periods reduce the window of exposure to stale data but also
 reduce the effectiveness of Optimistic DNS for infrequently-accessed names.<a href="#section-10-3.6.1" class="pilcrow">¶</a></p>
 </dd>
@@ -2464,7 +2476,7 @@ reduce the effectiveness of Optimistic DNS for infrequently-accessed names.<a hr
 <a href="#appendix-A" class="section-number selfRef">Appendix A. </a><a href="#name-deployment-history" class="section-name selfRef">Deployment History</a>
       </h2>
 <p id="appendix-A-1">Prior to implementing Optimistic DNS, the mDNSResponder code
-addressed the Zeno’s paradox problem (<a href="#zenos-paradox" class="auto internal xref">Section 4</a>)
+addressed the Zeno’s paradox problem (<a href="#zeno" class="auto internal xref">Section 4</a>)
 by implementing a modest form of DNS TTL stretching.
 The mDNSResponder code stretches TTLs by 25%,
 plus two seconds to account for minor clock variations.
@@ -2476,7 +2488,7 @@ of 80-100% of the stretched TTL, then the mDNSResponder stub resolver
 code will return the available answer to the client immediately, while
 in parallel simultaneously sending a query to the recursive resolver.<a href="#appendix-A-2" class="pilcrow">¶</a></p>
 <p id="appendix-A-3">In addition, if an asynchronous query is active on the client
-at the time the record age reaches 80% of its stretched TTL,
+at the time the record age passes 80% of its stretched TTL,
 then the mDNSResponder stub resolver code will send a DNS query
 to the recursive resolver to fetch fresh data, and will update
 the client with fresh information if new data is received.<a href="#appendix-A-3" class="pilcrow">¶</a></p>
@@ -2579,7 +2591,7 @@ record lifecycle:<a href="#appendix-A.1.2-1" class="pilcrow">¶</a></p>
             <dt id="appendix-A.1.2-2.1">Mortal (default)</dt>
             <dd style="margin-left: 1.5em" id="appendix-A.1.2-2.2">
               <p id="appendix-A.1.2-2.2.1">The normal cache state for a record retrieved to
-answer a Traditional (not Optimistic DNS) query.
+answer a traditional (not Optimistic DNS) query.
 These records may be refreshed in the course
 of normal operation.
 If subsequently queried by an Optimistic DNS
