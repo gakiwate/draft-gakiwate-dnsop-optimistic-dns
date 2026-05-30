@@ -252,11 +252,11 @@ local API matter.
   the content of a directory has changed, but using asynchronous
   filesystem notifications gives the same effect more efficiently.
   Asynchronous DNS resolution is supported in Apple’s networking APIs,
-  and in other DNS stub resolver code like getdns {{getdns}}.
+  and in other DNS stub resolver implementations like getdns {{getdns}}.
 
 *Happy Eyeballs.*
 : A client-side connection establishment algorithm
-{{IETF72}} {{?RFC6555}} {{!RFC8305}} {{HEv3}} ({{happy-eyeballs}})
+{{IETF72}} {{?RFC6555}} {{?RFC8305}} {{HEv3}} ({{happy-eyeballs}})
 that races connection attempts across multiple addresses and
 address families, using whichever connection succeeds first.
 
@@ -376,7 +376,7 @@ Data being younger than its TTL is not a guarantee that it is still correct,
 and data being older than its TTL is not a guarantee that it is wrong.
 
 The asynchronous connection-racing mechanism known as Happy Eyeballs
-{{IETF72}} {{?RFC6555}} {{!RFC8305}} {{HEv3}} ({{happy-eyeballs}})
+{{IETF72}} {{?RFC6555}} {{?RFC8305}} {{HEv3}} ({{happy-eyeballs}})
 is a key technology that makes Optimistic DNS useful,
 because it makes makes applications more robust in occasional
 situations where they may briefly receive incorrect information.
@@ -453,7 +453,7 @@ delivers additional results through subsequent callbacks.  This is the
 resolution model defined by Multicast DNS {{?RFC6762}}
 and is valuable for unicast DNS too.
 
-This model naturally supports the two-wave delivery that Optimistic DNS
+This model naturally supports the incremental delivery that Optimistic DNS
 requires.  Expired records arrive in the first callback, within
 microseconds.  Fresh records from the network arrive in subsequent
 callbacks, within milliseconds.  The application can act on the expired
@@ -464,16 +464,16 @@ established and the fresh answer serves as confirmation.
 
 ## Happy Eyeballs
 
-Optimistic DNS delivers DNS answers quickly, with the caveat that,
-on rare occasions, some of those answers might be stale, in which case
-updated answers will be delivered as soon as they are available.
+Optimistic DNS delivers DNS answers quickly, with the caveat that, on rare
+occasions, some of those answers might be stale and incorrect, in which
+case updated answers will be delivered as soon as they are available.
 To make this optimistic approach viable, it MUST be coupled
 with networking code that is designed to embrace this uncertainty,
 and account for the fact that all data received from a network
 is necessarily at least a little stale by the time it arrives,
 and may subsequently be found to be incorrect.
 
-Happy Eyeballs {{IETF72}} {{?RFC6555}} {{!RFC8305}} {{HEv3}}
+Happy Eyeballs {{IETF72}} {{?RFC6555}} {{?RFC8305}} {{HEv3}}
 defines algorithms for racing connection attempts across multiple
 addresses and address families. When a client has several
 candidate addresses for a destination, Happy Eyeballs staggers
@@ -572,12 +572,17 @@ returns the same address:
 | T+5us  | Callback: 203.0.113.34         | Expired                  |
 | T+120ms| (data unchanged, no callback)  | Fresh Answer Same        |
 
-When the fresh answer matches the expired answer, no second callback is
-delivered. The application that began connecting at T+5us saved 120 milliseconds
-compared to waiting for the fresh answer.
+When a fresh positive answer matches the previous
+Optimistic Positive Answer, no second callback is delivered.
+The application that began connecting at T+5us saved 120
+milliseconds compared to waiting for the fresh answer.
 
-When the data has changed (for example, if the server moved to a new
-address), the sequence looks like this:
+When the data has changed (for example, if the server moved to a new address),
+or a fresh negative answer confirms a previous Optimistic Negative Answer,
+the application is notified.
+Sending confirmations of Optimistic Negative Answers is
+necessary because the client may be waiting for that negative
+answer confirmation before proceeding with its next steps.
 
 | Time   | Event                          | Notes                    |
 |--------|--------------------------------|--------------------------|
@@ -585,13 +590,14 @@ address), the sequence looks like this:
 | T+5us  | Callback: 203.0.113.34         | Expired                  |
 | T+120ms| Callback: 198.51.100.42        | Fresh Answer Different   |
 
-Here the expired answer contained an old address.  An application that
-connected to 203.0.113.34 may find that the connection fails with
-an ICMP Host Unreachable error, a TCP RST, a TLS failure, or other
-unexpected content.  But the fresh answer arrives 120 milliseconds later,
-and the application can retry with the correct address.  The total time to
-a successful connection is still only about 120 milliseconds -- roughly the same as
-it would have been without Optimistic DNS.
+In this example the expired answer contained a stale and incorrect address.
+An application that connected to 203.0.113.34 may find that
+the connection fails with an ICMP Host Unreachable error,
+a TCP RST, a TLS failure, or other unexpected content.
+But the fresh answer arrives 120 milliseconds later,
+and the application can retry with the correct address.
+The total time to a successful connection is still only about 120 milliseconds
+-- roughly the same as it would have been without Optimistic DNS.
 
 Optimistic DNS never makes things substantially worse for the application.  In the common
 case where the data has not changed, it makes things dramatically faster.  In
@@ -660,13 +666,9 @@ that may be required by the search algorithm (see {{search}}).
 
 ## Parallel Network Query
 
-If no unexpired records are found, the stub resolver issues a standard DNS
+If no unexpired records are found, the stub resolver MUST issue a standard DNS
 query on the network.  This query proceeds through the normal resolution path:
-contacting configured recursive resolvers, following CNAME chains,
-and so on.  This network query is not optional.
-Even if expired records were already returned from the cache, the network query
-MUST still be issued.  The expired records are a convenience for the
-application, not a substitute for proper DNS resolution.
+contacting configured recursive resolvers, following CNAME chains, and so on.
 
 Fresh answers from the network are delivered to the application through
 an asynchronous callback mechanism.  The application’s networking code MUST
@@ -762,7 +764,7 @@ the validity periods of cryptographic signatures.
 
 ## DNS Domain Name Search Lists {#search}
 
-Most DNS stub resolvers support domain name search lists {{?RFC1034}}.
+Most DNS stub resolvers support domain name search lists {{!RFC1034}}.
 Domain name search lists can be configured manually, or learned
 automatically from the network using DHCP {{?RFC3397}} {{?RFC3646}}
 or IPv6 Router Advertisements {{?RFC8106}}.
@@ -832,7 +834,7 @@ UDP/TCP, DNS over TLS (DoT) {{?RFC7858}}, DNS over HTTPS (DoH)
 {{?RFC8484}}, or DNS over QUIC (DoQ) {{?RFC9250}}, the Optimistic DNS
 mechanism functions identically.
 
-## Relationship to RFC 8767
+## Serving Stale Data at Recursive Resolvers
 
 Serving Stale Data to Improve DNS Resiliency {{?RFC8767}} describes a
 mechanism for recursive resolvers to serve stale cached data when they are
@@ -881,11 +883,11 @@ to issue asynchronous updates to correct an earlier
 answer that is subsequently discovered to be wrong.
 In principle, stub resolvers could use DNS Push Notifications {{?RFC8765}}
 to receive asynchronous updates from a recursive resolver, but
-in practice this mught place too much load on recursive resolvers.
+in practice this might place too much load on recursive resolvers.
 The current recommended solution for recursive resolvers returning
 stale data is that the TTL is reported as being 30 seconds {{?RFC8767}}.
 This has the effect of instructing stub resolvers to poll
-the recursive resolver, no more than once every 30 seconds,
+the recursive resolver once every 30 seconds
 to ascertain if newer data has become available.
 
 # Operational Considerations
@@ -973,7 +975,7 @@ Poisoning Amplification
 
 Expired Records Retention Period
 : The recommended maximum retention period of one week ({{cache-management}})
-  bounds the maximum time a stale record can be served.
+  bounds the maximum time an expired record can be served.
   Implementations SHOULD allow this period to be configured.
   Shorter periods reduce the window of exposure to stale data but also
   reduce the effectiveness of Optimistic DNS for infrequently-accessed names.
@@ -1000,10 +1002,11 @@ of 80-100% of the stretched TTL, then the mDNSResponder stub resolver
 code will return the available answer to the client immediately, while
 in parallel simultaneously sending a query to the recursive resolver.
 
-If an asynchronous query is active on the client at the time the record
-age reaches 80% of its stretched TTL, then the mDNSResponder stub resolver
-code will send a DNS query to the recursive resolver to fetch fresh data,
-and will update the client with fresh information if new data is received.
+In addition, if an asynchronous query is active on the client
+at the time the record age reaches 80% of its stretched TTL,
+then the mDNSResponder stub resolver code will send a DNS query
+to the recursive resolver to fetch fresh data, and will update
+the client with fresh information if new data is received.
 
 This DNS query to the recursive resolver happens after the
 recursive resolver’s copy of the record has expired, causing the
@@ -1015,7 +1018,7 @@ Thus, traditional DNS queries using the mDNSResponder stub resolver
 may receive answers that are up to 25% beyond their original lifetime.
 
 The development of
-Happy Eyeballs in 2008 {{IETF72}} {{?RFC6555}} {{!RFC8305}} {{HEv3}}
+Happy Eyeballs in 2008 {{IETF72}} {{?RFC6555}} {{?RFC8305}} {{HEv3}}
 made it feasible to increase
 effective record lifetimes beyond a modest extension of just 25%,
 and this new capability is what made Optimistic DNS possible.
@@ -1044,10 +1047,15 @@ kDNSServiceFlagsAllowExpiredAnswers
 
 kDNSServiceFlagsExpiredAnswer
 : Set by the resolver on individual answer callbacks to indicate that the
-  record being returned is expired.  While this flag is not necessary for
-  optimistic DNS to function correctly, mDNSResponder adds this hint for
-  applications.
-  Providing an equivalent indication in other implementations is not recommended,
+  record being returned is expired.
+  In the case of Optimistic Negative Answers, the flag is a useful
+  hint to the client about how much trust it should place in this answer.
+  An expired Optimistic Negative Answer should be quickly updated with
+  a fresh confirmation of the negative answer, or a new positive answer.
+  In the case of Optimistic Positive Answers, the flag has little
+  significance, since the application verifies the validity of
+  positive answers by attempting communication with those addresses.
+  Developers should take care in how they interpret this answer property
   because, as mentioned earlier, the notion of record expiry is subjective,
   and this flag is easily misunderstood and misused by developers who
   think it carries more significance than it really does.
@@ -1092,11 +1100,12 @@ Immortal
   In addition, promotion from mortal to immortal occurs when a cached
   record is used to answer a query from an application that has opted
   in to Optimistic DNS.
-  The logic is that if an application has made an Optimistic DNS query
-  for this DNS name, then there may be more such queries in the future.
+  The logic is that if an application has made an Optimistic DNS
+  query for this DNS name, that is a hint that there may be
+  more such Optimistic DNS queries in the future.
   If there has been not even one single Optimistic DNS query
   for this DNS name, then that is a sign that whatever applications
-  are resolving this DNS name do not yet support Optimistic DNS,
+  are resolving this DNS name do not yet use Optimistic DNS,
   so saving these records for a long time would be a waste of memory.
   Successful subsequent queries for these records
   will refresh their lifetime.
