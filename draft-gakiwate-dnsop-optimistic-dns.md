@@ -74,6 +74,18 @@ informative:
      - org: NLnet Labs, Sinodun and No Mountain Software
     target: https://getdnsapi.net/
 
+  ZC:
+    title: "Zero Configuration Networking: The Definitive Guide"
+    author:
+      - ins: S. Cheshire
+        name: Stuart Cheshire
+      - ins: D. H. Steinberg
+        name: Daniel H. Steinberg
+    date: 2005-12
+    seriesinfo:
+      ISBN: 978-0-596-10100-5
+    refcontent: "O'Reilly Media"
+
 --- abstract
 
 DNS lookups introduce user-visible delay, particularly when cached records
