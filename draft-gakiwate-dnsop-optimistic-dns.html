@@ -1435,34 +1435,8 @@ resolver, which may be more recent than the data in the local cache.<a href="#se
         <dd style="margin-left: 1.5em" id="section-2-2.10">
           <p id="section-2-2.10.1">A DNS resolution model where the application initiates a query and
 receives results through callbacks or event notifications as they
-become available, rather than blocking until a single atomic set of answers is
-returned all at once.  This model supports receiving multiple answers over time,
-including updated answers that supersede earlier ones.
-The operational model of asynchronous DNS resolution is
-that it is a performance optimization over rapid polling.
-If an application were to call an API like getaddrinfo()
-as fast as it can in a tight loop, then the application
-would always have the latest information available from the local
-stub resolver, but it would be inefficient and wasteful of CPU time.
-Most consecutive calls to getaddrinfo() would return unchanged information.
-The guiding principle of an asynchronous DNS resolution API is
-that it gives the application the exact same information as repeated
-calls to the equivalent synchronous API, but more efficiently.
-If a fresh new query would yield different results,
-then the client’s asynchronous DNS operation <span class="bcp14">MUST</span> be given
-asynchronous notifications to deliver the new set of results.
-This avoids the temptation for clients to resort to polling,
-in the belief that polling gives them better results
-than trusting the asynchronous notification mechanism.
-For efficiency, the application is notified via an asynchronous
-notification only when the set of answers changes.
-This is similar to the efficiency trade-offs present in other APIs,
-where asynchronous notification is more efficient than polling.
-For example, an application can repeatedly poll to find if
-the content of a directory has changed, but using asynchronous
-filesystem notifications gives the same effect more efficiently.
-Asynchronous DNS resolution is supported in Apple’s networking APIs,
-and in other DNS stub resolver implementations like getdns <span>[<a href="#getdns" class="cite xref">getdns</a>]</span>.<a href="#section-2-2.10.1" class="pilcrow">¶</a></p>
+become available, rather than blocking until a single atomic set
+of answers is returned all at once (<a href="#async" class="auto internal xref">Section 5.1</a>).<a href="#section-2-2.10.1" class="pilcrow">¶</a></p>
 </dd>
         <dd class="break"></dd>
 <dt id="section-2-2.11"><em>Happy Eyeballs.</em></dt>
@@ -1664,7 +1638,7 @@ support delivering asynchronous results as they arrive<a href="#section-5-2.1.1"
 the application needs to continue gracefully.<a href="#section-5-2.2.1" class="pilcrow">¶</a></p>
 </li>
       </ul>
-<div id="asynchronous-dns-resolution">
+<div id="async">
 <section id="section-5.1">
         <h3 id="name-asynchronous-dns-resolution">
 <a href="#section-5.1" class="section-number selfRef">5.1. </a><a href="#name-asynchronous-dns-resolution" class="section-name selfRef">Asynchronous DNS Resolution</a>
@@ -1674,19 +1648,44 @@ is available.  The caller issues a query, waits, receives one set of results, an
 the call is complete.  Optimistic DNS cannot function with this model since
 there is no mechanism to deliver an expired answer now and
 update it with newer answers shortly afterwards.<a href="#section-5.1-1" class="pilcrow">¶</a></p>
-<p id="section-5.1-2">With Asynchronous DNS APIs, the application registers a callback and receives
-results as they become available.  The query remains active, and the resolver
-delivers additional results through subsequent callbacks.  This is the
-resolution model defined by Multicast DNS <span>[<a href="#RFC6762" class="cite xref">RFC6762</a>]</span>
-and is valuable for unicast DNS too.<a href="#section-5.1-2" class="pilcrow">¶</a></p>
-<p id="section-5.1-3">This model naturally supports the incremental delivery that Optimistic DNS
+<p id="section-5.1-2">Asynchronous DNS APIs support receiving multiple answers over time,
+including updated answers that supersede earlier ones.
+The operational model of asynchronous DNS resolution is
+that it is a performance optimization over rapid polling.
+If an application were to call an API like getaddrinfo()
+as fast as it can in a tight loop, then the application
+would always have the latest information available from the local
+stub resolver, but it would be inefficient and wasteful of CPU time.
+Most consecutive calls to getaddrinfo() would return unchanged information.
+The guiding principle of an asynchronous DNS resolution API is
+that it gives the application the exact same information as repeated
+calls to the equivalent synchronous API, but more efficiently.
+If a fresh new query would yield different results,
+then the client’s asynchronous DNS operation <span class="bcp14">MUST</span> be given
+asynchronous notifications to deliver the new set of results.
+This avoids the temptation for clients to resort to polling,
+in the belief that polling gives them better results
+than trusting the asynchronous notification mechanism.
+For efficiency, the application is notified via an asynchronous
+notification only when the set of answers changes.
+This is similar to the efficiency trade-offs present in other APIs,
+where asynchronous notification is more efficient than polling.
+For example, an application can repeatedly poll to find if
+the content of a directory has changed, but using asynchronous
+filesystem notifications gives the same effect more efficiently.<a href="#section-5.1-2" class="pilcrow">¶</a></p>
+<p id="section-5.1-3">This is the resolution model defined by Multicast DNS <span>[<a href="#RFC6762" class="cite xref">RFC6762</a>]</span>
+and is valuable for unicast DNS too.
+Asynchronous DNS resolution is supported in
+Apple’s networking APIs <span>[<a href="#ZC" class="cite xref">ZC</a>]</span>,
+and in other DNS stub resolver implementations like getdns <span>[<a href="#getdns" class="cite xref">getdns</a>]</span>.<a href="#section-5.1-3" class="pilcrow">¶</a></p>
+<p id="section-5.1-4">This model naturally supports the incremental delivery that Optimistic DNS
 requires.  Expired records arrive in the first callback, within
 microseconds.  Fresh records from the network arrive in subsequent
 callbacks, within milliseconds.  The application can act on the expired
 answer immediately by opening a connection.  If the address has
 changed, the application can start a new connection to the updated
 address.  If the address is the same, the connection is already
-established and the fresh answer serves as confirmation.<a href="#section-5.1-3" class="pilcrow">¶</a></p>
+established and the fresh answer serves as confirmation.<a href="#section-5.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="happy-eyeballs">
@@ -1736,7 +1735,38 @@ or excessive extra load on servers.
 If, during this procedure, new DNS results are received,
 the list of candidate addresses is updated accordingly,
 for use in subsequent connection requests.<a href="#section-5.2-4" class="pilcrow">¶</a></p>
-<p id="section-5.2-5">Using Optimistic DNS in conjunction with Happy Eyeballs means that,
+<p id="section-5.2-5">After the Happy Eyeballs algorithm has succeeded in
+establishing a connection to an acceptable destination
+(determined by verifying the TLS certificate, or otherwise,
+as appropriate) the asynchronous DNS operation <span class="bcp14">MUST</span> be stopped.
+Once an application has established a successful connection, the
+application should make its future decisions based on the viability
+of that established connection, rather than any subsequent
+information to the contrary received from asynchronous DNS.
+If a new IP address is established for the server but
+existing connections to the old IP address continue to work,
+then there is no reason for clients to abandon their working connections.
+The decision about if and when to migrate existing clients
+to the new IP address is in the hands of the server operator.
+The server operator might choose to allow those connections to remain.
+If the server operator wishes to have clients reconnect
+using the new IP address, then that could be achieved
+using an in-band message on the existing connection,
+or by simply shutting down the server at the old IP address,
+so that clients receive TCP RST packets (or equivalent),
+causing clients to re-establish their connections
+using the new IP address.<a href="#section-5.2-5" class="pilcrow">¶</a></p>
+<p id="section-5.2-6">Cancelling the asynchronous DNS operation prematurely,
+before a successful connection has been established,
+would prevent the reception of future updated answers,
+which would defeat the purpose of Optimistic DNS,
+which is to deliver available answers quickly,
+combined with eventual correctness.<a href="#section-5.2-6" class="pilcrow">¶</a></p>
+<p id="section-5.2-7">Failure to cancel the asynchronous DNS operation after an
+acceptable connection has been made would be a waste of resources.
+In the extreme case, if asynchronous DNS operations are never
+cancelled, this would constitute a resource leak on the client device.<a href="#section-5.2-7" class="pilcrow">¶</a></p>
+<p id="section-5.2-8">Using Optimistic DNS in conjunction with Happy Eyeballs means that,
 in the common case, a connection to the correct server is made faster,
 with no additional network traffic.
 In the rare case when a server address has actually changed, the cost is
@@ -1744,8 +1774,8 @@ a small amount of wasted network traffic while waiting for the DNS reply.
 Once the reply arrives the Happy Eyeballs algorithm can immediately
 connect to the correct server, with no additional delay beyond what
 it would have experienced had it just waited for the DNS reply
-without trying other candidate addresses while it was waiting.<a href="#section-5.2-5" class="pilcrow">¶</a></p>
-<p id="section-5.2-6">Applications using Optimistic DNS and Happy Eyeballs <span class="bcp14">SHOULD</span> follow
+without trying other candidate addresses while it was waiting.<a href="#section-5.2-8" class="pilcrow">¶</a></p>
+<p id="section-5.2-9">Applications using Optimistic DNS and Happy Eyeballs <span class="bcp14">SHOULD</span> follow
 appropriate security practices (<a href="#security-considerations" class="auto internal xref">Section 10</a>) to ensure
 that they are connecting to the intended host or service on the network.
 Applications that do not support both Happy Eyeballs
@@ -1753,13 +1783,13 @@ and appropriate application-layer security
 <span class="bcp14">SHOULD NOT</span> use Optimistic DNS.
 These applications are very dependent on always getting
 the right answers from DNS every time, and do not recover
-gracefully when delivered stale data by Optimistic DNS.<a href="#section-5.2-6" class="pilcrow">¶</a></p>
-<p id="section-5.2-7">Waiting for a fresh answer that confirms what the cache already
+gracefully when delivered stale data by Optimistic DNS.<a href="#section-5.2-9" class="pilcrow">¶</a></p>
+<p id="section-5.2-10">Waiting for a fresh answer that confirms what the cache already
 had would result in a guaranteed delay of the full network
 round-trip time on every cache expiry. For most applications,
-the expected value of the optimistic approach is clearly positive.<a href="#section-5.2-7" class="pilcrow">¶</a></p>
-<p id="section-5.2-8">Without Happy Eyeballs, a wrong expired address would mean a failed connection and
-user frustration.<a href="#section-5.2-8" class="pilcrow">¶</a></p>
+the expected value of the optimistic approach is clearly positive.<a href="#section-5.2-10" class="pilcrow">¶</a></p>
+<p id="section-5.2-11">Without Happy Eyeballs, a wrong expired address would mean a failed connection and
+user frustration.<a href="#section-5.2-11" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="combined-effect">
@@ -2414,8 +2444,12 @@ reduce the effectiveness of Optimistic DNS for infrequently-accessed names.<a hr
 <span class="refAuthor">Lawrence, D.</span>, <span class="refAuthor">Kumari, W.</span>, and <span class="refAuthor">P. Sood</span>, <span class="refTitle">"Serving Stale Data to Improve DNS Resiliency"</span>, <span class="seriesInfo">RFC 8767</span>, <span class="seriesInfo">DOI 10.17487/RFC8767</span>, <time datetime="2020-03" class="refDate">March 2020</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc8767">https://www.rfc-editor.org/rfc/rfc8767</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="RFC9250">[RFC9250]</dt>
-      <dd>
+        <dd>
 <span class="refAuthor">Huitema, C.</span>, <span class="refAuthor">Dickinson, S.</span>, and <span class="refAuthor">A. Mankin</span>, <span class="refTitle">"DNS over Dedicated QUIC Connections"</span>, <span class="seriesInfo">RFC 9250</span>, <span class="seriesInfo">DOI 10.17487/RFC9250</span>, <time datetime="2022-05" class="refDate">May 2022</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc9250">https://www.rfc-editor.org/rfc/rfc9250</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="ZC">[ZC]</dt>
+      <dd>
+<span class="refAuthor">Cheshire, S.</span> and <span class="refAuthor">D. H. Steinberg</span>, <span class="refTitle">"Zero Configuration Networking: The Definitive Guide"</span>, <span class="refContent">O'Reilly Media</span>, <span class="seriesInfo">ISBN 978-0-596-10100-5</span>, <time datetime="2005-12" class="refDate">December 2005</time>. </dd>
 <dd class="break"></dd>
 </dl>
 </section>
