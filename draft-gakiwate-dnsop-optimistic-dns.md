@@ -1119,6 +1119,13 @@ kDNSServiceFlagsAnsweredFromCache
   came from the cache and the other will be told that it did not.
   Which client gets told which is effectively a coin toss,
   and usually has little significance.
+  Revealing whether an answer was served from the cache
+  also has privacy implications.
+  A rogue application could issue queries for a large
+  number of popular domain names, and from the replies
+  indicating which domain names were already in the local
+  cache and which were not, the rogue application could infer
+  a list of which services this user has recently accessed.
 
 ### Record Lifecycle {#record-immortalization}
 
