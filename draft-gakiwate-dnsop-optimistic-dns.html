@@ -2181,18 +2181,18 @@ mechanism for recursive resolvers to serve stale cached data when they are
 unable to refresh it from authoritative servers.  Optimistic DNS and
 RFC 8767 address different levels of the DNS resolution chain:<a href="#section-8.5-1" class="pilcrow">¶</a></p>
 <span class="break"></span><dl class="dlParallel" id="section-8.5-2">
-          <dt id="section-8.5-2.1">RFC 8767</dt>
+          <dt id="section-8.5-2.1">Optimistic DNS</dt>
           <dd style="margin-left: 1.5em" id="section-8.5-2.2">
-            <p id="section-8.5-2.2.1">Operates at the recursive resolver.  Serves stale data when upstream
-authoritative servers are unreachable.  The primary goal is resiliency --
-maintaining DNS service during outages.<a href="#section-8.5-2.2.1" class="pilcrow">¶</a></p>
+            <p id="section-8.5-2.2.1">Operates at the stub resolver on the end-user's device.  Serves expired
+cached data proactively, while simultaneously initiating a network query.
+The primary goal is delay reduction -- eliminating the TTL expiry spike.<a href="#section-8.5-2.2.1" class="pilcrow">¶</a></p>
 </dd>
           <dd class="break"></dd>
-<dt id="section-8.5-2.3">Optimistic DNS</dt>
+<dt id="section-8.5-2.3">RFC 8767</dt>
           <dd style="margin-left: 1.5em" id="section-8.5-2.4">
-            <p id="section-8.5-2.4.1">Operates at the stub resolver on the end-user's device.  Serves expired
-cached data proactively, while simultaneously initiating a network query.
-The primary goal is delay reduction -- eliminating the TTL expiry spike.<a href="#section-8.5-2.4.1" class="pilcrow">¶</a></p>
+            <p id="section-8.5-2.4.1">Operates at the recursive resolver.
+Serves stale data when upstream authoritative servers are unreachable.
+The primary goal is resiliency -- maintaining DNS service during outages.<a href="#section-8.5-2.4.1" class="pilcrow">¶</a></p>
 </dd>
         <dd class="break"></dd>
 </dl>
@@ -2210,14 +2210,14 @@ server is unreachable, the recursive resolver can serve its own stale
 data rather than returning SERVFAIL.<a href="#section-8.5-4.2.1" class="pilcrow">¶</a></p>
 </li>
         </ol>
-<p id="section-8.5-5">RFC 8767 serves stale data without any provision for a future
-asynchronous notification when the desired data becomes available.<a href="#section-8.5-5" class="pilcrow">¶</a></p>
-<p id="section-8.5-6">In contrast, Optimistic DNS delivers the data it has immediately, while
+<p id="section-8.5-5">Optimistic DNS delivers the data it has immediately, while
 also delivering updated data the moment it becomes available. It gives
 the application the benefit of timely data, which could occasionally be
 wrong, without depriving the application of also receiving the exact
 data it would have received with a traditional non-optimistic DNS query,
-at the time it would have received it.<a href="#section-8.5-6" class="pilcrow">¶</a></p>
+at the time it would have received it.<a href="#section-8.5-5" class="pilcrow">¶</a></p>
+<p id="section-8.5-6">In contrast, RFC 8767 serves stale data without any provision for a
+future asynchronous notification when the desired data becomes available.<a href="#section-8.5-6" class="pilcrow">¶</a></p>
 <p id="section-8.5-7">Optimistic DNS is not applicable to recursive resolvers because
 Optimistic DNS relies on the ability to deliver its best available
 information immediately, and then asynchronously update that
