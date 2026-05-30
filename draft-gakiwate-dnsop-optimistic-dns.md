@@ -117,7 +117,7 @@ now constitute a larger proportion of the overall web page load time.
 Computer processing speed and network throughput continue to increase,
 but the speed of light isn’t changing.
 
-When a user opens their laptop and navigates to a website, the first step
+When a user views a website, the first step
 is typically a DNS lookup to translate the hostname into an IP address.  If
 the laptop's DNS cache contains a record for that hostname, the answer is
 returned almost instantly and the user perceives no delay.  But if the
@@ -243,9 +243,10 @@ local API matter.
 
 *Happy Eyeballs.*
 : A client-side connection establishment algorithm
-{{IETF72}} {{?RFC6555}} {{?RFC8305}} {{HEv3}} ({{happy-eyeballs}})
+{{IETF72}} {{?RFC6555}} {{?RFC8305}} {{HEv3}}
 that races connection attempts across multiple addresses and
-address families, using whichever connection succeeds first.
+address families, using whichever connection succeeds first
+({{happy-eyeballs}}).
 
 # Problem Statement
 
@@ -295,7 +296,7 @@ the resolver decides to refresh, not when the data becomes incorrect.
 The "stale" state is also subjective.  A user querying the same record at
 two different resolvers can see entirely different views of staleness.
 The diagram below illustrates this: both Recursive A and Recursive B
-cached R1 before the authoritative server replaced it with R2 at T=90.
+cached A1 before the authoritative server replaced it with A2 at T=90.
 But because each resolver started its TTL clock at a different moment,
 they present a different view to their clients.
 A client querying Recursive A at time T=80 will cause a DNS
@@ -334,7 +335,7 @@ Recursive B queries at T=45:
                                               v
                                    Client 2 queries at T=100:
                                        A1 TTL still valid
-                                       Returns cached R1
+                                       Returns cached A1
                                         (now incorrect).
 ~~~
 
@@ -363,12 +364,13 @@ Data being younger than its TTL is not a guarantee that it is still correct,
 and data being older than its TTL is not a guarantee that it is wrong.
 
 The asynchronous connection-racing mechanism known as Happy Eyeballs
-{{IETF72}} {{?RFC6555}} {{?RFC8305}} {{HEv3}} ({{happy-eyeballs}})
+{{IETF72}} {{?RFC6555}} {{?RFC8305}} {{HEv3}}
 is a key technology that makes Optimistic DNS useful,
 because it makes makes applications more robust in occasional
-situations where they may briefly receive incorrect information.
+situations where they may briefly receive incorrect information
+({{happy-eyeballs}}).
 
-# Zeno’s Paradox {#zenos-paradox}
+# Zeno’s Paradox {#zeno}
 
 One seemingly attractive approach to avoiding the delay spike
 might be to take inspiration from DHCP {{?RFC2131}} {{?RFC2132}},
@@ -379,7 +381,7 @@ lifetime has elapsed, rather than waiting for the lease
 to expire and then briefly losing the right to use that
 IP address while a new request is processed.
 
-Unfortunately, because of the way DNS works, the DHCP-inspired approach
+Unfortunately, because of the way DNS operates, the DHCP-inspired approach
 of refreshing records in advance of their expiration does not work.
 
 Suppose a DNS stub resolver makes a request for a name
@@ -591,7 +593,7 @@ Asynchronous DNS resolution makes Optimistic DNS *possible*.  It provides the
 delivery mechanism for multiple waves of results.  Happy Eyeballs makes Optimistic
 DNS *safe*.  It ensures that acting on a wrong expired address is not fatal to
 the overall connection attempt.  Together, the application starts connecting
-instantly with best-effort cached addresses, the connection race handles any
+instantly with provisional cached addresses, the connection race handles any
 staleness gracefully, and the fresh DNS answer arrives as an update confirming
 or correcting the initial result.
 
@@ -608,8 +610,8 @@ performs two actions in parallel:
 2. It issues a standard DNS query on the network to obtain fresh records.
 
 As fresh answers arrive from the network, the resolver delivers them to
-the application through the asynchronous callback mechanism.  The
-following diagram shows both waves for a query where www.example.com
+the application through the asynchronous callback mechanism.
+{{unchanged-flow}} shows both waves for a query where www.example.com
 has an expired A record (203.0.113.34) in the cache, and the fresh answer
 returns the same address:
 
@@ -618,6 +620,7 @@ returns the same address:
 | T+0us  | App queries www.example.com    |                          |
 | T+5us  | Callback: 203.0.113.34         | Expired                  |
 | T+120ms| (data unchanged, no callback)  | Fresh Answer Same        |
+{: #unchanged-flow title="Optimistic DNS when data is unchanged"}
 
 When a fresh positive answer matches the previous
 Optimistic Positive Answer, no second callback is delivered.
@@ -636,8 +639,9 @@ answer confirmation before proceeding with its next steps.
 | T+0us  | App queries www.example.com    |                          |
 | T+5us  | Callback: 203.0.113.34         | Expired                  |
 | T+120ms| Callback: 198.51.100.42        | Fresh Answer Different   |
+{: #changed-flow title="Optimistic DNS when data has changed"}
 
-In this example the expired answer contained a stale and incorrect address.
+In {{changed-flow}} the expired answer contained a stale and incorrect address.
 An application that connected to 203.0.113.34 may find that
 the connection fails with an ICMP Host Unreachable error,
 a TCP RST, a TLS failure, or other unexpected content.
@@ -709,7 +713,7 @@ where the nonexistence of a certain record is a prerequisite
 for using some other record, and the tentatively presumed
 nonexistence of a certain record can serve as a useful hint that
 the client should begin work speculatively looking up other names
-that may be required by the search algorithm (see {{search}}).
+that may be required by the search algorithm ({{search}}).
 
 ## Parallel Network Query
 
@@ -770,7 +774,7 @@ records during optimistic resolution, it takes the following steps:
 
 2. The CNAME referral is followed.
    (If the target of the CNAME referral is another CNAME record,
-   then this process repeats until a non-CNAME record is found.)
+   then this process repeats until a non-CNAME answer is found.)
 
 3. If, at any time while an asynchronous DNS query is active,
    the record data for any of the names in the CNAME chain changes,
@@ -877,7 +881,7 @@ some positive answer, if any, is returned.
 Optimistic DNS is transport-agnostic.  It operates entirely within the stub
 resolver's cache layer, which sits above the transport layer.  Whether the
 stub resolver communicates with recursive resolvers using classic DNS over
-UDP/TCP, DNS over TLS (DoT) {{?RFC7858}}, DNS over HTTPS (DoH)
+UDP/TCP {{!RFC1035}}, DNS over TLS (DoT) {{?RFC7858}}, DNS over HTTPS (DoH)
 {{?RFC8484}}, or DNS over QUIC (DoQ) {{?RFC9250}}, the Optimistic DNS
 mechanism functions identically.
 
@@ -963,7 +967,7 @@ Optimistic DNS changes this assumption.
 Using the same 24-hour TTL, the decline in the incoming connection
 rate will not be quite as rapid, and incoming connection requests
 to the old IP address may continue to be received for a week
-after the TTL has elapsed ({{cache-management}}).
+after the TTL has expired ({{cache-management}}).
 
 However, Optimistic DNS does not mean that the server operator
 is forced to maintain the availability of their web site
@@ -1023,7 +1027,7 @@ Poisoning Amplification
 Expired Records Retention Period
 : The recommended maximum retention period of one week ({{cache-management}})
   bounds the maximum time an expired record can be served.
-  Implementations SHOULD allow this period to be configured.
+  Implementations MAY allow this period to be configured.
   Shorter periods reduce the window of exposure to stale data but also
   reduce the effectiveness of Optimistic DNS for infrequently-accessed names.
 
@@ -1036,7 +1040,7 @@ This document has no IANA actions.
 # Deployment History
 
 Prior to implementing Optimistic DNS, the mDNSResponder code
-addressed the Zeno’s paradox problem ({{zenos-paradox}})
+addressed the Zeno’s paradox problem ({{zeno}})
 by implementing a modest form of DNS TTL stretching.
 The mDNSResponder code stretches TTLs by 25%,
 plus two seconds to account for minor clock variations.
@@ -1050,7 +1054,7 @@ code will return the available answer to the client immediately, while
 in parallel simultaneously sending a query to the recursive resolver.
 
 In addition, if an asynchronous query is active on the client
-at the time the record age reaches 80% of its stretched TTL,
+at the time the record age passes 80% of its stretched TTL,
 then the mDNSResponder stub resolver code will send a DNS query
 to the recursive resolver to fetch fresh data, and will update
 the client with fresh information if new data is received.
@@ -1139,7 +1143,7 @@ record lifecycle:
 
 Mortal (default)
 : The normal cache state for a record retrieved to
-  answer a Traditional (not Optimistic DNS) query.
+  answer a traditional (not Optimistic DNS) query.
   These records may be refreshed in the course
   of normal operation.
   If subsequently queried by an Optimistic DNS
