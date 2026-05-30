@@ -423,7 +423,7 @@ connecting to it, two things need to happen:
 
 - When the fresh answer arrives moments later, the application
 needs a way to receive it -- which means the DNS API has to
-support delivering asynchronous results as they arrive
+support delivering asynchronous results as they arrive.
 
 - If the expired address is found to be wrong,
 the application needs to continue gracefully.
@@ -705,7 +705,7 @@ indicate the stub resolver’s best guess that the
 requested record probably still doesn’t exist.
 Optimistic Negative Answers SHOULD NOT be used to generate
 error messages to the user.
-Such error messages should only be generated after a network
+Such error messages SHOULD only be generated after a network
 query has confirmed that the named record still does not exist.
 Optimistic Negative Answers can be useful in certain
 search scenarios (like applying DNS domain name search lists)
@@ -734,8 +734,8 @@ For this reason, stub resolvers SHOULD NOT store records
 for more than one week after the TTL has expired.
 
 The time limit of one week is selected so that a user could
-go home from work on a Thursday night, take a four-day long
-weekend break, return to work the next Tuesday, and still
+go home from work on a Thursday night, take a four-day
+long-weekend break, return to work the next Tuesday, and still
 benefit from using expired cached records for faster performance.
 Storing expired records for less time
 risks eliminating the benefit of Optimistic DNS in many cases;
@@ -785,7 +785,7 @@ records during optimistic resolution, it takes the following steps:
    If a fresh new query would yield different results, then the client’s
    asynchronous DNS operation receives asynchronous notifications
    to deliver the new set of results, giving it the exact same
-   information that a fresh query at that time would receive.
+   information that a fresh query at that time would yield.
 
 This rewind-and-restart approach ensures that the application continues
 to receive a complete, consistent answer for its query, even as DNS record
@@ -803,7 +803,7 @@ subsequent queries for these records always result in a new network request.
 ## DNSSEC {#dnssec}
 
 Optimistic DNS extends the cache lifetime for DNS records,
-as signalled by the TTL values.
+as signaled by the TTL values.
 
 Optimistic DNS does not extend the validity periods of cryptographic signatures.
 
@@ -854,8 +854,8 @@ to use a particular answer needs to wait until all
 earlier Optimistic Negative Answers have been confirmed.
 
 If a stub resolver were to issue parallel queries
-for all names in the domain name search list this
-could result in a lot of unnecessary network traffic,
+for all names in the domain name search list,
+this could result in a lot of unnecessary network traffic,
 particularly for users with many names in their search lists.
 If a stub resolver were to issue its queries sequentially,
 this could result in poor performance for the user.
@@ -956,7 +956,7 @@ Depending on when that address record was cached at various recursive
 resolvers around the world, the operator may expect to see a roughly
 linear decrease in new incoming connection requests to the old
 IP address in the 24 hours after the address record was updated, ending
-with no new connection requests being received after 24 hours has passed.
+with no new connection requests being received after 24 hours have passed.
 In reality there are various reasons that some clients may still attempt
 to use a stale address, but in practice there should be very few
 incoming connection requests to the old IP address after 24 hours.
@@ -970,7 +970,7 @@ to the old IP address may continue to be received for a week
 after the TTL has expired ({{cache-management}}).
 
 However, Optimistic DNS does not mean that the server operator
-is forced to maintain the availability of their web site
+is forced to maintain the availability of their website
 at the old IP address for a week after the address change.
 Because clients using the expired IP address are using Optimistic DNS,
 they have the benefit of asynchronous DNS and Happy Eyeballs,
@@ -1050,8 +1050,8 @@ actual TTL of the record as viewed by the recursive resolver has expired.
 
 If a client performs a new DNS query for a record within the time window
 of 80-100% of the stretched TTL, then the mDNSResponder stub resolver
-code will return the available answer to the client immediately, while
-in parallel simultaneously sending a query to the recursive resolver.
+code will return the available answer to the client immediately,
+while in parallel sending a query to the recursive resolver.
 
 In addition, if an asynchronous query is active on the client
 at the time the record age passes 80% of its stretched TTL,
@@ -1081,7 +1081,7 @@ Optimistic DNS in Apple’s mDNSResponder code was first shipped enabled by defa
 platforms since that release, serving as the default stub resolver behavior for
 all applications that use Apple’s recommended networking APIs.
 
-The mDNSResponder project is an open source system stub resolver, and runs on macOS, iOS,
+The mDNSResponder project is an open-source system stub resolver, and runs on macOS, iOS,
 tvOS, watchOS, Microsoft Windows, Android, Linux, and other platforms.
 This section describes its concrete implementation of the
 Optimistic DNS mechanism described in this document.
@@ -1120,7 +1120,7 @@ kDNSServiceFlagsAnsweredFromCache
   because this flag is easily misunderstood and misused by developers who
   think it carries more significance than it really does.
   If two clients happen to query for the same domain name at almost
-  exactly the same time then one will get told that the answer
+  exactly the same time then one will be told that the answer
   came from the cache and the other will be told that it did not.
   Which client gets told which is effectively a coin toss,
   and usually has little significance.
@@ -1161,7 +1161,7 @@ Immortal
   The logic is that if an application has made an Optimistic DNS
   query for this DNS name, that is a hint that there may be
   more such Optimistic DNS queries in the future.
-  If there has been not even one single Optimistic DNS query
+  If there has not been even one single Optimistic DNS query
   for this DNS name, then that is a sign that whatever applications
   are resolving this DNS name do not yet use Optimistic DNS,
   so saving these records for a long time would be a waste of memory.
