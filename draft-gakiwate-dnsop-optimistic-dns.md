@@ -119,9 +119,9 @@ but the speed of light isn’t changing.
 
 When a user views a website, the first step
 is typically a DNS lookup to translate the hostname into an IP address.  If
-the laptop's DNS cache contains a record for that hostname, the answer is
+the device's DNS cache contains a record for that hostname, the answer is
 returned almost instantly and the user perceives no delay.  But if the
-record's TTL has expired, by even a single second, the laptop must perform
+record's TTL has expired by even a single second, the device must perform
 a fresh DNS lookup.  On a wired connection this might take 50 to 200
 milliseconds.  On a cellular connection, particularly at the edge of
 coverage, it can take several seconds.
@@ -293,7 +293,7 @@ Servers do not typically change IP addresses the instant a TTL expires.
 The TTL is a freshness hint, not a correctness deadline.  It marks when
 the resolver decides to refresh, not when the data becomes incorrect.
 
-The "stale" state is also subjective.  A user querying the same record at
+The "stale" state is also relative.  A user querying the same record at
 two different resolvers can see entirely different views of staleness.
 The diagram below illustrates this: both Recursive A and Recursive B
 cached A1 before the authoritative server replaced it with A2 at T=90.
@@ -366,11 +366,11 @@ and data being older than its TTL is not a guarantee that it is wrong.
 The asynchronous connection-racing mechanism known as Happy Eyeballs
 {{IETF72}} {{?RFC6555}} {{?RFC8305}} {{HEv3}}
 is a key technology that makes Optimistic DNS useful,
-because it makes makes applications more robust in occasional
+because it makes applications more robust in occasional
 situations where they may briefly receive incorrect information
 ({{happy-eyeballs}}).
 
-# Zeno’s Paradox {#zeno}
+# The Preemptive Refresh Problem - Zeno’s Paradox {#zeno}
 
 One seemingly attractive approach to avoiding the delay spike
 might be to take inspiration from DHCP {{?RFC2131}} {{?RFC2132}},
@@ -487,6 +487,8 @@ with networking code that is designed to embrace this uncertainty,
 and account for the fact that all data received from a network
 is necessarily at least a little stale by the time it arrives,
 and may subsequently be found to be incorrect.
+Without Happy Eyeballs, a wrong expired address would mean a failed
+connection and user frustration.
 
 Happy Eyeballs {{IETF72}} {{?RFC6555}} {{?RFC8305}} {{HEv3}}
 defines algorithms for racing connection attempts across multiple
@@ -496,96 +498,65 @@ connection attempts, in order of expected likelihood of success,
 with short delays, and uses whichever connection succeeds first.
 
 The Happy Eyeballs mechanism pairs naturally with Optimistic DNS.
-
-With Happy Eyeballs, the networking code takes the set of
+When using Happy Eyeballs, the networking code takes the set of
 answers immediately available in the local cache and selects
-the address it predicts is most likely to succeed.
-If it predicts correctly, as it should at least 99% of the time,
-and the connection succeeds, then no additional traffic is generated.
-The connection may succeed before the fresh
-DNS answer from the network even arrives.
+the address it predicts is most likely to succeed.  If the prediction
+is correct, which is the common case, the connection succeeds and
+no additional traffic is generated.  The connection may succeed
+before the fresh DNS answer from the network even arrives.
+
 In the rare cases where the first connection attempt does not
-succeed within the expected network round-trip time,
-the TCP SYN (or equivalent connection request packet)
-is retransmitted and then immediately a connection attempt
-is initiated to the next address in order of preference.
-The first connection attempt is not abandoned when the second one starts
--- its usual schedule of retransmissions is still followed --
-and the two connection attempts proceed in parallel.
-If the second connection attempt does not succeed within the
-expected time then a third attempt is initiated, and so on.
-Running connection attempts in parallel instead of sequentially
-prevents long stalls waiting for a connection to time-out and fail
-before the next attempt is started.
-Staggering the start times by the expected response time means that
-in the majority of cases only a single connection attempt (the first one)
-is needed, which avoids generating excessive extra network traffic
-or excessive extra load on servers.
-If, during this procedure, new DNS results are received,
-the list of candidate addresses is updated accordingly,
-for use in subsequent connection requests.
+succeed within the expected network round-trip time, the TCP SYN
+(or equivalent connection request packet) is retransmitted, and a
+second connection attempt is immediately initiated to the next
+address in order of preference.  The first connection attempt is
+not abandoned when the second one starts -- its usual schedule of
+retransmissions is still followed -- and the two attempts proceed
+in parallel.  If the second connection attempt does not succeed
+within the expected time, a third attempt is initiated, and so on.
+
+Running connection attempts in parallel rather than sequentially
+prevents long stalls waiting for a connection to time out and fail
+before the next attempt is started.  Staggering the start times by
+the expected response time means that in the majority of cases only
+the first connection attempt is needed, which avoids generating
+unnecessary network traffic or extra load on servers.
+
+If new DNS results are received during this procedure, the list of
+candidate addresses is updated accordingly for use in subsequent
+connection requests.
+
+Using Optimistic DNS in conjunction with Happy Eyeballs means that, in
+the common case, a connection to the correct server is made faster,
+with no additional network traffic.  In the rare case when a server
+address has actually changed, the cost is a small amount of wasted
+network traffic while waiting for the DNS reply.  Once the reply
+arrives, Happy Eyeballs can immediately connect to the correct server,
+with no additional delay beyond what would have been experienced had
+the application just waited for the DNS reply in the first place.
+The cost of waiting for a fresh answer that simply confirms what the
+cache already had is a guaranteed delay of the full network round-trip
+time on every cache expiry.  For most applications, the expected value
+of the optimistic approach is clearly positive.
 
 After the Happy Eyeballs algorithm has succeeded in
 establishing a connection to an acceptable destination
 (determined by verifying the TLS certificate, or otherwise,
 as appropriate) the asynchronous DNS operation MUST be stopped.
-Once an application has established a successful connection, the
-application should make its future decisions based on the viability
-of that established connection, rather than any subsequent
-information to the contrary received from asynchronous DNS.
-If a new IP address is established for the server but
-existing connections to the old IP address continue to work,
-then there is no reason for clients to abandon their working connections.
-The decision about if and when to migrate existing clients
-to the new IP address is in the hands of the server operator.
-The server operator might choose to allow those connections to remain.
-If the server operator wishes to have clients reconnect
-using the new IP address, then that could be achieved
-using an in-band message on the existing connection,
-or by simply shutting down the server at the old IP address,
-so that clients receive TCP RST packets (or equivalent),
-causing clients to re-establish their connections
-using the new IP address.
-
-Cancelling the asynchronous DNS operation prematurely,
-before a successful connection has been established,
-would prevent the reception of future updated answers,
-which would defeat the purpose of Optimistic DNS,
-which is to deliver available answers quickly,
-combined with eventual correctness.
-
-Failure to cancel the asynchronous DNS operation after an
-acceptable connection has been made would be a waste of resources.
-In the extreme case, if asynchronous DNS operations are never
-cancelled, this would constitute a resource leak on the client device.
-
-Using Optimistic DNS in conjunction with Happy Eyeballs means that,
-in the common case, a connection to the correct server is made faster,
-with no additional network traffic.
-In the rare case when a server address has actually changed, the cost is
-a small amount of wasted network traffic while waiting for the DNS reply.
-Once the reply arrives the Happy Eyeballs algorithm can immediately
-connect to the correct server, with no additional delay beyond what
-it would have experienced had it just waited for the DNS reply
-without trying other candidate addresses while it was waiting.
+Once an application has established a successful connection, it
+should make its future decisions based on the viability of that
+connection, rather than any subsequent information to the contrary
+received from asynchronous DNS.
+Cancelling the asynchronous DNS operation prematurely, before a successful
+connection has been established, would prevent the reception of future updated
+answers, which would defeat the purpose of Optimistic DNS, which is to deliver
+available answers quickly while still ensuring eventual correctness. Failure to cancel
+after an acceptable connection has been made would be a waste of resources, and
+in the extreme case would constitute a resource leak on the client device.
 
 Applications using Optimistic DNS and Happy Eyeballs SHOULD follow
 appropriate security practices ({{security-considerations}}) to ensure
 that they are connecting to the intended host or service on the network.
-Applications that do not support both Happy Eyeballs
-and appropriate application-layer security
-SHOULD NOT use Optimistic DNS.
-These applications are very dependent on always getting
-the right answers from DNS every time, and do not recover
-gracefully when delivered stale data by Optimistic DNS.
-
-Waiting for a fresh answer that confirms what the cache already
-had would result in a guaranteed delay of the full network
-round-trip time on every cache expiry. For most applications,
-the expected value of the optimistic approach is clearly positive.
-
-Without Happy Eyeballs, a wrong expired address would mean a failed connection and
-user frustration.
 
 ## Combined Effect
 
@@ -664,6 +635,9 @@ their needs.
 Applications that do not support both Happy Eyeballs
 and appropriate application-layer security
 SHOULD NOT use Optimistic DNS.
+These applications are very dependent on always getting
+the right answers from DNS every time, and do not recover
+gracefully when delivered stale data by Optimistic DNS.
 
 # Implementation Details
 
@@ -892,12 +866,12 @@ mechanism for recursive resolvers to serve stale cached data when they are
 unable to refresh it from authoritative servers.  Optimistic DNS and
 RFC 8767 address different levels of the DNS resolution chain:
 
-Optimistic DNS
+*Optimistic DNS.*
 : Operates at the stub resolver on the end-user's device.  Serves expired
   cached data proactively, while simultaneously initiating a network query.
   The primary goal is delay reduction -- eliminating the TTL expiry spike.
 
-RFC 8767
+*RFC 8767.*
 : Operates at the recursive resolver.
   Serves stale data when upstream authoritative servers are unreachable.
   The primary goal is resiliency -- maintaining DNS service during outages.
@@ -977,6 +951,16 @@ they have the benefit of asynchronous DNS and Happy Eyeballs,
 which means that they will promptly switch to the new IP address,
 and the brief failed attempt to use the old IP address is inconsequential.
 
+If a new IP address is established for the server but existing connections to
+the old IP address continue to work, then there is no reason for clients to
+abandon their working connections.  The decision about if and when to migrate
+existing clients to the new IP address is in the hands of the server operator.
+The server operator might choose to allow those connections to remain.  If the
+server operator wishes to have clients reconnect using the new IP address, then
+that could be achieved using an in-band message on the existing connection, or
+by simply shutting down the server at the old IP address, so that clients
+re-establish their connections using the new IP address.
+
 Moreover, Optimistic DNS gives server operators
 the freedom to use shorter DNS TTLs safely.
 One of the reasons why server operators may choose
@@ -1009,7 +993,7 @@ Optimistic DNS adds a new way that packets may not reach their
 intended destination, but does not fundamentally alter the
 importance of application-layer security.
 
-IP Address Reuse
+*IP Address Reuse.*
 : When a DNS record expires, the IP address it contained may no longer be
   associated with the previous host or service.
   For HTTPS connections, TLS certificate
@@ -1017,14 +1001,14 @@ IP Address Reuse
   the wrong party.  For unencrypted protocols, there is a risk of
   connecting to an unintended server.
 
-Poisoning Amplification
+*Poisoning Amplification.*
 : If an attacker successfully poisons a cache entry, Optimistic DNS could
   extend the lifetime of the poisoned record beyond its original TTL.
   However, the record will be purged after the retention period expires.
   Moreover, the parallel network query will obtain and deliver the correct
   answer, giving the application an opportunity to detect the discrepancy.
 
-Expired Records Retention Period
+*Expired Records Retention Period.*
 : The recommended maximum retention period of one week ({{cache-management}})
   bounds the maximum time an expired record can be served.
   Implementations MAY allow this period to be configured.
@@ -1039,14 +1023,26 @@ This document has no IANA actions.
 
 # Deployment History
 
-Prior to implementing Optimistic DNS, the mDNSResponder code
-addressed the Zeno’s paradox problem ({{zeno}})
-by implementing a modest form of DNS TTL stretching.
-The mDNSResponder code stretches TTLs by 25%,
-plus two seconds to account for minor clock variations.
-This results in the situation where, when the age of the record
-as viewed by the stub resolver reaches 80% of its stretched TTL, the
-actual TTL of the record as viewed by the recursive resolver has expired.
+## Optimistic DNS in mDNSResponder {#mdnsresponder}
+
+The mDNSResponder project is an open-source system stub resolver, and runs on
+macOS, iOS, tvOS, watchOS, Microsoft Windows, Android, Linux, and other
+platforms.  This section describes its concrete implementation of the Optimistic
+DNS mechanism described in this document.
+
+Optimistic DNS in Apple’s mDNSResponder code was first shipped enabled by
+default in macOS 10.14 (Mojave) and iOS 12 in September 2018.  It has been
+active on all Apple platforms since that release, serving as the default stub
+resolver behavior for all applications that use Apple’s recommended networking
+APIs.
+
+Prior to implementing Optimistic DNS, the mDNSResponder code addressed the
+Zeno’s paradox problem ({{zeno}}) by implementing a modest form of DNS TTL
+stretching.  The mDNSResponder code stretches TTLs by 25%, plus two seconds to
+account for minor clock variations.  This results in the situation where, when
+the age of the record as viewed by the stub resolver reaches 80% of its
+stretched TTL, the actual TTL of the record as viewed by the recursive resolver
+has expired.
 
 If a client performs a new DNS query for a record within the time window
 of 80-100% of the stretched TTL, then the mDNSResponder stub resolver
@@ -1068,23 +1064,10 @@ waiting for the recursive resolver to refresh the record.
 Thus, traditional DNS queries using the mDNSResponder stub resolver
 may receive answers that are up to 25% beyond their original lifetime.
 
-The development of
-Happy Eyeballs in 2008 {{IETF72}} {{?RFC6555}} {{?RFC8305}} {{HEv3}}
-made it feasible to increase
-effective record lifetimes beyond a modest extension of just 25%,
-and this new capability is what made Optimistic DNS possible.
-
-## Optimistic DNS in mDNSResponder {#mdnsresponder}
-
-Optimistic DNS in Apple’s mDNSResponder code was first shipped enabled by default in macOS
-10.14 (Mojave) and iOS 12 in September 2018.  It has been active on all Apple
-platforms since that release, serving as the default stub resolver behavior for
-all applications that use Apple’s recommended networking APIs.
-
-The mDNSResponder project is an open-source system stub resolver, and runs on macOS, iOS,
-tvOS, watchOS, Microsoft Windows, Android, Linux, and other platforms.
-This section describes its concrete implementation of the
-Optimistic DNS mechanism described in this document.
+The development of Happy Eyeballs in 2008 {{IETF72}} {{?RFC6555}} {{?RFC8305}}
+{{HEv3}} made it feasible to increase effective record lifetimes beyond a modest
+extension of just 25%, and this new capability is what made Optimistic DNS
+possible.
 
 ### Signaling
 
@@ -1092,11 +1075,11 @@ This document describes query initiation as a local signaling matter
 between the application and the stub resolver. The mDNSResponder code implements
 this through the following API flags:
 
-kDNSServiceFlagsAllowExpiredAnswers
+*kDNSServiceFlagsAllowExpiredAnswers.*
 : Set by the application when issuing a query to request delivery
   of expired cached records.
 
-kDNSServiceFlagsExpiredAnswer
+*kDNSServiceFlagsExpiredAnswer.*
 : Set by the resolver on individual answer callbacks to indicate that the
   record being returned is expired.
   In the case of Optimistic Negative Answers, the flag is a useful
@@ -1111,7 +1094,7 @@ kDNSServiceFlagsExpiredAnswer
   and this flag is easily misunderstood and misused by developers who
   think it carries more significance than it really does.
 
-kDNSServiceFlagsAnsweredFromCache
+*kDNSServiceFlagsAnsweredFromCache.*
 : Set by the resolver to indicate that the record was served from the
   local cache rather than from a network response.  Set regardless of
   whether the record is expired, allowing the application to distinguish
@@ -1141,7 +1124,7 @@ Practically, the stub resolver code may want to limit its memory usage.
 The mDNSResponder code approaches this with a three-state
 record lifecycle:
 
-Mortal (default)
+*Mortal (default).*
 : The normal cache state for a record retrieved to
   answer a traditional (not Optimistic DNS) query.
   If subsequently queried by an Optimistic DNS
@@ -1154,7 +1137,7 @@ Mortal (default)
   When the (stretched) TTL of a mortal record expires
   the record is eligible for immediate removal.
 
-Immortal
+*Immortal.*
 : A record marked to survive past its (stretched) TTL expiry.
   This is the initial cache state for a record retrieved to
   answer an Optimistic DNS query.
@@ -1173,7 +1156,7 @@ Immortal
   When the (stretched) TTL of an immortal record expires
   the record becomes a ghost record.
 
-Ghost
+*Ghost.*
 : An immortal record whose (stretched) TTL has expired.
   Ghost records linger in the cache, available to serve future
   Optimistic DNS queries.
