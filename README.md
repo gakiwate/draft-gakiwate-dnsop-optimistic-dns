@@ -1,8 +1,8 @@
 <!-- regenerate: on (set to off if you edit this file) -->
 
-# TODO - Your title
+# Optimistic DNS
 
-This is the working area for the individual Internet-Draft, "TODO - Your title".
+This is the working area for the individual Internet-Draft, "Optimistic DNS".
 
 * [Editor's Copy](https://gakiwate.github.io/draft-gakiwate-dnsop-optimistic-dns/#go.draft-gakiwate-dnsop-optimistic-dns.html)
 * [Datatracker Page](https://datatracker.ietf.org/doc/draft-gakiwate-dnsop-optimistic-dns)
@@ -13,7 +13,7 @@ This is the working area for the individual Internet-Draft, "TODO - Your title".
 ## Contributing
 
 See the
-[guidelines for contributions](https://github.com/gakiwate/draft-gakiwate-dnsop-optimistic-dns/blob//CONTRIBUTING.md).
+[guidelines for contributions](https://github.com/gakiwate/draft-gakiwate-dnsop-optimistic-dns/blob/main/CONTRIBUTING.md).
 
 The contributing file also has tips on how to make contributions, if you
 don't already know how to do that.
