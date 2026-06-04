@@ -1286,25 +1286,29 @@ A.1.2.  Record Lifecycle
 
    The complete lifecycle:
 
-          | Traditional      Optimistic DNS |
-          | Query                     Query |   ----R----
-          | for record           for record |  |         |
-    -R-   | not in cache       not in cache |  |   -R-   |
-   |   |  |                                 |  |  |   |  |
-   |   V  V                                 V  V  V   |  |
-   | +--------+  Optimistic DNS Query   +-----------+ |  |
-   | | Mortal | ----------------------> | Immortal  | |  |
-   | +--------+     during lifetime     +-----------+ |  |
-   |   | |                                    |   |   |  |
-    ---  |                                    |    ---   |
-         | TTL expires            TTL expires |          |
-         |                                    |          |
-         |                                    |          |
-         |                                    v          |
-         V                               +---------+     |
-      [purged] <-----------------------  |  Ghost  |-----
-                      ghost retention    +---------+
-                       period expires
+   +--------------------------------------------------------------+
+   |                                                              |
+   |          | Traditional      Optimistic DNS |                 |
+   |          | Query                     Query |  +----R------+  |
+   |          | for record           for record |  |           |  |
+   | +--R--+  | not in cache       not in cache |  |  +--R--+  |  |
+   | |     |  |                                 |  |  |     |  |  |
+   | |     v  v                                 v  v  v     |  |  |
+   | |   +--------+  Optimistic DNS Query   +-----------+   |  |  |
+   | |   | Mortal | ----------------------> | Immortal  |   |  |  |
+   | |   +--------+     during lifetime     +-----------+   |  |  |
+   | |     | |                                    |   |     |  |  |
+   | +-----+ |                                    |   +-----+  |  |
+   |         | TTL expires            TTL expires |            |  |
+   |         |                                    |            |  |
+   |         |                                    |            |  |
+   |         |                                    v            |  |
+   |         v                               +---------+       |  |
+   |      [Purged] <-----------------------  |  Ghost  |-------+  |
+   |                      ghost retention    +---------+          |
+   |                       period expires                         |
+   |                                                              |
+   +--------------------------------------------------------------+
 
    This creates a virtuous cycle: the more frequently a name is queried
    with Optimistic DNS, the more likely the cache will contain a ghost
