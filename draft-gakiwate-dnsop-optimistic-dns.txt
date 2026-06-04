@@ -175,31 +175,44 @@ Table of Contents
 
    *Conventional DNS (after cache expiry):*
 
-     Application        Stub Resolver        DNS Server
-         |                    |                    |
-         |--- Query --------->|                    |
-         |                    |--- Query --------->|
-         |                    |                    |
-         |          (waiting for network)          |
-         |                    |                    |
-         |                    |<-- Response -------|
-         |<-- Fresh Answer ---|                    |
-         |                    |                    |
-         [====== 150ms+ delay ======]
+   +------------------------------------------------------+
+   |                                                      |
+   |   Application        Stub Resolver        DNS Server |
+   |       |                    |                    |    |
+   |       |--- Query --------->|                    |    |
+   |       |                    |                    |    |
+   |       |                    |--- Query --------->|    |
+   |       |                    |                    |    |
+   |       |          (waiting for network)          |    |
+   |       |                    |                    |    |
+   |       |                    |<-- Response -------|    |
+   |       |                    |                    |    |
+   |       |<-- Fresh Answer ---|                    |    |
+   |       |   (150ms+ delay)   |                    |    |
+   |       |                    |                    |    |
+   |                                                      |
+   +------------------------------------------------------+
 
    *Optimistic DNS (after cache expiry):*
 
-     Application        Stub Resolver        DNS Server
-         |                    |                    |
-         |--- Query --------->|                    |
-         |<- Expired Answer --|--- Query --------->|
-         |   (~0ms delay)     |                    |
-         |                    |                    |
-         |  (app can start    |                    |
-         |  connecting now)   |                    |
-         |                    |<-- Response -------|
-         |<-- Fresh Answer ---|                    |
-         |    (if changed)    |                    |
+   +------------------------------------------------------+
+   |                                                      |
+   |   Application        Stub Resolver        DNS Server |
+   |       |                    |                    |    |
+   |       |--- Query --------->|                    |    |
+   |       |                    |                    |    |
+   |       |<--Expired Answer---|--- Query --------->|    |
+   |       |   (~0ms delay)     |                    |    |
+   |       |                    |                    |    |
+   |       |  (app can start    |                    |    |
+   |       |  connecting now)   |                    |    |
+   |       |                    |<-- Response -------|    |
+   |       |                    |                    |    |
+   |       |<-- Fresh Answer ---|                    |    |
+   |       |    (if changed)    |                    |    |
+   |       |                    |                    |    |
+   |                                                      |
+   +------------------------------------------------------+
 
    Optimistic DNS is complementary to Serving Stale Data to Improve DNS
    Resiliency [RFC8767], which allows recursive resolvers to serve stale
@@ -309,38 +322,43 @@ Table of Contents
    querying Recursive B twenty seconds later at time T=100 will receive
    cached data because Recursive B considers it still valid.
 
-   Time:
-    0 --- 15 --- 30 --- 45 --- 60 --- 75 --- 90 -- 105 -- 120
-
-   Authoritative Nameserver:
-   -------------------- A1 -------------------|----- A2 -----
-                                              ^
-                                 Authoritative Answer Changes
-                                 At T=90 A1 is replaced by A2
-
-   Recursive A queries at T=15:
-           +--------------------------+
-           |    Cached A1 (TTL=60)    |
-           +--------------------------+
-          15 --- 30 --- 45 --- 60 --- 75  |
-                                          |
-                                          v
-                               Client 1 queries at T=80:
-                                    A1 TTL expired
-                                      New Query
-
-   Recursive B queries at T=45:
-                         +--------------------------+
-                         |    Cached A1 (TTL=60)    |
-                         +--------------------------+
-                        45 --- 60 --- 75 --- 90 -- 105
-                                                 |
-                                                 |
-                                                 v
-                                      Client 2 queries at T=100:
-                                          A1 TTL still valid
-                                          Returns cached A1
-                                           (now incorrect).
+   +----------------------------------------------------------------+
+   |                                                                |
+   |  Time:                                                         |
+   |   0 --- 15 --- 30 --- 45 --- 60 --- 75 --- 90 -- 105 -- 120    |
+   |                                                                |
+   |  Authoritative Nameserver:                                     |
+   |  -------------------- A1 -------------------|----- A2 -----    |
+   |                                             ^                  |
+   |                                             |                  |
+   |                                Authoritative Answer Changes    |
+   |                                At T=90 A1 is replaced by A2    |
+   |                                                                |
+   |  Recursive A queries at T=15:                                  |
+   |          +--------------------------+                          |
+   |          |    Cached A1 (TTL=60)    |                          |
+   |          +--------------------------+                          |
+   |         15 --- 30 --- 45 --- 60 --- 75  |                      |
+   |                                         |                      |
+   |                                         v                      |
+   |                              Client 1 queries at T=80          |
+   |                                   A1 TTL expired               |
+   |                                     New Query                  |
+   |                                                                |
+   |  Recursive B queries at T=45:                                  |
+   |                        +--------------------------+            |
+   |                        |    Cached A1 (TTL=60)    |            |
+   |                        +--------------------------+            |
+   |                       45 --- 60 --- 75 --- 90 -- 105           |
+   |                                                |               |
+   |                                                |               |
+   |                                                v               |
+   |                                     Client 2 queries at T=100  |
+   |                                         A1 TTL still valid     |
+   |                                         Returns cached A1      |
+   |                                          (now incorrect).      |
+   |                                                                |
+   +----------------------------------------------------------------+
 
    Client 1 issued a query at time T=80 and suffered a delay waiting for
    “fresh” data, even though, at that time, the data on the

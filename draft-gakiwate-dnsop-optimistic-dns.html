@@ -1346,36 +1346,100 @@ prove to be stale and incorrect (<a href="#enabling-technologies" class="auto in
 <p id="section-1-6">The following diagram illustrates the timing difference between
 conventional DNS resolution and Optimistic DNS:<a href="#section-1-6" class="pilcrow">¶</a></p>
 <p id="section-1-7"><strong>Conventional DNS (after cache expiry):</strong><a href="#section-1-7" class="pilcrow">¶</a></p>
-<div class="alignLeft art-text artwork" id="section-1-8">
-<pre>
-  Application        Stub Resolver        DNS Server
-      |                    |                    |
-      |--- Query ---------&gt;|                    |
-      |                    |--- Query ---------&gt;|
-      |                    |                    |
-      |          (waiting for network)          |
-      |                    |                    |
-      |                    |&lt;-- Response -------|
-      |&lt;-- Fresh Answer ---|                    |
-      |                    |                    |
-      [====== 150ms+ delay ======]
-</pre><a href="#section-1-8" class="pilcrow">¶</a>
+<div id="section-1-8">
+        <div class="alignLeft art-svg artwork" id="section-1-8.1">
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" height="304" width="456" viewBox="0 0 456 304" class="diagram" text-anchor="middle" font-family="monospace" font-size="13px" stroke-linecap="round">
+            <path d="M 8,32 L 8,288" fill="none" stroke="black"></path>
+            <path d="M 72,80 L 72,256" fill="none" stroke="black"></path>
+            <path d="M 240,80 L 240,144" fill="none" stroke="black"></path>
+            <path d="M 240,176 L 240,256" fill="none" stroke="black"></path>
+            <path d="M 408,80 L 408,256" fill="none" stroke="black"></path>
+            <path d="M 448,32 L 448,288" fill="none" stroke="black"></path>
+            <path d="M 8,32 L 448,32" fill="none" stroke="black"></path>
+            <path d="M 80,96 L 96,96" fill="none" stroke="black"></path>
+            <path d="M 160,96 L 232,96" fill="none" stroke="black"></path>
+            <path d="M 248,128 L 264,128" fill="none" stroke="black"></path>
+            <path d="M 328,128 L 400,128" fill="none" stroke="black"></path>
+            <path d="M 248,192 L 264,192" fill="none" stroke="black"></path>
+            <path d="M 352,192 L 400,192" fill="none" stroke="black"></path>
+            <path d="M 80,224 L 96,224" fill="none" stroke="black"></path>
+            <path d="M 216,224 L 232,224" fill="none" stroke="black"></path>
+            <path d="M 8,288 L 448,288" fill="none" stroke="black"></path>
+            <polygon class="arrowhead" points="408,128 396,122.4 396,133.6" fill="black" transform="rotate(0,400,128)"></polygon>
+            <polygon class="arrowhead" points="256,192 244,186.4 244,197.6" fill="black" transform="rotate(180,248,192)"></polygon>
+            <polygon class="arrowhead" points="240,96 228,90.4 228,101.6" fill="black" transform="rotate(0,232,96)"></polygon>
+            <polygon class="arrowhead" points="88,224 76,218.4 76,229.6" fill="black" transform="rotate(180,80,224)"></polygon>
+            <g class="text">
+              <text x="80" y="68">Application</text>
+              <text x="204" y="68">Stub</text>
+              <text x="260" y="68">Resolver</text>
+              <text x="368" y="68">DNS</text>
+              <text x="412" y="68">Server</text>
+              <text x="128" y="100">Query</text>
+              <text x="296" y="132">Query</text>
+              <text x="188" y="164">(waiting</text>
+              <text x="240" y="164">for</text>
+              <text x="292" y="164">network)</text>
+              <text x="308" y="196">Response</text>
+              <text x="128" y="228">Fresh</text>
+              <text x="180" y="228">Answer</text>
+              <text x="128" y="244">(150ms+</text>
+              <text x="188" y="244">delay)</text>
+            </g>
+          </svg><a href="#section-1-8.1" class="pilcrow">¶</a>
+</div>
 </div>
 <p id="section-1-9"><strong>Optimistic DNS (after cache expiry):</strong><a href="#section-1-9" class="pilcrow">¶</a></p>
-<div class="alignLeft art-text artwork" id="section-1-10">
-<pre>
-  Application        Stub Resolver        DNS Server
-      |                    |                    |
-      |--- Query ---------&gt;|                    |
-      |&lt;- Expired Answer --|--- Query ---------&gt;|
-      |   (~0ms delay)     |                    |
-      |                    |                    |
-      |  (app can start    |                    |
-      |  connecting now)   |                    |
-      |                    |&lt;-- Response -------|
-      |&lt;-- Fresh Answer ---|                    |
-      |    (if changed)    |                    |
-</pre><a href="#section-1-10" class="pilcrow">¶</a>
+<div id="section-1-10">
+        <div class="alignLeft art-svg artwork" id="section-1-10.1">
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" height="320" width="456" viewBox="0 0 456 320" class="diagram" text-anchor="middle" font-family="monospace" font-size="13px" stroke-linecap="round">
+            <path d="M 8,32 L 8,304" fill="none" stroke="black"></path>
+            <path d="M 72,80 L 72,272" fill="none" stroke="black"></path>
+            <path d="M 240,80 L 240,272" fill="none" stroke="black"></path>
+            <path d="M 408,80 L 408,272" fill="none" stroke="black"></path>
+            <path d="M 448,32 L 448,304" fill="none" stroke="black"></path>
+            <path d="M 8,32 L 448,32" fill="none" stroke="black"></path>
+            <path d="M 80,96 L 96,96" fill="none" stroke="black"></path>
+            <path d="M 160,96 L 232,96" fill="none" stroke="black"></path>
+            <path d="M 80,128 L 96,128" fill="none" stroke="black"></path>
+            <path d="M 216,128 L 232,128" fill="none" stroke="black"></path>
+            <path d="M 248,128 L 264,128" fill="none" stroke="black"></path>
+            <path d="M 328,128 L 400,128" fill="none" stroke="black"></path>
+            <path d="M 248,208 L 264,208" fill="none" stroke="black"></path>
+            <path d="M 352,208 L 400,208" fill="none" stroke="black"></path>
+            <path d="M 80,240 L 96,240" fill="none" stroke="black"></path>
+            <path d="M 216,240 L 232,240" fill="none" stroke="black"></path>
+            <path d="M 8,304 L 448,304" fill="none" stroke="black"></path>
+            <polygon class="arrowhead" points="408,128 396,122.4 396,133.6" fill="black" transform="rotate(0,400,128)"></polygon>
+            <polygon class="arrowhead" points="256,208 244,202.4 244,213.6" fill="black" transform="rotate(180,248,208)"></polygon>
+            <polygon class="arrowhead" points="240,96 228,90.4 228,101.6" fill="black" transform="rotate(0,232,96)"></polygon>
+            <polygon class="arrowhead" points="88,240 76,234.4 76,245.6" fill="black" transform="rotate(180,80,240)"></polygon>
+            <polygon class="arrowhead" points="88,128 76,122.4 76,133.6" fill="black" transform="rotate(180,80,128)"></polygon>
+            <g class="text">
+              <text x="80" y="68">Application</text>
+              <text x="204" y="68">Stub</text>
+              <text x="260" y="68">Resolver</text>
+              <text x="368" y="68">DNS</text>
+              <text x="412" y="68">Server</text>
+              <text x="128" y="100">Query</text>
+              <text x="128" y="132">Expired</text>
+              <text x="188" y="132">Answer</text>
+              <text x="296" y="132">Query</text>
+              <text x="120" y="148">(~0ms</text>
+              <text x="172" y="148">delay)</text>
+              <text x="108" y="180">(app</text>
+              <text x="144" y="180">can</text>
+              <text x="184" y="180">start</text>
+              <text x="132" y="196">connecting</text>
+              <text x="196" y="196">now)</text>
+              <text x="308" y="212">Response</text>
+              <text x="128" y="244">Fresh</text>
+              <text x="180" y="244">Answer</text>
+              <text x="120" y="260">(if</text>
+              <text x="172" y="260">changed)</text>
+            </g>
+          </svg><a href="#section-1-10.1" class="pilcrow">¶</a>
+</div>
 </div>
 <p id="section-1-11">Optimistic DNS is complementary to Serving Stale Data to Improve DNS
 Resiliency <span>[<a href="#RFC8767" class="cite xref">RFC8767</a>]</span>, which allows recursive resolvers to serve stale data
@@ -1518,41 +1582,126 @@ A client querying Recursive A at time T=80 will cause a DNS
 request to the authoritative DNS server to retrieve fresh data.
 A client querying Recursive B twenty seconds later at time T=100
 will receive cached data because Recursive B considers it still valid.<a href="#section-3-5" class="pilcrow">¶</a></p>
-<div class="alignLeft art-text artwork" id="section-3-6">
-<pre>
-Time:
- 0 --- 15 --- 30 --- 45 --- 60 --- 75 --- 90 -- 105 -- 120
-
-Authoritative Nameserver:
--------------------- A1 -------------------|----- A2 -----
-                                           ^
-                              Authoritative Answer Changes
-                              At T=90 A1 is replaced by A2
-
-Recursive A queries at T=15:
-        +--------------------------+
-        |    Cached A1 (TTL=60)    |
-        +--------------------------+
-       15 --- 30 --- 45 --- 60 --- 75  |
-                                       |
-                                       v
-                            Client 1 queries at T=80:
-                                 A1 TTL expired
-                                   New Query
-
-Recursive B queries at T=45:
-                      +--------------------------+
-                      |    Cached A1 (TTL=60)    |
-                      +--------------------------+
-                     45 --- 60 --- 75 --- 90 -- 105
-                                              |
-                                              |
-                                              v
-                                   Client 2 queries at T=100:
-                                       A1 TTL still valid
-                                       Returns cached A1
-                                        (now incorrect).
-</pre><a href="#section-3-6" class="pilcrow">¶</a>
+<div id="section-3-6">
+        <div class="alignLeft art-svg artwork" id="section-3-6.1">
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" height="624" width="536" viewBox="0 0 536 624" class="diagram" text-anchor="middle" font-family="monospace" font-size="13px" stroke-linecap="round">
+            <path d="M 8,32 L 8,608" fill="none" stroke="black"></path>
+            <path d="M 96,240 L 96,272" fill="none" stroke="black"></path>
+            <path d="M 208,416 L 208,448" fill="none" stroke="black"></path>
+            <path d="M 312,240 L 312,272" fill="none" stroke="black"></path>
+            <path d="M 344,288 L 344,320" fill="none" stroke="black"></path>
+            <path d="M 376,144 L 376,160" fill="none" stroke="black"></path>
+            <path d="M 400,472 L 400,512" fill="none" stroke="black"></path>
+            <path d="M 424,416 L 424,448" fill="none" stroke="black"></path>
+            <path d="M 528,32 L 528,608" fill="none" stroke="black"></path>
+            <path d="M 8,32 L 528,32" fill="none" stroke="black"></path>
+            <path d="M 56,80 L 72,80" fill="none" stroke="black"></path>
+            <path d="M 112,80 L 128,80" fill="none" stroke="black"></path>
+            <path d="M 168,80 L 184,80" fill="none" stroke="black"></path>
+            <path d="M 224,80 L 240,80" fill="none" stroke="black"></path>
+            <path d="M 280,80 L 296,80" fill="none" stroke="black"></path>
+            <path d="M 336,80 L 352,80" fill="none" stroke="black"></path>
+            <path d="M 32,128 L 184,128" fill="none" stroke="black"></path>
+            <path d="M 224,128 L 368,128" fill="none" stroke="black"></path>
+            <path d="M 384,128 L 416,128" fill="none" stroke="black"></path>
+            <path d="M 456,128 L 488,128" fill="none" stroke="black"></path>
+            <path d="M 96,240 L 312,240" fill="none" stroke="black"></path>
+            <path d="M 96,272 L 312,272" fill="none" stroke="black"></path>
+            <path d="M 112,288 L 128,288" fill="none" stroke="black"></path>
+            <path d="M 168,288 L 184,288" fill="none" stroke="black"></path>
+            <path d="M 224,288 L 240,288" fill="none" stroke="black"></path>
+            <path d="M 280,288 L 296,288" fill="none" stroke="black"></path>
+            <path d="M 208,416 L 424,416" fill="none" stroke="black"></path>
+            <path d="M 208,448 L 424,448" fill="none" stroke="black"></path>
+            <path d="M 224,464 L 240,464" fill="none" stroke="black"></path>
+            <path d="M 280,464 L 296,464" fill="none" stroke="black"></path>
+            <path d="M 336,464 L 352,464" fill="none" stroke="black"></path>
+            <path d="M 8,608 L 528,608" fill="none" stroke="black"></path>
+            <polygon class="arrowhead" points="408,512 396,506.4 396,517.6" fill="black" transform="rotate(90,400,512)"></polygon>
+            <polygon class="arrowhead" points="384,144 372,138.4 372,149.6" fill="black" transform="rotate(270,376,144)"></polygon>
+            <polygon class="arrowhead" points="352,320 340,314.4 340,325.6" fill="black" transform="rotate(90,344,320)"></polygon>
+            <g class="text">
+              <text x="48" y="68">Time:</text>
+              <text x="40" y="84">0</text>
+              <text x="92" y="84">15</text>
+              <text x="148" y="84">30</text>
+              <text x="204" y="84">45</text>
+              <text x="260" y="84">60</text>
+              <text x="316" y="84">75</text>
+              <text x="372" y="84">90</text>
+              <text x="396" y="84">--</text>
+              <text x="424" y="84">105</text>
+              <text x="452" y="84">--</text>
+              <text x="480" y="84">120</text>
+              <text x="80" y="116">Authoritative</text>
+              <text x="184" y="116">Nameserver:</text>
+              <text x="204" y="132">A1</text>
+              <text x="376" y="132">|</text>
+              <text x="436" y="132">A2</text>
+              <text x="320" y="180">Authoritative</text>
+              <text x="404" y="180">Answer</text>
+              <text x="464" y="180">Changes</text>
+              <text x="276" y="196">At</text>
+              <text x="308" y="196">T=90</text>
+              <text x="340" y="196">A1</text>
+              <text x="364" y="196">is</text>
+              <text x="412" y="196">replaced</text>
+              <text x="460" y="196">by</text>
+              <text x="484" y="196">A2</text>
+              <text x="64" y="228">Recursive</text>
+              <text x="112" y="228">A</text>
+              <text x="152" y="228">queries</text>
+              <text x="196" y="228">at</text>
+              <text x="232" y="228">T=15:</text>
+              <text x="156" y="260">Cached</text>
+              <text x="196" y="260">A1</text>
+              <text x="244" y="260">(TTL=60)</text>
+              <text x="92" y="292">15</text>
+              <text x="148" y="292">30</text>
+              <text x="204" y="292">45</text>
+              <text x="260" y="292">60</text>
+              <text x="316" y="292">75</text>
+              <text x="276" y="340">Client</text>
+              <text x="312" y="340">1</text>
+              <text x="352" y="340">queries</text>
+              <text x="396" y="340">at</text>
+              <text x="428" y="340">T=80</text>
+              <text x="300" y="356">A1</text>
+              <text x="328" y="356">TTL</text>
+              <text x="376" y="356">expired</text>
+              <text x="320" y="372">New</text>
+              <text x="360" y="372">Query</text>
+              <text x="64" y="404">Recursive</text>
+              <text x="112" y="404">B</text>
+              <text x="152" y="404">queries</text>
+              <text x="196" y="404">at</text>
+              <text x="232" y="404">T=45:</text>
+              <text x="268" y="436">Cached</text>
+              <text x="308" y="436">A1</text>
+              <text x="356" y="436">(TTL=60)</text>
+              <text x="204" y="468">45</text>
+              <text x="260" y="468">60</text>
+              <text x="316" y="468">75</text>
+              <text x="372" y="468">90</text>
+              <text x="396" y="468">--</text>
+              <text x="424" y="468">105</text>
+              <text x="332" y="532">Client</text>
+              <text x="368" y="532">2</text>
+              <text x="408" y="532">queries</text>
+              <text x="452" y="532">at</text>
+              <text x="488" y="532">T=100</text>
+              <text x="348" y="548">A1</text>
+              <text x="376" y="548">TTL</text>
+              <text x="416" y="548">still</text>
+              <text x="464" y="548">valid</text>
+              <text x="368" y="564">Returns</text>
+              <text x="428" y="564">cached</text>
+              <text x="468" y="564">A1</text>
+              <text x="364" y="580">(now</text>
+              <text x="432" y="580">incorrect).</text>
+            </g>
+          </svg><a href="#section-3-6.1" class="pilcrow">¶</a>
+</div>
 </div>
 <p id="section-3-7">Client 1 issued a query at time T=80 and suffered a delay waiting
 for “fresh” data, even though, at that time,
