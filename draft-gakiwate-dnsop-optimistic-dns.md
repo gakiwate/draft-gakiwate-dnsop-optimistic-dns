@@ -480,15 +480,13 @@ established and the fresh answer serves as confirmation.
 ## Happy Eyeballs
 
 Optimistic DNS delivers DNS answers quickly, with the caveat that, on rare
-occasions, some of those answers might be stale and incorrect, in which
-case updated answers will be delivered as soon as they are available.
-To make this optimistic approach viable, it MUST be coupled
-with networking code that is designed to embrace this uncertainty,
-and account for the fact that all data received from a network
-is necessarily at least a little stale by the time it arrives,
-and may subsequently be found to be incorrect.
-Without Happy Eyeballs, a wrong expired address would mean a failed
-connection and user frustration.
+occasions, some of those answers might be stale and incorrect, in which case
+updated answers will be delivered as soon as they are available.  To make this
+optimistic approach viable, it MUST be coupled with networking code that is
+designed to embrace this uncertainty, and account for the fact that all data
+received from a network is necessarily at least a little stale by the time it
+arrives, and may subsequently be found to be incorrect.  Without Happy Eyeballs,
+a wrong expired address would mean a failed connection and user frustration.
 
 Happy Eyeballs {{IETF72}} {{?RFC6555}} {{?RFC8305}} {{HEv3}}
 defines algorithms for racing connection attempts across multiple
