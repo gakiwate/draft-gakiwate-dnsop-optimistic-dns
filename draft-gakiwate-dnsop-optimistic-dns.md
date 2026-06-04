@@ -163,34 +163,47 @@ conventional DNS resolution and Optimistic DNS:
 
 **Conventional DNS (after cache expiry):**
 
-~~~
-  Application        Stub Resolver        DNS Server
-      |                    |                    |
-      |--- Query --------->|                    |
-      |                    |--- Query --------->|
-      |                    |                    |
-      |          (waiting for network)          |
-      |                    |                    |
-      |                    |<-- Response -------|
-      |<-- Fresh Answer ---|                    |
-      |                    |                    |
-      [====== 150ms+ delay ======]
+~~~ aasvg
++------------------------------------------------------+
+|                                                      |
+|   Application        Stub Resolver        DNS Server |
+|       |                    |                    |    |
+|       |--- Query --------->|                    |    |
+|       |                    |                    |    |
+|       |                    |--- Query --------->|    |
+|       |                    |                    |    |
+|       |          (waiting for network)          |    |
+|       |                    |                    |    |
+|       |                    |<-- Response -------|    |
+|       |                    |                    |    |
+|       |<-- Fresh Answer ---|                    |    |
+|       |   (150ms+ delay)   |                    |    |
+|       |                    |                    |    |
+|                                                      |
++------------------------------------------------------+
 ~~~
 
 **Optimistic DNS (after cache expiry):**
 
-~~~
-  Application        Stub Resolver        DNS Server
-      |                    |                    |
-      |--- Query --------->|                    |
-      |<- Expired Answer --|--- Query --------->|
-      |   (~0ms delay)     |                    |
-      |                    |                    |
-      |  (app can start    |                    |
-      |  connecting now)   |                    |
-      |                    |<-- Response -------|
-      |<-- Fresh Answer ---|                    |
-      |    (if changed)    |                    |
+~~~ aasvg
++------------------------------------------------------+
+|                                                      |
+|   Application        Stub Resolver        DNS Server |
+|       |                    |                    |    |
+|       |--- Query --------->|                    |    |
+|       |                    |                    |    |
+|       |<--Expired Answer---|--- Query --------->|    |
+|       |   (~0ms delay)     |                    |    |
+|       |                    |                    |    |
+|       |  (app can start    |                    |    |
+|       |  connecting now)   |                    |    |
+|       |                    |<-- Response -------|    |
+|       |                    |                    |    |
+|       |<-- Fresh Answer ---|                    |    |
+|       |    (if changed)    |                    |    |
+|       |                    |                    |    |
+|                                                      |
++------------------------------------------------------+
 ~~~
 
 Optimistic DNS is complementary to Serving Stale Data to Improve DNS
@@ -304,39 +317,44 @@ request to the authoritative DNS server to retrieve fresh data.
 A client querying Recursive B twenty seconds later at time T=100
 will receive cached data because Recursive B considers it still valid.
 
-~~~
-Time:
- 0 --- 15 --- 30 --- 45 --- 60 --- 75 --- 90 -- 105 -- 120
-
-Authoritative Nameserver:
--------------------- A1 -------------------|----- A2 -----
-                                           ^
-                              Authoritative Answer Changes
-                              At T=90 A1 is replaced by A2
-
-Recursive A queries at T=15:
-        +--------------------------+
-        |    Cached A1 (TTL=60)    |
-        +--------------------------+
-       15 --- 30 --- 45 --- 60 --- 75  |
-                                       |
-                                       v
-                            Client 1 queries at T=80:
-                                 A1 TTL expired
-                                   New Query
-
-Recursive B queries at T=45:
-                      +--------------------------+
-                      |    Cached A1 (TTL=60)    |
-                      +--------------------------+
-                     45 --- 60 --- 75 --- 90 -- 105
-                                              |
-                                              |
-                                              v
-                                   Client 2 queries at T=100:
-                                       A1 TTL still valid
-                                       Returns cached A1
-                                        (now incorrect).
+~~~ aasvg
++----------------------------------------------------------------+
+|                                                                |
+|  Time:                                                         |
+|   0 --- 15 --- 30 --- 45 --- 60 --- 75 --- 90 -- 105 -- 120    |
+|                                                                |
+|  Authoritative Nameserver:                                     |
+|  -------------------- A1 -------------------|----- A2 -----    |
+|                                             ^                  |
+|                                             |                  |
+|                                Authoritative Answer Changes    |
+|                                At T=90 A1 is replaced by A2    |
+|                                                                |
+|  Recursive A queries at T=15:                                  |
+|          +--------------------------+                          |
+|          |    Cached A1 (TTL=60)    |                          |
+|          +--------------------------+                          |
+|         15 --- 30 --- 45 --- 60 --- 75  |                      |
+|                                         |                      |
+|                                         v                      |
+|                              Client 1 queries at T=80          |
+|                                   A1 TTL expired               |
+|                                     New Query                  |
+|                                                                |
+|  Recursive B queries at T=45:                                  |
+|                        +--------------------------+            |
+|                        |    Cached A1 (TTL=60)    |            |
+|                        +--------------------------+            |
+|                       45 --- 60 --- 75 --- 90 -- 105           |
+|                                                |               |
+|                                                |               |
+|                                                v               |
+|                                     Client 2 queries at T=100  |
+|                                         A1 TTL still valid     |
+|                                         Returns cached A1      |
+|                                          (now incorrect).      |
+|                                                                |
++----------------------------------------------------------------+
 ~~~
 
 Client 1 issued a query at time T=80 and suffered a delay waiting
@@ -1168,27 +1186,30 @@ record lifecycle:
 
 The complete lifecycle:
 
-~~~
-
-       | Traditional      Optimistic DNS |
-       | Query                     Query |   ----R----
-       | for record           for record |  |         |
- -R-   | not in cache       not in cache |  |   -R-   |
-|   |  |                                 |  |  |   |  |
-|   V  V                                 V  V  V   |  |
-| +--------+  Optimistic DNS Query   +-----------+ |  |
-| | Mortal | ----------------------> | Immortal  | |  |
-| +--------+     during lifetime     +-----------+ |  |
-|   | |                                    |   |   |  |
- ---  |                                    |    ---   |
-      | TTL expires            TTL expires |          |
-      |                                    |          |
-      |                                    |          |
-      |                                    v          |
-      V                               +---------+     |
-   [purged] <-----------------------  |  Ghost  |-----
-                   ghost retention    +---------+
-                    period expires
+~~~ aasvg
++--------------------------------------------------------------+
+|                                                              |
+|          | Traditional      Optimistic DNS |                 |
+|          | Query                     Query |  +----R------+  |
+|          | for record           for record |  |           |  |
+| +--R--+  | not in cache       not in cache |  |  +--R--+  |  |
+| |     |  |                                 |  |  |     |  |  |
+| |     v  v                                 v  v  v     |  |  |
+| |   +--------+  Optimistic DNS Query   +-----------+   |  |  |
+| |   | Mortal | ----------------------> | Immortal  |   |  |  |
+| |   +--------+     during lifetime     +-----------+   |  |  |
+| |     | |                                    |   |     |  |  |
+| +-----+ |                                    |   +-----+  |  |
+|         | TTL expires            TTL expires |            |  |
+|         |                                    |            |  |
+|         |                                    |            |  |
+|         |                                    v            |  |
+|         v                               +---------+       |  |
+|      [Purged] <-----------------------  |  Ghost  |-------+  |
+|                      ghost retention    +---------+          |
+|                       period expires                         |
+|                                                              |
++--------------------------------------------------------------+
 ~~~
 
 This creates a virtuous cycle: the more frequently a name is queried with
