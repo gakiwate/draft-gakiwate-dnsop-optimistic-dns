@@ -68,6 +68,15 @@ informative:
     annotation: "This presentation introduced the concept of asynchronous
     concurrent connection racing, later known as Happy Eyeballs."
 
+  WWDC18:
+    author:
+     - ins: S. Cheshire
+     - ins: J. Mehta
+    title: "Optimizing Your App for Today’s Internet"
+    date: 2018-06
+    seriesinfo: "Apple Worldwide Developer Conference"
+    target: https://developer.apple.com/videos/play/wwdc2018/714/
+
   getdns:
     title: "Welcome to getdns!"
     author:
@@ -1046,11 +1055,12 @@ macOS, iOS, tvOS, watchOS, Microsoft Windows, Android, Linux, and other
 platforms.  This section describes its concrete implementation of the Optimistic
 DNS mechanism described in this document.
 
-Optimistic DNS in Apple’s mDNSResponder code was first shipped enabled by
-default in macOS 10.14 (Mojave) and iOS 12 in September 2018.  It has been
-active on all Apple platforms since that release, serving as the default stub
-resolver behavior for all applications that use Apple’s recommended networking
-APIs.
+Optimistic DNS in Apple’s mDNSResponder code was first shipped
+enabled by default in macOS 10.14 (Mojave) and iOS 12
+in September 2018 {{WWDC18}}.
+It has been active on all Apple platforms since that release,
+serving as the default stub resolver behavior for all
+applications that use Apple’s recommended networking APIs.
 
 Prior to implementing Optimistic DNS, the mDNSResponder code addressed the
 Zeno’s paradox problem ({{zeno}}) by implementing a modest form of DNS TTL
