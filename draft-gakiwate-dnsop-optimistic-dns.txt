@@ -5,8 +5,8 @@
 Domain Name System Operations                                 G. Akiwate
 Internet-Draft                                                  P. Flack
 Intended status: Standards Track                             S. Cheshire
-Expires: 6 December 2026                                      Apple Inc.
-                                                             4 June 2026
+Expires: 7 December 2026                                      Apple Inc.
+                                                             5 June 2026
 
 
                              Optimistic DNS
@@ -61,7 +61,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 6 December 2026.
+   This Internet-Draft will expire on 7 December 2026.
 
 Copyright Notice
 
@@ -1141,6 +1141,11 @@ Table of Contents
               DOI 10.17487/RFC9250, May 2022,
               <https://www.rfc-editor.org/rfc/rfc9250>.
 
+   [WWDC18]   Cheshire, S. and J. Mehta, "Optimizing Your App for
+              Today’s Internet", Apple Worldwide Developer Conference ,
+              June 2018,
+              <https://developer.apple.com/videos/play/wwdc2018/714/>.
+
    [ZC]       Cheshire, S. and D. H. Steinberg, "Zero Configuration
               Networking: The Definitive Guide", O'Reilly Media,
               ISBN 978-0-596-10100-5, December 2005.
@@ -1157,9 +1162,9 @@ A.1.  Optimistic DNS in mDNSResponder
 
    Optimistic DNS in Apple’s mDNSResponder code was first shipped
    enabled by default in macOS 10.14 (Mojave) and iOS 12 in September
-   2018.  It has been active on all Apple platforms since that release,
-   serving as the default stub resolver behavior for all applications
-   that use Apple’s recommended networking APIs.
+   2018 [WWDC18].  It has been active on all Apple platforms since that
+   release, serving as the default stub resolver behavior for all
+   applications that use Apple’s recommended networking APIs.
 
    Prior to implementing Optimistic DNS, the mDNSResponder code
    addressed the Zeno’s paradox problem (Section 4) by implementing a
