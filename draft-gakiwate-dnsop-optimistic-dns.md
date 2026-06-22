@@ -794,9 +794,9 @@ changes may mean that the CNAME chain for a given name changes over time.
 
 ## Uncacheable Records
 
-The DNS specifications require that DNS records
-with a TTL of zero MUST NOT be cached {{!RFC1035}}.
-This document does not change that requirement;
+{{Section 3.2.1 of !RFC1035}} specifies that DNS records
+with a TTL of zero "can only be used for the transaction in progress,
+and should not be cached." This document does not change that guidance;
 subsequent queries for these records always result in a new network request.
 
 ## DNSSEC {#dnssec}
