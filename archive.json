@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2026-06-21T04:44:30.636319+00:00",
+  "timestamp": "2026-06-23T03:54:58.039728+00:00",
   "repo": "gakiwate/draft-gakiwate-dnsop-optimistic-dns",
   "labels": [
     {
@@ -49,6 +49,50 @@
       "color": "ffffff"
     }
   ],
-  "issues": [],
-  "pulls": []
+  "issues": [
+    {
+      "number": 1,
+      "id": "I_kwDOR5L8A88AAAABGQeygw",
+      "title": "RFC1035 doesn't say MUST NOT",
+      "url": "https://github.com/gakiwate/draft-gakiwate-dnsop-optimistic-dns/issues/1",
+      "state": "OPEN",
+      "author": "nidhijaju",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [],
+      "body": "https://www.ietf.org/archive/id/draft-gakiwate-dnsop-optimistic-dns-00.html#section-8.1-1 claims:\n> The DNS specifications require that DNS records with a TTL of zero MUST NOT be cached [[RFC1035](https://www.ietf.org/archive/id/draft-gakiwate-dnsop-optimistic-dns-00.html#RFC1035)].\n\nSince RFC1035 predates RFC2119, perhaps we can just quote the text itself:\n```\nTTL             a 32 bit signed integer that specifies the time interval\n                that the resource record may be cached before the source\n                of the information should again be consulted.  Zero\n                values are interpreted to mean that the RR can only be\n                used for the transaction in progress, and should not be\n                cached.  For example, SOA records are always distributed\n                with a zero TTL to prohibit caching.  Zero values can\n                also be used for extremely volatile data.\n```",
+      "createdAt": "2026-06-22T08:39:13Z",
+      "updatedAt": "2026-06-22T08:39:13Z",
+      "closedAt": null,
+      "comments": []
+    }
+  ],
+  "pulls": [
+    {
+      "number": 2,
+      "id": "PR_kwDOR5L8A87pGof1",
+      "title": "Update reference to RFC1035",
+      "url": "https://github.com/gakiwate/draft-gakiwate-dnsop-optimistic-dns/pull/2",
+      "state": "OPEN",
+      "author": "nidhijaju",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [],
+      "body": "Fixes #1. ",
+      "createdAt": "2026-06-22T09:46:58Z",
+      "updatedAt": "2026-06-22T09:46:59Z",
+      "baseRepository": "gakiwate/draft-gakiwate-dnsop-optimistic-dns",
+      "baseRefName": "main",
+      "baseRefOid": "de2819e596707f61be2f467b836bd28e72152079",
+      "headRepository": "nidhijaju/draft-gakiwate-dnsop-optimistic-dns",
+      "headRefName": "rfc1035-ref",
+      "headRefOid": "8a96563a0e00dfd847178c15cf57d41e2422d614",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    }
+  ]
 }
