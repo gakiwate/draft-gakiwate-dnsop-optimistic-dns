@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2026-06-23T03:54:58.039728+00:00",
+  "timestamp": "2026-06-25T03:57:05.118310+00:00",
   "repo": "gakiwate/draft-gakiwate-dnsop-optimistic-dns",
   "labels": [
     {
@@ -65,6 +65,54 @@
       "updatedAt": "2026-06-22T08:39:13Z",
       "closedAt": null,
       "comments": []
+    },
+    {
+      "number": 3,
+      "id": "I_kwDOR5L8A88AAAABGY5uew",
+      "title": "Section 8 (Interaction with Other DNS Features) doesn't mention SVCB records (especially ECH)",
+      "url": "https://github.com/gakiwate/draft-gakiwate-dnsop-optimistic-dns/issues/3",
+      "state": "OPEN",
+      "author": "nidhijaju",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [],
+      "body": "[RFC9460 Section 9.2.3](https://www.rfc-editor.org/rfc/rfc9460.html#name-cache-lifetime) states: \n\n> Some DNS caches incorrectly extend the lifetime of DNS records beyond the stated TTL, so server operators cannot rely on HTTPS RRs expiring on time. Shortening the TTL to compensate for incorrect caching is NOT RECOMMENDED, as this practice impairs the performance of correctly functioning caches and does not guarantee faster expiration from incorrect caches. Instead, server operators SHOULD maintain compatibility with expired records until they observe that nearly all connections have migrated to the new configuration.\n\nOptimistic DNS is essentially doing what RFC9460 claims is \"incorrect\". I think most of the SvcParams are fine, but for SVCB/HTTPS records with an `ech=` SvcParam, a stale ECHConfig means the server cannot decrypt the ClientHelloInner, so the server falls back via `retry_configs`, and the client must retry, costing a roundtrip. Not sure if this matters, but an on-path attacker can also observe these retries and potentially infer past behavior about the client.\n\nAdditionally, since clients with an ECHConfig [should fail closed](https://www.rfc-editor.org/rfc/rfc9849.html#section-8.1.1-3) and not send unencrypted ClientHellos, we probably should add some guidance around replacing an Optimistic Answer with an ECHConfig with a fresh answer even if it doesn't contain an ECHConfig, since otherwise clients may be blocked for the entire duration the stub resolver is willing to return stale answers.\n\nPerhaps we should add text to Section 8 outlining that to stay compatible with RFC9460 and RFC9849, we should not use Optimstic DNS for SVCB/HTTPS records with a non-empty `ech=` SvcParamKey.",
+      "createdAt": "2026-06-23T07:48:58Z",
+      "updatedAt": "2026-06-23T07:48:58Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 4,
+      "id": "I_kwDOR5L8A88AAAABGZCULQ",
+      "title": "Missing privacy considerations",
+      "url": "https://github.com/gakiwate/draft-gakiwate-dnsop-optimistic-dns/issues/4",
+      "state": "OPEN",
+      "author": "nidhijaju",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [],
+      "body": "We should have a privacy considerations section (potentially following RFC6973). A few topics that seem good to cover: \n\n* Cache timing attacks by co-located applications\n* Persistence of cached data past its original TTL\n* Stale-while-refreshing behavior observable to on-path observers and recursive resolvers\n* SNI leakage to incorrect destinations after using a stale answer that turns out to be wrong\n* Risks of caching cross-network (reinforce that we still shouldn't)",
+      "createdAt": "2026-06-23T08:08:28Z",
+      "updatedAt": "2026-06-23T08:08:28Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 5,
+      "id": "I_kwDOR5L8A88AAAABGZK0Mw",
+      "title": "Update terminology to be more consistent",
+      "url": "https://github.com/gakiwate/draft-gakiwate-dnsop-optimistic-dns/issues/5",
+      "state": "OPEN",
+      "author": "nidhijaju",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [],
+      "body": "Throughout the document, we use \"Optimistic DNS Client\" without defining it. Perhaps \"Optimistic DNS Client\" could be defined as \"An application or networking library that has signaled to the stub resolver that it is prepared to receive Optimistic Answers.\"\n\nWe also use \"fresh\", \"current\", and \"fresh new\" to refer to non-staleness.\nWe can also clarify \"Optimistic Positive Answer\" and \"Optimistic Negative Answer\" to make it clear that this is a Positive or Negative Answer that happens to be Optimistic, rather than Positive/Negative applying to the Optimistic part.\n\nThere's already a good terminology section that defines the other terms, so this is likely a minor update and we can do an editorial pass for consistency.",
+      "createdAt": "2026-06-23T08:26:52Z",
+      "updatedAt": "2026-06-23T08:26:52Z",
+      "closedAt": null,
+      "comments": []
     }
   ],
   "pulls": [
@@ -80,7 +128,7 @@
       "labels": [],
       "body": "Fixes #1. ",
       "createdAt": "2026-06-22T09:46:58Z",
-      "updatedAt": "2026-06-22T09:46:59Z",
+      "updatedAt": "2026-06-24T20:05:24Z",
       "baseRepository": "gakiwate/draft-gakiwate-dnsop-optimistic-dns",
       "baseRefName": "main",
       "baseRefOid": "de2819e596707f61be2f467b836bd28e72152079",
@@ -91,7 +139,15 @@
       "mergedAt": null,
       "mergedBy": null,
       "mergeCommit": null,
-      "comments": [],
+      "comments": [
+        {
+          "author": "gakiwate",
+          "authorAssociation": "OWNER",
+          "body": "@nidhijaju Thanks for the PR. This is a great suggestion. Just a style consideration (trying to not use references as nouns).\r\n\r\n> The DNS specification {{Section 3.2.1 of !RFC1035}} states that DNS records with a TTL of zero \"can only be used for > the transaction in progress, and should not be cached\". This document does not change that guidance;\r\n\r\nWould the proposed text be ok with you?",
+          "createdAt": "2026-06-24T20:04:54Z",
+          "updatedAt": "2026-06-24T20:05:24Z"
+        }
+      ],
       "reviews": []
     }
   ]
