@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2026-06-25T03:57:05.118310+00:00",
+  "timestamp": "2026-07-09T03:38:32.683388+00:00",
   "repo": "gakiwate/draft-gakiwate-dnsop-optimistic-dns",
   "labels": [
     {
@@ -111,6 +111,22 @@
       "body": "Throughout the document, we use \"Optimistic DNS Client\" without defining it. Perhaps \"Optimistic DNS Client\" could be defined as \"An application or networking library that has signaled to the stub resolver that it is prepared to receive Optimistic Answers.\"\n\nWe also use \"fresh\", \"current\", and \"fresh new\" to refer to non-staleness.\nWe can also clarify \"Optimistic Positive Answer\" and \"Optimistic Negative Answer\" to make it clear that this is a Positive or Negative Answer that happens to be Optimistic, rather than Positive/Negative applying to the Optimistic part.\n\nThere's already a good terminology section that defines the other terms, so this is likely a minor update and we can do an editorial pass for consistency.",
       "createdAt": "2026-06-23T08:26:52Z",
       "updatedAt": "2026-06-23T08:26:52Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 6,
+      "id": "I_kwDOR5L8A88AAAABIGBaDA",
+      "title": "Section 7.4: Cache managements with multiple networks/PvDs",
+      "url": "https://github.com/gakiwate/draft-gakiwate-dnsop-optimistic-dns/issues/6",
+      "state": "OPEN",
+      "author": "stefanoduo-google",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [],
+      "body": "As briefly highlighted in Section 3, a device awaking from sleep is a common scenario where Optimistic DNS makes a real difference in user perceived latency. In this scenario it's not always obvious whether the device is still using the same PvD it was previously using. While cross-PvD DNS cache management is technically orthogonal to this draft, Optimistic DNS might exacerbate \"cross-network contamination\" (this has also been mentioned also in issue #4); which, for the reasons stated in RFCs 6418, 6731, 7556; is not recommended.\n\nSection 7.4 gives the following recommendation for cache management:\n> stub resolvers SHOULD NOT store records for more than X after the TTL has expired\n\nShould it also say something about cross-PvD cache management? Perhaps we could just refer to RFC 8801, which attempts to solve this with PvD IDs for explicit PvDs.",
+      "createdAt": "2026-07-08T14:00:34Z",
+      "updatedAt": "2026-07-08T14:00:34Z",
       "closedAt": null,
       "comments": []
     }
