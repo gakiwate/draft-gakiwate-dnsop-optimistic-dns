@@ -5,8 +5,8 @@
 Domain Name System Operations                                 G. Akiwate
 Internet-Draft                                                  P. Flack
 Intended status: Standards Track                             S. Cheshire
-Expires: 7 December 2026                                      Apple Inc.
-                                                             5 June 2026
+Expires: 15 January 2027                                      Apple Inc.
+                                                            14 July 2026
 
 
                              Optimistic DNS
@@ -61,7 +61,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 7 December 2026.
+   This Internet-Draft will expire on 15 January 2027.
 
 Copyright Notice
 
@@ -325,7 +325,7 @@ Table of Contents
    +----------------------------------------------------------------+
    |                                                                |
    |  Time:                                                         |
-   |   0 --- 15 --- 30 --- 45 --- 60 --- 75 --- 90 -- 105 -- 120    |
+   |   0 --- 15 --- 30 --- 45 --- 60 --- 75 --- 90 --- 105 --- 120  |
    |                                                                |
    |  Authoritative Nameserver:                                     |
    |  -------------------- A1 -------------------|----- A2 -----    |
@@ -349,7 +349,7 @@ Table of Contents
    |                        +--------------------------+            |
    |                        |    Cached A1 (TTL=60)    |            |
    |                        +--------------------------+            |
-   |                       45 --- 60 --- 75 --- 90 -- 105           |
+   |                       45 --- 60 --- 75 --- 90 --- 105          |
    |                                                |               |
    |                                                |               |
    |                                                v               |
@@ -1050,9 +1050,9 @@ Table of Contents
    [HEv3]     Pauly, T., Schinazi, D., Jaju, N., and K. Ishibashi,
               "Happy Eyeballs Version 3: Better Connectivity Using
               Concurrency", Work in Progress, Internet-Draft, draft-
-              ietf-happy-happyeyeballs-v3-03, 2 March 2026,
+              ietf-happy-happyeyeballs-v3-04, 1 July 2026,
               <https://datatracker.ietf.org/doc/html/draft-ietf-happy-
-              happyeyeballs-v3-03>.
+              happyeyeballs-v3-04>.
 
    [RFC1034]  Mockapetris, P., "Domain names - concepts and facilities",
               STD 13, RFC 1034, DOI 10.17487/RFC1034, November 1987,
@@ -1131,10 +1131,7 @@ Table of Contents
               RFC 8765, DOI 10.17487/RFC8765, June 2020,
               <https://www.rfc-editor.org/rfc/rfc8765>.
 
-   [RFC8767]  Lawrence, D., Kumari, W., and P. Sood, "Serving Stale Data
-              to Improve DNS Resiliency", RFC 8767,
-              DOI 10.17487/RFC8767, March 2020,
-              <https://www.rfc-editor.org/rfc/rfc8767>.
+   [RFC8767]  "*** BROKEN REFERENCE ***".
 
    [RFC9250]  Huitema, C., Dickinson, S., and A. Mankin, "DNS over
               Dedicated QUIC Connections", RFC 9250,
