@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2026-07-09T03:38:32.683388+00:00",
+  "timestamp": "2026-07-16T02:51:38.004370+00:00",
   "repo": "gakiwate/draft-gakiwate-dnsop-optimistic-dns",
   "labels": [
     {
@@ -127,6 +127,38 @@
       "body": "As briefly highlighted in Section 3, a device awaking from sleep is a common scenario where Optimistic DNS makes a real difference in user perceived latency. In this scenario it's not always obvious whether the device is still using the same PvD it was previously using. While cross-PvD DNS cache management is technically orthogonal to this draft, Optimistic DNS might exacerbate \"cross-network contamination\" (this has also been mentioned also in issue #4); which, for the reasons stated in RFCs 6418, 6731, 7556; is not recommended.\n\nSection 7.4 gives the following recommendation for cache management:\n> stub resolvers SHOULD NOT store records for more than X after the TTL has expired\n\nShould it also say something about cross-PvD cache management? Perhaps we could just refer to RFC 8801, which attempts to solve this with PvD IDs for explicit PvDs.",
       "createdAt": "2026-07-08T14:00:34Z",
       "updatedAt": "2026-07-08T14:00:34Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 7,
+      "id": "I_kwDOR5L8A88AAAABI_COlg",
+      "title": "Extend dependency re-evaluation to SVCB/HTTPS resolution",
+      "url": "https://github.com/gakiwate/draft-gakiwate-dnsop-optimistic-dns/issues/7",
+      "state": "OPEN",
+      "author": "bashi",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [],
+      "body": "Section 7.5 specifies rewind-and-restart behavior for CNAME chains. SVCB/HTTPS resolution creates a similar dependency graph: AliasMode chains, ServiceMode RRs and SvcParams, TargetName A/AAAA records, and address hints.\n\nAn update to any dependency can change the valid endpoint configuration even when the final address set is unchanged. Implementations should re-evaluate the original service query and notify the client whenever the resulting service-binding configuration changes.\n\nThis issue concerns general resolution consistency. The policy for using stale ech SvcParams and ECH-specific security/privacy considerations is tracked separately in #3.",
+      "createdAt": "2026-07-16T01:53:43Z",
+      "updatedAt": "2026-07-16T01:53:43Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 8,
+      "id": "I_kwDOR5L8A88AAAABI_QxFg",
+      "title": "Consider a confirmation callback when a fresh answer matches the expired answer",
+      "url": "https://github.com/gakiwate/draft-gakiwate-dnsop-optimistic-dns/issues/8",
+      "state": "OPEN",
+      "author": "bashi",
+      "authorAssociation": "NONE",
+      "assignees": [],
+      "labels": [],
+      "body": "Section 6 currently says:\n\n> When a fresh positive answer matches the previous Optimistic Positive Answer,\n> no second callback is delivered.\n\nI think \"no callback\" might be ambiguous for the application. After receiving \"Optimistic Positive Answer\", it cannot tell whether the fresh answer arrived and matched, the network query is still in flight, or the query failed.\n\nThis matters most in the window where the application is still listening. For example, the connection attempt to the stale address (203.0.113.34 in the example) is hanging or being reset, and the fresh answer returns the same address. Under the current text the application receives nothing, so it keeps waiting in case a corrected address is about to arrive. With a confirmation it would know the address is correct and the host is just down, and it could fail fast.\n\nThe confirmation could also help while the TCP/TLS handshake is still in progress. Once the application knows the address was confirmed, it can stop treating the ongoing attempt as provisional, for example by restoring the normal timeout or releasing resources reserved for retrying with a corrected address. Note that when the fresh answer changes but still contains the address in use, the application does get a callback, so it can confirm the address. Only the fully unchanged case, which confirms the address most strongly, gives the application no signal.\n\nThe draft already accepts this reasoning for the negative case.\n\n> Sending confirmations of Optimistic Negative Answers is necessary because\n> the client may be waiting for that negative answer confirmation before\n> proceeding with its next steps.\n\nThe same logic seems to apply to positive answers, so I wonder if this asymmetry is intentional.",
+      "createdAt": "2026-07-16T02:44:04Z",
+      "updatedAt": "2026-07-16T02:44:04Z",
       "closedAt": null,
       "comments": []
     }
