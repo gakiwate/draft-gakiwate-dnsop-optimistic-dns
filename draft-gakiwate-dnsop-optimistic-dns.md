@@ -83,6 +83,12 @@ informative:
      - org: NLnet Labs, Sinodun and No Mountain Software
     target: https://getdnsapi.net/
 
+  Firefox:
+    title: "Firefox stub resolver: nsHostResolver"
+    author:
+     - org: Mozilla
+    target: https://searchfox.org/mozilla-central/source/netwerk/dns/nsHostResolver.cpp
+
   ZC:
     title: "Zero Configuration Networking: The Definitive Guide"
     author:
@@ -1225,6 +1231,53 @@ The complete lifecycle:
 This creates a virtuous cycle: the more frequently a name is queried with
 Optimistic DNS, the more likely the cache will contain a ghost record for
 it the next time the TTL expires.
+
+## Optimistic DNS in Firefox {#firefox}
+
+Firefox implements client-side optimistic DNS in two layers.  Its stub resolver,
+nsHostResolver {{Firefox}}, serves expired cached records while it revalidates
+them.  Its Happy Eyeballs v3 {{HEv3}} connection state machine asks for stale
+answers, acts on them at once, and drives the refresh.
+
+### Stub Resolver Grace Period
+
+Firefox's stub resolver has served expired cached records by default since
+Firefox 18, released in January 2013.  Each record has a valid lifetime, taken
+from its TTL or, when the platform hides the TTL, from a default of 60 seconds.
+A grace period follows.  Each record thus passes through three states: valid,
+grace, and expired.
+
+In the grace period, after the TTL has elapsed but before the grace period ends,
+the stub resolver returns the expired record to the caller at once and sends a
+revalidation query in the background.
+
+The grace period is configurable.  Its default has changed over Firefox's
+history and is currently ten minutes, well inside the one-week maximum
+{{cache-management}} recommends.  When the grace period ends, the record expires
+for good and the resolver stops serving it.
+
+Firefox flushes the host cache on a network change, since names resolved on the
+old network may resolve differently on the new one.  The flush discards expired
+records with the rest, so the resolver never serves an address learned on a
+different network.
+
+### Happy Eyeballs v3 Integration
+
+Since 2026, Firefox has driven connection setup from a Happy Eyeballs v3 {{HEv3}}
+state machine that joins the grace-period cache to connection racing, and so
+applies the asynchronous model of {{async}}.  To resolve a name, the state
+machine emits a DNS query that allows a stale answer.  If the stub resolver
+answers from an expired record, the state machine at once races connection
+attempts across the returned addresses and address families, and in parallel
+emits a second query that bars the cache, which forces a fresh network lookup.
+When the fresh answer arrives, the state machine updates its candidate addresses.
+
+This per-query signaling, a stale answer allowed for the first query and a fresh
+one required for the refresh, mirrors the application-to-resolver signaling of
+{{query-initiation}}, here between Firefox's connection layer and its own stub
+resolver.  Most of the time the expired addresses are still right and the
+connection stands before the fresh answer returns.  When an address has changed,
+the race adds the fresh addresses and the user sees no failure.
 
 # Acknowledgments
 {:numbered="false"}
