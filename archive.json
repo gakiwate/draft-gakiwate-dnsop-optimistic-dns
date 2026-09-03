@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2026-08-02T03:19:29.248181+00:00",
+  "timestamp": "2026-09-03T03:41:53.762917+00:00",
   "repo": "gakiwate/draft-gakiwate-dnsop-optimistic-dns",
   "labels": [
     {
@@ -210,7 +210,7 @@
       "labels": [],
       "body": "@gakiwate as discussed, adding a Firefox section. Depends on https://github.com/mozilla/happy-eyeballs/issues/125 and Happy Eyeballs v3 landing in Firefox Release ([tracking issue](https://bugzilla.mozilla.org/show_bug.cgi?id=1953459)). I expect this to happen soon, i.e. before this draft publishes.\r\n\r\n---\r\n\r\nDocument Firefox's client-side optimistic DNS in two layers, alongside the mDNSResponder section.\r\n\r\nThe stub resolver (nsHostResolver) has served expired records within a grace period, revalidating them in the background, by default since Firefox 18 (January 2013). Describe its three record states, negative revalidation, and the grace window, which began at thirty days and now defaults to ten minutes.\r\n\r\nThe Happy Eyeballs v3 state machine emits a query that allows a stale answer, races connections on the expired record it gets back, and emits a second query that bars the cache to force a fresh lookup, updating its candidate addresses when the fresh answer arrives. This applies the draft's asynchronous model and per-query signaling.\r\n\r\nAdd an informative reference to the Firefox stub resolver source.\r\n",
       "createdAt": "2026-07-19T06:34:57Z",
-      "updatedAt": "2026-07-19T06:35:35Z",
+      "updatedAt": "2026-09-01T17:46:50Z",
       "baseRepository": "gakiwate/draft-gakiwate-dnsop-optimistic-dns",
       "baseRefName": "main",
       "baseRefOid": "7f3525a00ff35adeab892c736bc894d276b437ec",
@@ -221,7 +221,15 @@
       "mergedAt": null,
       "mergedBy": null,
       "mergeCommit": null,
-      "comments": [],
+      "comments": [
+        {
+          "author": "mxinden",
+          "authorAssociation": "NONE",
+          "body": "> @gakiwate as discussed, adding a Firefox section. Depends on [mozilla/happy-eyeballs#125](https://github.com/mozilla/happy-eyeballs/issues/125) and Happy Eyeballs v3 landing in Firefox Release ([tracking issue](https://bugzilla.mozilla.org/show_bug.cgi?id=1953459)). I expect this to happen soon, i.e. before this draft publishes.\r\n\r\nAll pending work is now merged into Firefox, i.e. this pull request is ready to merge from my end.\r\n\r\n@gakiwate @StuartCheshire could you give this patch a review?",
+          "createdAt": "2026-09-01T17:46:50Z",
+          "updatedAt": "2026-09-01T17:46:50Z"
+        }
+      ],
       "reviews": []
     },
     {
