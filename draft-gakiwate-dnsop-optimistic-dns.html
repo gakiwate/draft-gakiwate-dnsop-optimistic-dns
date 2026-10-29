@@ -1275,6 +1275,17 @@ is able to handle old and possibly incorrect information.<a href="#section-abstr
 </li>
                 </ul>
 </li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.13.2.2">
+                <p id="section-toc.1-1.13.2.2.1"><a href="#appendix-A.2" class="auto internal xref">A.2</a>.  <a href="#name-optimistic-dns-in-firefox" class="internal xref">Optimistic DNS in Firefox</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.13.2.2.2.1">
+                    <p id="section-toc.1-1.13.2.2.2.1.1"><a href="#appendix-A.2.1" class="auto internal xref">A.2.1</a>.  <a href="#name-stub-resolver-grace-period" class="internal xref">Stub Resolver Grace Period</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.13.2.2.2.2">
+                    <p id="section-toc.1-1.13.2.2.2.2.1"><a href="#appendix-A.2.2" class="auto internal xref">A.2.2</a>.  <a href="#name-happy-eyeballs-v3-integrati" class="internal xref">Happy Eyeballs v3 Integration</a></p>
+</li>
+                </ul>
+</li>
             </ul>
 </li>
           <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.14">
@@ -2531,6 +2542,10 @@ reduce the effectiveness of Optimistic DNS for infrequently-accessed names.<a hr
 <a href="#section-12.2" class="section-number selfRef">12.2. </a><a href="#name-informative-references" class="section-name selfRef">Informative References</a>
         </h3>
 <dl class="references">
+<dt id="Firefox">[Firefox]</dt>
+        <dd>
+<span class="refAuthor">Mozilla</span>, <span class="refTitle">"Firefox stub resolver: nsHostResolver"</span>, <span>n.d.</span>, <span>&lt;<a href="https://searchfox.org/firefox-main/rev/b0625683b9b8cd108f6b3fa9eedbcd4aa0066d6e/netwerk/dns/nsHostResolver.cpp">https://searchfox.org/firefox-main/rev/b0625683b9b8cd108f6b3fa9eedbcd4aa0066d6e/netwerk/dns/nsHostResolver.cpp</a>&gt;</span>. </dd>
+<dd class="break"></dd>
 <dt id="getdns">[getdns]</dt>
         <dd>
 <span class="refAuthor">NLnet Labs, Sinodun and No Mountain Software</span>, <span class="refTitle">"Welcome to getdns!"</span>, <span>n.d.</span>, <span>&lt;<a href="https://getdnsapi.net/">https://getdnsapi.net/</a>&gt;</span>. </dd>
@@ -2869,6 +2884,62 @@ one week), ghost records are purged.<a href="#appendix-A.1.2-2.6.1" class="pilcr
 <p id="appendix-A.1.2-5">This creates a virtuous cycle: the more frequently a name is queried with
 Optimistic DNS, the more likely the cache will contain a ghost record for
 it the next time the TTL expires.<a href="#appendix-A.1.2-5" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="firefox">
+<section id="appendix-A.2">
+        <h3 id="name-optimistic-dns-in-firefox">
+<a href="#appendix-A.2" class="section-number selfRef">A.2. </a><a href="#name-optimistic-dns-in-firefox" class="section-name selfRef">Optimistic DNS in Firefox</a>
+        </h3>
+<p id="appendix-A.2-1">Firefox implements client-side optimistic DNS in two layers.  Its stub resolver,
+nsHostResolver <span>[<a href="#Firefox" class="cite xref">Firefox</a>]</span>, serves expired cached records while it revalidates
+them.  Its Happy Eyeballs v3 <span>[<a href="#HEv3" class="cite xref">HEv3</a>]</span> connection state machine asks for stale
+answers, acts on them at once, and drives the refresh.<a href="#appendix-A.2-1" class="pilcrow">¶</a></p>
+<div id="stub-resolver-grace-period">
+<section id="appendix-A.2.1">
+          <h4 id="name-stub-resolver-grace-period">
+<a href="#appendix-A.2.1" class="section-number selfRef">A.2.1. </a><a href="#name-stub-resolver-grace-period" class="section-name selfRef">Stub Resolver Grace Period</a>
+          </h4>
+<p id="appendix-A.2.1-1">Firefox's stub resolver has served expired cached records by default since
+Firefox 18, released in January 2013.  Each record has a valid lifetime, taken
+from its TTL or, when the platform hides the TTL, from a default of 60 seconds.
+A grace period follows.  Each record thus passes through three states: valid,
+grace, and expired.<a href="#appendix-A.2.1-1" class="pilcrow">¶</a></p>
+<p id="appendix-A.2.1-2">In the grace period, after the TTL has elapsed but before the grace period ends,
+the stub resolver returns the expired record to the caller at once and sends a
+revalidation query in the background.<a href="#appendix-A.2.1-2" class="pilcrow">¶</a></p>
+<p id="appendix-A.2.1-3">The grace period is configurable.  Its default has changed over Firefox's
+history and is currently ten minutes, well inside the recommended maximum
+retention period of one week (<a href="#cache-management" class="auto internal xref">Section 7.4</a>).  When the grace period
+ends, the record expires for good and the resolver stops serving it.<a href="#appendix-A.2.1-3" class="pilcrow">¶</a></p>
+<p id="appendix-A.2.1-4">Firefox flushes the host cache on a network change, since names resolved on the
+old network may resolve differently on the new one.  The flush discards expired
+records with the rest, so the resolver never serves an address learned on a
+different network.<a href="#appendix-A.2.1-4" class="pilcrow">¶</a></p>
+</section>
+</div>
+<div id="happy-eyeballs-v3-integration">
+<section id="appendix-A.2.2">
+          <h4 id="name-happy-eyeballs-v3-integrati">
+<a href="#appendix-A.2.2" class="section-number selfRef">A.2.2. </a><a href="#name-happy-eyeballs-v3-integrati" class="section-name selfRef">Happy Eyeballs v3 Integration</a>
+          </h4>
+<p id="appendix-A.2.2-1">Since Firefox 155, released in September 2026, Firefox has driven connection
+setup from a Happy Eyeballs v3 <span>[<a href="#HEv3" class="cite xref">HEv3</a>]</span> state machine that joins the
+grace-period cache to connection racing, and so applies the asynchronous
+resolution model (<a href="#async" class="auto internal xref">Section 5.1</a>).  To resolve a name, the state machine emits a
+DNS query that allows a stale answer.  If the stub resolver answers from an
+expired record, the state machine at once races connection attempts across
+the returned addresses and address families, and in parallel emits a second
+query that bypasses the cache, which forces a fresh network lookup.  When
+the fresh answer arrives, the state machine updates its candidate addresses.<a href="#appendix-A.2.2-1" class="pilcrow">¶</a></p>
+<p id="appendix-A.2.2-2">This per-query signaling, a stale answer allowed for the first query and a fresh
+one required for the refresh, mirrors the application-to-resolver signaling
+(<a href="#query-initiation" class="auto internal xref">Section 7.1</a>), here between Firefox's connection layer and its own stub
+resolver.  Most of the time the expired addresses are still right and the
+connection stands before the fresh answer returns.  When an address has changed,
+the race adds the fresh addresses and the user sees no failure.<a href="#appendix-A.2.2-2" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>
