@@ -1307,38 +1307,40 @@ the race adds the fresh addresses and the user sees no failure.
 
 ## Optimistic DNS in Android {#android}
 
-Android's stub resolver does not enable Optimistic DNS.  Instead, the
-system-provided HTTP client {{HttpEngine}} enables Optimistic DNS as a
-developer option.  This is done to guarantee the correct retry behavior.
+In Android, Optimistic DNS is implemented by the system-provided HTTP client
+{{HttpEngine}} rather than by the stub resolver, so that the client can retry a
+request when an optimistic answer turns out to be wrong.  An application needs
+to opt in by supplying stale DNS options {{StaleDnsOptions}} when it configures
+the client.  These options have been available since API level 34, released
+in June 2023, and on earlier releases through SDK extensions.
 
 ### HTTP Client Optimistic DNS Configurations
 
-HttpEngine allows developers to specify the configuration of Optimistic DNS
-behavior (in this API dubbed StaleDNS).
+Two of the options HttpEngine provides configure the behavior described in
+this document.
 
-- setFreshLookupTimeout allows specifying how long to wait for the actual
-DNS query to return before a stale result is used.  This is commonly set
-to 0, 500ms or 1500ms.
+- setFreshLookupTimeout sets how long to wait for a fresh answer before
+an expired one is used instead.  Setting it to zero returns the expired
+record immediately and continues the query in the background to update
+the cache, which is the model described in this document ({{async}}).
+Larger values trade part of the latency benefit for a greater chance of
+answering from fresh data.  Values of 0, 500 ms and 1500 ms are commonly
+used.
 
-- setMaxExpiredDelay allows specifying how long past the expiration to
-consider using the DNS result.  This is commonly set to 3, 7 or 21 days.
-
-- setAllowCrossNetworkUsage allows specifying whether stale DNS results
-should be used across networks.  This is commonly set to true.
-
-- setUseStaleOnNameNotResolved allows specifying whether stale DNS results
-should be used when the actual DNS query fails to return any records.
+- setMaxExpiredDelay sets how long past expiration an expired record may
+still be used.  Setting it to zero means expired records may be used
+indefinitely, so a deployment that wants the retention bound recommended
+in this document ({{cache-management}}) has to set this option
+explicitly.  Values of 3, 7 and 21 days are commonly used.
 
 ### Observed Impact on Server-Side Traffic
 
-Rollout of StaleDNS has universally led to an improvement in user
-perceivable latency, while not creating any visible breakage.
-TODO: provide an approximate number.
-Servers already had to serve services on obsolete IP addresses past their
-originally intended TTL because of the recursive resolvers increasing
-records TTL.  This practice, known as TTL clamping, has been investigated
-in the wild {{dnsttlviolations}} and was estimated to be employed by 4.17%
-of resolvers.
+Rollout of stale DNS support has improved user-perceived latency, without
+observed breakage.  Servers already had to serve services on obsolete IP
+addresses past their originally intended TTL because of the recursive
+resolvers unilaterally increasing records TTL.  This practice, known as TTL
+clamping, has been investigated in the wild {{dnsttlviolations}} and was
+estimated to be employed by 4.17% of resolvers.
 
 # Acknowledgments
 {:numbered="false"}
