@@ -1263,15 +1263,15 @@ different network.
 
 ### Happy Eyeballs v3 Integration
 
-Since 2026, Firefox has driven connection setup from a Happy Eyeballs v3 {{HEv3}}
-state machine that joins the grace-period cache to connection racing, and so
-applies the asynchronous resolution model ({{async}}).  To resolve a name, the
-state machine emits a DNS query that allows a stale answer.  If the stub
-resolver answers from an expired record, the state machine at once races
-connection attempts across the returned addresses and address families, and in
-parallel emits a second query that bypasses the cache, which forces a fresh
-network lookup.  When the fresh answer arrives, the state machine updates its
-candidate addresses.
+Since Firefox 155, released in September 2026, Firefox has driven connection
+setup from a Happy Eyeballs v3 {{HEv3}} state machine that joins the
+grace-period cache to connection racing, and so applies the asynchronous
+resolution model ({{async}}).  To resolve a name, the state machine emits a
+DNS query that allows a stale answer.  If the stub resolver answers from an
+expired record, the state machine at once races connection attempts across
+the returned addresses and address families, and in parallel emits a second
+query that bypasses the cache, which forces a fresh network lookup.  When
+the fresh answer arrives, the state machine updates its candidate addresses.
 
 This per-query signaling, a stale answer allowed for the first query and a fresh
 one required for the refresh, mirrors the application-to-resolver signaling
