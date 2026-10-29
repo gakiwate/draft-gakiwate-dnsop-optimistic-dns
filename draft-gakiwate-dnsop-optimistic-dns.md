@@ -1252,9 +1252,9 @@ the stub resolver returns the expired record to the caller at once and sends a
 revalidation query in the background.
 
 The grace period is configurable.  Its default has changed over Firefox's
-history and is currently ten minutes, well inside the one-week maximum
-{{cache-management}} recommends.  When the grace period ends, the record expires
-for good and the resolver stops serving it.
+history and is currently ten minutes, well inside the recommended maximum
+retention period of one week ({{cache-management}}).  When the grace period
+ends, the record expires for good and the resolver stops serving it.
 
 Firefox flushes the host cache on a network change, since names resolved on the
 old network may resolve differently on the new one.  The flush discards expired
@@ -1265,16 +1265,17 @@ different network.
 
 Since 2026, Firefox has driven connection setup from a Happy Eyeballs v3 {{HEv3}}
 state machine that joins the grace-period cache to connection racing, and so
-applies the asynchronous model of {{async}}.  To resolve a name, the state
-machine emits a DNS query that allows a stale answer.  If the stub resolver
-answers from an expired record, the state machine at once races connection
-attempts across the returned addresses and address families, and in parallel
-emits a second query that bars the cache, which forces a fresh network lookup.
-When the fresh answer arrives, the state machine updates its candidate addresses.
+applies the asynchronous resolution model ({{async}}).  To resolve a name, the
+state machine emits a DNS query that allows a stale answer.  If the stub
+resolver answers from an expired record, the state machine at once races
+connection attempts across the returned addresses and address families, and in
+parallel emits a second query that bypasses the cache, which forces a fresh
+network lookup.  When the fresh answer arrives, the state machine updates its
+candidate addresses.
 
 This per-query signaling, a stale answer allowed for the first query and a fresh
-one required for the refresh, mirrors the application-to-resolver signaling of
-{{query-initiation}}, here between Firefox's connection layer and its own stub
+one required for the refresh, mirrors the application-to-resolver signaling
+({{query-initiation}}), here between Firefox's connection layer and its own stub
 resolver.  Most of the time the expired addresses are still right and the
 connection stands before the fresh answer returns.  When an address has changed,
 the race adds the fresh addresses and the user sees no failure.
