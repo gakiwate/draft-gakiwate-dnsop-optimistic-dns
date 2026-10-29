@@ -5,8 +5,8 @@
 Domain Name System Operations                                 G. Akiwate
 Internet-Draft                                                  P. Flack
 Intended status: Standards Track                             S. Cheshire
-Expires: 15 January 2027                                      Apple Inc.
-                                                            14 July 2026
+Expires: 2 May 2027                                           Apple Inc.
+                                                         29 October 2026
 
 
                              Optimistic DNS
@@ -61,7 +61,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 15 January 2027.
+   This Internet-Draft will expire on 2 May 2027.
 
 Copyright Notice
 
@@ -802,10 +802,11 @@ Table of Contents
 
 8.1.  Uncacheable Records
 
-   The DNS specifications require that DNS records with a TTL of zero
-   MUST NOT be cached [RFC1035].  This document does not change that
-   requirement; subsequent queries for these records always result in a
-   new network request.
+   The DNS specification states that DNS records with a TTL of zero "can
+   only be used for the transaction in progress, and should not be
+   cached" (Section 3.2.1 of [RFC1035]).  This document does not change
+   that guidance; subsequent queries for these records always result in
+   a new network request.
 
 8.2.  DNSSEC
 
@@ -1131,7 +1132,10 @@ Table of Contents
               RFC 8765, DOI 10.17487/RFC8765, June 2020,
               <https://www.rfc-editor.org/rfc/rfc8765>.
 
-   [RFC8767]  "*** BROKEN REFERENCE ***".
+   [RFC8767]  Lawrence, D., Kumari, W., and P. Sood, "Serving Stale Data
+              to Improve DNS Resiliency", RFC 8767,
+              DOI 10.17487/RFC8767, March 2020,
+              <https://www.rfc-editor.org/rfc/rfc8767>.
 
    [RFC9250]  Huitema, C., Dickinson, S., and A. Mankin, "DNS over
               Dedicated QUIC Connections", RFC 9250,
