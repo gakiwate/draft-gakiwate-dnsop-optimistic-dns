@@ -1048,7 +1048,7 @@ importance of application-layer security.
   The unintended server would be in a position to associate the client
   source IP with an SNI of the intended service.
   Applications that want to use Optimistic DNS with servers which reuse IP
-  addresses, MUST NOT use unencrypted protocols, and MAY use Encrypted
+  addresses MUST NOT use unencrypted protocols, and MAY use Encrypted
   Client Hello {RFC 9849} to defend against SNI leaks.
 
 *Poisoning Amplification.*
@@ -1301,22 +1301,38 @@ the race adds the fresh addresses and the user sees no failure.
 
 ## Optimistic DNS in Android {#android}
 
-Android's stub resolver does not enable Optimistic DNS. Instead, the system provided HTTP client {{HttpEngine}} enables Optimistic DNS as a developer option. This is done to guarantee the correct retry behavior.
+Android's stub resolver does not enable Optimistic DNS.  Instead, the
+system-provided HTTP client {{HttpEngine}} enables Optimistic DNS as a
+developer option.  This is done to guarantee the correct retry behavior.
 
-### HTTP Client Optimistic DNS configurations
+### HTTP Client Optimistic DNS Configurations
 
-HttpEngine allows the developers to specify the configuration of Optimistic DNS behavior (in this API dubbed StaleDNS).
+HttpEngine allows developers to specify the configuration of Optimistic DNS
+behavior (in this API dubbed StaleDNS).
 
-* setFreshLookupTimeout allows specifying how long to wait for the actual DNS query to return before a stale result is used. This is commonly set to 0, 500ms or 1500ms.
-* setMaxExpiredDelay allows specifying how long past the expiration to consider using the DNS result. This is commonly set to 3, 7 or 21 days.
-* setAllowCrossNetworkUsage allows specifying whether stale DNS results should be used across networks. This is commonly set to true.
-* setUseStaleOnNameNotResolved allows specifying whether stale DNS results should be used when the actual DNS query fails to return any records.
+- setFreshLookupTimeout allows specifying how long to wait for the actual
+DNS query to return before a stale result is used.  This is commonly set
+to 0, 500ms or 1500ms.
 
-### Observed impact on server-side traffic
+- setMaxExpiredDelay allows specifying how long past the expiration to
+consider using the DNS result.  This is commonly set to 3, 7 or 21 days.
 
-Rollout of StaleDNS has universally led to an improvement in user perceivable latency, while not creating any visible breakage.
+- setAllowCrossNetworkUsage allows specifying whether stale DNS results
+should be used across networks.  This is commonly set to true.
+
+- setUseStaleOnNameNotResolved allows specifying whether stale DNS results
+should be used when the actual DNS query fails to return any records.
+
+### Observed Impact on Server-Side Traffic
+
+Rollout of StaleDNS has universally led to an improvement in user
+perceivable latency, while not creating any visible breakage.
 TODO: provide an approximate number.
-Servers already had to serve services on obsolete IP addresses past their originally intended TTL because of the recursive resolvers increasing records TTL. This practice, known as TTL clamping was investigated in {{dnsttlviolations}} and was estimated to be employed by 4.17% of the resolvers.
+Servers already had to serve services on obsolete IP addresses past their
+originally intended TTL because of the recursive resolvers increasing
+records TTL.  This practice, known as TTL clamping, has been investigated
+in the wild {{dnsttlviolations}} and was estimated to be employed by 4.17%
+of resolvers.
 
 # Acknowledgments
 {:numbered="false"}
