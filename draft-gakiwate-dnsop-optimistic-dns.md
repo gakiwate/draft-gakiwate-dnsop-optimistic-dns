@@ -1052,11 +1052,10 @@ importance of application-layer security.
   validation will detect this mismatch and prevent data from being sent to
   the wrong party.  For unencrypted protocols, there is a risk of
   connecting to an unintended server.
-  The unintended server would be in a position to associate the client
-  source IP with an SNI of the intended service.
-  Applications that want to use Optimistic DNS with servers which reuse IP
-  addresses MUST NOT use unencrypted protocols, and MAY use Encrypted
-  Client Hello {RFC 9849} to defend against SNI leaks.
+  Even with the use of encrypted protocols, detecting the mismatch does
+  not prevent privacy exposure, since the unintended server learns that a
+  user was interested in a specific name (for example through the Server
+  Name Indication).
 
 *Poisoning Amplification.*
 : If an attacker successfully poisons a cache entry, Optimistic DNS could
