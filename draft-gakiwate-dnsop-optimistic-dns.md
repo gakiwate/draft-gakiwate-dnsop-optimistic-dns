@@ -87,7 +87,7 @@ informative:
     title: "Firefox stub resolver: nsHostResolver"
     author:
      - org: Mozilla
-    target: https://searchfox.org/mozilla-central/source/netwerk/dns/nsHostResolver.cpp
+    target: https://searchfox.org/firefox-main/rev/b0625683b9b8cd108f6b3fa9eedbcd4aa0066d6e/netwerk/dns/nsHostResolver.cpp
 
   ZC:
     title: "Zero Configuration Networking: The Definitive Guide"
