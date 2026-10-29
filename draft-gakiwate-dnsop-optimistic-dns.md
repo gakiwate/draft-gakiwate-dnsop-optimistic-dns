@@ -107,12 +107,19 @@ informative:
      - org: Google
     target: "https://developer.android.com/reference/android/net/http/HttpEngine"
 
+  StaleDnsOptions:
+    title: "android.net.http.DnsOptions.StaleDnsOptions API reference"
+    author:
+     - org: Google
+    target: "https://developer.android.com/reference/android/net/http/DnsOptions.StaleDnsOptions"
+
   dnsttlviolations:
     title: "DNS TTL Violations in the Wild - Measured with RIPE Atlas"
     author:
       - ins: G. Moura
         name: Giovane Moura
     date: 2017-12
+    target: "https://labs.ripe.net/author/giovane_moura/dns-ttl-violations-in-the-wild-measured-with-ripe-atlas/"
 
 --- abstract
 
