@@ -101,6 +101,26 @@ informative:
       ISBN: 978-0-596-10100-5
     refcontent: "O'Reilly Media"
 
+  HttpEngine:
+    title: "android.net.http.HttpEngine API reference"
+    author:
+     - org: Google
+    target: "https://developer.android.com/reference/android/net/http/HttpEngine"
+
+  StaleDnsOptions:
+    title: "android.net.http.DnsOptions.StaleDnsOptions API reference"
+    author:
+     - org: Google
+    target: "https://developer.android.com/reference/android/net/http/DnsOptions.StaleDnsOptions"
+
+  dnsttlviolations:
+    title: "DNS TTL Violations in the Wild - Measured with RIPE Atlas"
+    author:
+      - ins: G. Moura
+        name: Giovane Moura
+    date: 2017-12
+    target: "https://labs.ripe.net/author/giovane_moura/dns-ttl-violations-in-the-wild-measured-with-ripe-atlas/"
+
 --- abstract
 
 DNS lookups introduce user-visible delay, particularly when cached records
@@ -1032,6 +1052,10 @@ importance of application-layer security.
   validation will detect this mismatch and prevent data from being sent to
   the wrong party.  For unencrypted protocols, there is a risk of
   connecting to an unintended server.
+  Even with the use of encrypted protocols, detecting the mismatch does
+  not prevent privacy exposure, since the unintended server learns that a
+  user was interested in a specific name (for example through the Server
+  Name Indication).
 
 *Poisoning Amplification.*
 : If an attacker successfully poisons a cache entry, Optimistic DNS could
@@ -1280,6 +1304,43 @@ one required for the refresh, mirrors the application-to-resolver signaling
 resolver.  Most of the time the expired addresses are still right and the
 connection stands before the fresh answer returns.  When an address has changed,
 the race adds the fresh addresses and the user sees no failure.
+
+## Optimistic DNS in Android {#android}
+
+In Android, Optimistic DNS is implemented by the system-provided HTTP client
+{{HttpEngine}} rather than by the stub resolver, so that the client can retry a
+request when an optimistic answer turns out to be wrong.  An application needs
+to opt in by supplying stale DNS options {{StaleDnsOptions}} when it configures
+the client.  These options have been available since API level 34, released
+in June 2023, and on earlier releases through SDK extensions.
+
+### HTTP Client Optimistic DNS Configurations
+
+Two of the options HttpEngine provides configure the behavior described in
+this document.
+
+- setFreshLookupTimeout sets how long to wait for a fresh answer before
+an expired one is used instead.  Setting it to zero returns the expired
+record immediately and continues the query in the background to update
+the cache, which is the model described in this document ({{async}}).
+Larger values trade part of the latency benefit for a greater chance of
+answering from fresh data.  Values of 0, 500 ms and 1500 ms are commonly
+used.
+
+- setMaxExpiredDelay sets how long past expiration an expired record may
+still be used.  Setting it to zero means expired records may be used
+indefinitely, so a deployment that wants the retention bound recommended
+in this document ({{cache-management}}) has to set this option
+explicitly.  Values of 3, 7 and 21 days are commonly used.
+
+### Observed Impact on Server-Side Traffic
+
+Rollout of stale DNS support has improved user-perceived latency, without
+observed breakage.  Servers already had to serve services on obsolete IP
+addresses past their originally intended TTL because of the recursive
+resolvers unilaterally increasing records TTL.  This practice, known as TTL
+clamping, has been investigated in the wild {{dnsttlviolations}} and was
+estimated to be employed by 4.17% of resolvers.
 
 # Acknowledgments
 {:numbered="false"}
