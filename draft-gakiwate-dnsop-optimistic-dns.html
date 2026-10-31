@@ -1057,7 +1057,7 @@ svg {
 </tr></thead>
 <tfoot><tr>
 <td class="left">Akiwate, et al.</td>
-<td class="center">Expires 2 May 2027</td>
+<td class="center">Expires 4 May 2027</td>
 <td class="right">[Page]</td>
 </tr></tfoot>
 </table>
@@ -1070,12 +1070,12 @@ svg {
 <dd class="internet-draft">draft-gakiwate-dnsop-optimistic-dns-latest</dd>
 <dt class="label-published">Published:</dt>
 <dd class="published">
-<time datetime="2026-10-29" class="published">29 October 2026</time>
+<time datetime="2026-10-31" class="published">31 October 2026</time>
     </dd>
 <dt class="label-intended-status">Intended Status:</dt>
 <dd class="intended-status">Standards Track</dd>
 <dt class="label-expires">Expires:</dt>
-<dd class="expires"><time datetime="2027-05-02">2 May 2027</time></dd>
+<dd class="expires"><time datetime="2027-05-04">4 May 2027</time></dd>
 <dt class="label-authors">Authors:</dt>
 <dd class="authors">
 <div class="author">
@@ -1143,7 +1143,7 @@ is able to handle old and possibly incorrect information.<a href="#section-abstr
         time. It is inappropriate to use Internet-Drafts as reference
         material or to cite them other than as "work in progress."<a href="#section-boilerplate.1-3" class="pilcrow">¶</a></p>
 <p id="section-boilerplate.1-4">
-        This Internet-Draft will expire on 2 May 2027.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
+        This Internet-Draft will expire on 4 May 2027.<a href="#section-boilerplate.1-4" class="pilcrow">¶</a></p>
 </section>
 </div>
 <div id="copyright">
@@ -1283,6 +1283,17 @@ is able to handle old and possibly incorrect information.<a href="#section-abstr
 </li>
                   <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.13.2.2.2.2">
                     <p id="section-toc.1-1.13.2.2.2.2.1"><a href="#appendix-A.2.2" class="auto internal xref">A.2.2</a>.  <a href="#name-happy-eyeballs-v3-integrati" class="internal xref">Happy Eyeballs v3 Integration</a></p>
+</li>
+                </ul>
+</li>
+              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.13.2.3">
+                <p id="section-toc.1-1.13.2.3.1"><a href="#appendix-A.3" class="auto internal xref">A.3</a>.  <a href="#name-optimistic-dns-in-android" class="internal xref">Optimistic DNS in Android</a></p>
+<ul class="compact toc ulBare ulEmpty">
+<li class="compact toc ulBare ulEmpty" id="section-toc.1-1.13.2.3.2.1">
+                    <p id="section-toc.1-1.13.2.3.2.1.1"><a href="#appendix-A.3.1" class="auto internal xref">A.3.1</a>.  <a href="#name-http-client-optimistic-dns-" class="internal xref">HTTP Client Optimistic DNS Configurations</a></p>
+</li>
+                  <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.13.2.3.2.2">
+                    <p id="section-toc.1-1.13.2.3.2.2.1"><a href="#appendix-A.3.2" class="auto internal xref">A.3.2</a>.  <a href="#name-observed-impact-on-server-s" class="internal xref">Observed Impact on Server-Side Traffic</a></p>
 </li>
                 </ul>
 </li>
@@ -2470,7 +2481,11 @@ associated with the previous host or service.
 For HTTPS connections, TLS certificate
 validation will detect this mismatch and prevent data from being sent to
 the wrong party.  For unencrypted protocols, there is a risk of
-connecting to an unintended server.<a href="#section-10-3.2.1" class="pilcrow">¶</a></p>
+connecting to an unintended server.
+Even with the use of encrypted protocols, detecting the mismatch does
+not prevent privacy exposure, since the unintended server learns that a
+user was interested in a specific name (for example through the Server
+Name Indication).<a href="#section-10-3.2.1" class="pilcrow">¶</a></p>
 </dd>
         <dd class="break"></dd>
 <dt id="section-10-3.3"><em>Poisoning Amplification.</em></dt>
@@ -2542,6 +2557,10 @@ reduce the effectiveness of Optimistic DNS for infrequently-accessed names.<a hr
 <a href="#section-12.2" class="section-number selfRef">12.2. </a><a href="#name-informative-references" class="section-name selfRef">Informative References</a>
         </h3>
 <dl class="references">
+<dt id="dnsttlviolations">[dnsttlviolations]</dt>
+        <dd>
+<span class="refAuthor">Moura, G.</span>, <span class="refTitle">"DNS TTL Violations in the Wild - Measured with RIPE Atlas"</span>, <time datetime="2017-12" class="refDate">December 2017</time>, <span>&lt;<a href="https://labs.ripe.net/author/giovane_moura/dns-ttl-violations-in-the-wild-measured-with-ripe-atlas/">https://labs.ripe.net/author/giovane_moura/dns-ttl-violations-in-the-wild-measured-with-ripe-atlas/</a>&gt;</span>. </dd>
+<dd class="break"></dd>
 <dt id="Firefox">[Firefox]</dt>
         <dd>
 <span class="refAuthor">Mozilla</span>, <span class="refTitle">"Firefox stub resolver: nsHostResolver"</span>, <span>n.d.</span>, <span>&lt;<a href="https://searchfox.org/firefox-main/rev/b0625683b9b8cd108f6b3fa9eedbcd4aa0066d6e/netwerk/dns/nsHostResolver.cpp">https://searchfox.org/firefox-main/rev/b0625683b9b8cd108f6b3fa9eedbcd4aa0066d6e/netwerk/dns/nsHostResolver.cpp</a>&gt;</span>. </dd>
@@ -2549,6 +2568,10 @@ reduce the effectiveness of Optimistic DNS for infrequently-accessed names.<a hr
 <dt id="getdns">[getdns]</dt>
         <dd>
 <span class="refAuthor">NLnet Labs, Sinodun and No Mountain Software</span>, <span class="refTitle">"Welcome to getdns!"</span>, <span>n.d.</span>, <span>&lt;<a href="https://getdnsapi.net/">https://getdnsapi.net/</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="HttpEngine">[HttpEngine]</dt>
+        <dd>
+<span class="refAuthor">Google</span>, <span class="refTitle">"android.net.http.HttpEngine API reference"</span>, <span>n.d.</span>, <span>&lt;<a href="https://developer.android.com/reference/android/net/http/HttpEngine">https://developer.android.com/reference/android/net/http/HttpEngine</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="IETF72">[IETF72]</dt>
         <dd>
@@ -2606,6 +2629,10 @@ reduce the effectiveness of Optimistic DNS for infrequently-accessed names.<a hr
 <dt id="RFC9250">[RFC9250]</dt>
         <dd>
 <span class="refAuthor">Huitema, C.</span>, <span class="refAuthor">Dickinson, S.</span>, and <span class="refAuthor">A. Mankin</span>, <span class="refTitle">"DNS over Dedicated QUIC Connections"</span>, <span class="seriesInfo">RFC 9250</span>, <span class="seriesInfo">DOI 10.17487/RFC9250</span>, <time datetime="2022-05" class="refDate">May 2022</time>, <span>&lt;<a href="https://www.rfc-editor.org/rfc/rfc9250">https://www.rfc-editor.org/rfc/rfc9250</a>&gt;</span>. </dd>
+<dd class="break"></dd>
+<dt id="StaleDnsOptions">[StaleDnsOptions]</dt>
+        <dd>
+<span class="refAuthor">Google</span>, <span class="refTitle">"android.net.http.DnsOptions.StaleDnsOptions API reference"</span>, <span>n.d.</span>, <span>&lt;<a href="https://developer.android.com/reference/android/net/http/DnsOptions.StaleDnsOptions">https://developer.android.com/reference/android/net/http/DnsOptions.StaleDnsOptions</a>&gt;</span>. </dd>
 <dd class="break"></dd>
 <dt id="WWDC18">[WWDC18]</dt>
         <dd>
@@ -2940,6 +2967,59 @@ one required for the refresh, mirrors the application-to-resolver signaling
 resolver.  Most of the time the expired addresses are still right and the
 connection stands before the fresh answer returns.  When an address has changed,
 the race adds the fresh addresses and the user sees no failure.<a href="#appendix-A.2.2-2" class="pilcrow">¶</a></p>
+</section>
+</div>
+</section>
+</div>
+<div id="android">
+<section id="appendix-A.3">
+        <h3 id="name-optimistic-dns-in-android">
+<a href="#appendix-A.3" class="section-number selfRef">A.3. </a><a href="#name-optimistic-dns-in-android" class="section-name selfRef">Optimistic DNS in Android</a>
+        </h3>
+<p id="appendix-A.3-1">In Android, Optimistic DNS is implemented by the system-provided HTTP client
+<span>[<a href="#HttpEngine" class="cite xref">HttpEngine</a>]</span> rather than by the stub resolver, so that the client can retry a
+request when an optimistic answer turns out to be wrong.  An application needs
+to opt in by supplying stale DNS options <span>[<a href="#StaleDnsOptions" class="cite xref">StaleDnsOptions</a>]</span> when it configures
+the client.  These options have been available since API level 34, released
+in June 2023, and on earlier releases through SDK extensions.<a href="#appendix-A.3-1" class="pilcrow">¶</a></p>
+<div id="http-client-optimistic-dns-configurations">
+<section id="appendix-A.3.1">
+          <h4 id="name-http-client-optimistic-dns-">
+<a href="#appendix-A.3.1" class="section-number selfRef">A.3.1. </a><a href="#name-http-client-optimistic-dns-" class="section-name selfRef">HTTP Client Optimistic DNS Configurations</a>
+          </h4>
+<p id="appendix-A.3.1-1">Two of the options HttpEngine provides configure the behavior described in
+this document.<a href="#appendix-A.3.1-1" class="pilcrow">¶</a></p>
+<ul class="normal">
+<li class="normal" id="appendix-A.3.1-2.1">
+              <p id="appendix-A.3.1-2.1.1">setFreshLookupTimeout sets how long to wait for a fresh answer before
+an expired one is used instead.  Setting it to zero returns the expired
+record immediately and continues the query in the background to update
+the cache, which is the model described in this document (<a href="#async" class="auto internal xref">Section 5.1</a>).
+Larger values trade part of the latency benefit for a greater chance of
+answering from fresh data.  Values of 0, 500 ms and 1500 ms are commonly
+used.<a href="#appendix-A.3.1-2.1.1" class="pilcrow">¶</a></p>
+</li>
+            <li class="normal" id="appendix-A.3.1-2.2">
+              <p id="appendix-A.3.1-2.2.1">setMaxExpiredDelay sets how long past expiration an expired record may
+still be used.  Setting it to zero means expired records may be used
+indefinitely, so a deployment that wants the retention bound recommended
+in this document (<a href="#cache-management" class="auto internal xref">Section 7.4</a>) has to set this option
+explicitly.  Values of 3, 7 and 21 days are commonly used.<a href="#appendix-A.3.1-2.2.1" class="pilcrow">¶</a></p>
+</li>
+          </ul>
+</section>
+</div>
+<div id="observed-impact-on-server-side-traffic">
+<section id="appendix-A.3.2">
+          <h4 id="name-observed-impact-on-server-s">
+<a href="#appendix-A.3.2" class="section-number selfRef">A.3.2. </a><a href="#name-observed-impact-on-server-s" class="section-name selfRef">Observed Impact on Server-Side Traffic</a>
+          </h4>
+<p id="appendix-A.3.2-1">Rollout of stale DNS support has improved user-perceived latency, without
+observed breakage.  Servers already had to serve services on obsolete IP
+addresses past their originally intended TTL because of the recursive
+resolvers unilaterally increasing records TTL.  This practice, known as TTL
+clamping, has been investigated in the wild <span>[<a href="#dnsttlviolations" class="cite xref">dnsttlviolations</a>]</span> and was
+estimated to be employed by 4.17% of resolvers.<a href="#appendix-A.3.2-1" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>

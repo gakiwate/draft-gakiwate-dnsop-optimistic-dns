@@ -5,8 +5,8 @@
 Domain Name System Operations                                 G. Akiwate
 Internet-Draft                                                  P. Flack
 Intended status: Standards Track                             S. Cheshire
-Expires: 2 May 2027                                           Apple Inc.
-                                                         29 October 2026
+Expires: 4 May 2027                                           Apple Inc.
+                                                         31 October 2026
 
 
                              Optimistic DNS
@@ -61,7 +61,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 2 May 2027.
+   This Internet-Draft will expire on 4 May 2027.
 
 Copyright Notice
 
@@ -113,6 +113,9 @@ Table of Contents
      A.2.  Optimistic DNS in Firefox
        A.2.1.  Stub Resolver Grace Period
        A.2.2.  Happy Eyeballs v3 Integration
+     A.3.  Optimistic DNS in Android
+       A.3.1.  HTTP Client Optimistic DNS Configurations
+       A.3.2.  Observed Impact on Server-Side Traffic
    Acknowledgments
    Authors' Addresses
 
@@ -1027,7 +1030,11 @@ Table of Contents
       service.  For HTTPS connections, TLS certificate validation will
       detect this mismatch and prevent data from being sent to the wrong
       party.  For unencrypted protocols, there is a risk of connecting
-      to an unintended server.
+      to an unintended server.  Even with the use of encrypted
+      protocols, detecting the mismatch does not prevent privacy
+      exposure, since the unintended server learns that a user was
+      interested in a specific name (for example through the Server Name
+      Indication).
 
    _Poisoning Amplification._  If an attacker successfully poisons a
       cache entry, Optimistic DNS could extend the lifetime of the
@@ -1077,6 +1084,12 @@ Table of Contents
 
 12.2.  Informative References
 
+   [dnsttlviolations]
+              Moura, G., "DNS TTL Violations in the Wild - Measured with
+              RIPE Atlas", December 2017,
+              <https://labs.ripe.net/author/giovane_moura/dns-ttl-
+              violations-in-the-wild-measured-with-ripe-atlas/>.
+
    [Firefox]  Mozilla, "Firefox stub resolver: nsHostResolver", n.d.,
               <https://searchfox.org/firefox-
               main/rev/b0625683b9b8cd108f6b3fa9eedbcd4aa0066d6e/netwerk/
@@ -1084,6 +1097,11 @@ Table of Contents
 
    [getdns]   NLnet Labs, Sinodun and No Mountain Software, "Welcome to
               getdns!", n.d., <https://getdnsapi.net/>.
+
+   [HttpEngine]
+              Google, "android.net.http.HttpEngine API reference", n.d.,
+              <https://developer.android.com/reference/android/net/http/
+              HttpEngine>.
 
    [IETF72]   Cheshire, S., "Stuart Cheshire on IPv6 Adoption", 2008,
               <https://www.stuartcheshire.org/IETF72/>.  This
@@ -1149,6 +1167,12 @@ Table of Contents
               Dedicated QUIC Connections", RFC 9250,
               DOI 10.17487/RFC9250, May 2022,
               <https://www.rfc-editor.org/rfc/rfc9250>.
+
+   [StaleDnsOptions]
+              Google, "android.net.http.DnsOptions.StaleDnsOptions API
+              reference", n.d.,
+              <https://developer.android.com/reference/android/net/http/
+              DnsOptions.StaleDnsOptions>.
 
    [WWDC18]   Cheshire, S. and J. Mehta, "Optimizing Your App for
               Today’s Internet", Apple Worldwide Developer Conference ,
@@ -1379,6 +1403,45 @@ A.2.2.  Happy Eyeballs v3 Integration
    addresses are still right and the connection stands before the fresh
    answer returns.  When an address has changed, the race adds the fresh
    addresses and the user sees no failure.
+
+A.3.  Optimistic DNS in Android
+
+   In Android, Optimistic DNS is implemented by the system-provided HTTP
+   client [HttpEngine] rather than by the stub resolver, so that the
+   client can retry a request when an optimistic answer turns out to be
+   wrong.  An application needs to opt in by supplying stale DNS options
+   [StaleDnsOptions] when it configures the client.  These options have
+   been available since API level 34, released in June 2023, and on
+   earlier releases through SDK extensions.
+
+A.3.1.  HTTP Client Optimistic DNS Configurations
+
+   Two of the options HttpEngine provides configure the behavior
+   described in this document.
+
+   *  setFreshLookupTimeout sets how long to wait for a fresh answer
+      before an expired one is used instead.  Setting it to zero returns
+      the expired record immediately and continues the query in the
+      background to update the cache, which is the model described in
+      this document (Section 5.1).  Larger values trade part of the
+      latency benefit for a greater chance of answering from fresh data.
+      Values of 0, 500 ms and 1500 ms are commonly used.
+
+   *  setMaxExpiredDelay sets how long past expiration an expired record
+      may still be used.  Setting it to zero means expired records may
+      be used indefinitely, so a deployment that wants the retention
+      bound recommended in this document (Section 7.4) has to set this
+      option explicitly.  Values of 3, 7 and 21 days are commonly used.
+
+A.3.2.  Observed Impact on Server-Side Traffic
+
+   Rollout of stale DNS support has improved user-perceived latency,
+   without observed breakage.  Servers already had to serve services on
+   obsolete IP addresses past their originally intended TTL because of
+   the recursive resolvers unilaterally increasing records TTL.  This
+   practice, known as TTL clamping, has been investigated in the wild
+   [dnsttlviolations] and was estimated to be employed by 4.17% of
+   resolvers.
 
 Acknowledgments
 
