@@ -593,17 +593,28 @@ of the optimistic approach is clearly positive.
 After the Happy Eyeballs algorithm has succeeded in
 establishing a connection to an acceptable destination
 (determined by verifying the TLS certificate, or otherwise,
-as appropriate) the asynchronous DNS operation MUST be stopped.
+as appropriate), the application MUST stop its asynchronous DNS
+operation (for example, by unsubscribing from further callbacks
+for that connection attempt).
 Once an application has established a successful connection, it
 should make its future decisions based on the viability of that
 connection, rather than any subsequent information to the contrary
 received from asynchronous DNS.
-Cancelling the asynchronous DNS operation prematurely, before a successful
-connection has been established, would prevent the reception of future updated
-answers, which would defeat the purpose of Optimistic DNS, which is to deliver
-available answers quickly while still ensuring eventual correctness. Failure to cancel
-after an acceptable connection has been made would be a waste of resources, and
-in the extreme case would constitute a resource leak on the client device.
+Cancelling the application's asynchronous DNS operation prematurely,
+before a successful connection has been established, would prevent the
+reception of future updated answers, which would defeat the purpose of
+Optimistic DNS, which is to deliver available answers quickly while
+still ensuring eventual correctness.  Failure to stop the application's
+asynchronous DNS operation after an acceptable connection has been made
+would be a waste of resources, and in the extreme case would constitute
+a resource leak on the client device.
+
+Stopping the application's asynchronous DNS operation ends notification
+delivery to that caller; however, when the stub resolver has initiated a
+parallel network query to refresh an expired cache entry, the stub
+resolver SHOULD allow that network query to complete in the background
+(subject to normal DNS query timeouts) rather than aborting it when the
+caller unsubscribes ({{parallel-network-query}}).
 
 Applications using Optimistic DNS and Happy Eyeballs SHOULD follow
 appropriate security practices ({{security-considerations}}) to ensure
@@ -746,9 +757,19 @@ If no unexpired records are found, the stub resolver MUST issue a standard DNS
 query on the network.  This query proceeds through the normal resolution path:
 contacting configured recursive resolvers, following CNAME chains, and so on.
 
-Fresh answers from the network are delivered to the application through
-an asynchronous callback mechanism.  The application’s networking code MUST
+While the application's asynchronous DNS operation remains active, fresh
+answers from the network are delivered to the application through an
+asynchronous callback mechanism.  The application's networking code MUST
 use these fresh answers to update the list of answers it received earlier.
+
+If the application stops its asynchronous DNS operation after establishing a
+connection ({{happy-eyeballs}}) before the parallel network query completes,
+the stub resolver SHOULD allow the network query to finish in the background
+(subject to normal DNS query timeouts) and update its cache with the fresh
+records.  Otherwise, whenever connection establishment using an Optimistic
+Answer completes faster than DNS resolution on the network, aborting the
+in-flight query would prevent the expired cache entry from being refreshed,
+causing subsequent lookups to repeatedly serve the same expired record.
 
 ## Cache Management
 
