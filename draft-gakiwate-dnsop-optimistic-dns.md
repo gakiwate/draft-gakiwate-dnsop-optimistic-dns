@@ -605,9 +605,14 @@ available answers quickly while still ensuring eventual correctness. Failure to 
 after an acceptable connection has been made would be a waste of resources, and
 in the extreme case would constitute a resource leak on the client device.
 
-Applications using Optimistic DNS and Happy Eyeballs SHOULD follow
-appropriate security practices ({{security-considerations}}) to ensure
-that they are connecting to the intended host or service on the network.
+Applications using Optimistic DNS and Happy Eyeballs MUST employ cryptographic
+peer authentication ({{security-considerations}}) to ensure that they are
+connecting to the intended host or service on the network. When a protocol
+supports 0-RTT early data (such as TLS 1.3 {{?RFC8446}} or QUIC {{?RFC9001}}),
+transmitting early data does not by itself establish that the destination is
+acceptable. The application MUST NOT stop its asynchronous DNS operation or
+abandon Happy Eyeballs connection attempts until peer authentication in the
+handshake completes.
 
 ## Combined Effect
 
@@ -683,9 +688,10 @@ receive conventional stub resolver behavior: expired records are ignored,
 and only fresh network answers are returned.  This ensures backward
 compatibility and allows applications to choose the tradeoff that suits
 their needs.
-Applications that do not support both Happy Eyeballs
-and appropriate application-layer security
-SHOULD NOT use Optimistic DNS.
+Applications MUST NOT initiate unauthenticated cleartext connections using
+addresses obtained from Optimistic Answers ({{security-considerations}}). More
+generally, applications that do not support both Happy Eyeballs and
+cryptographic peer authentication SHOULD NOT use Optimistic DNS.
 These applications are very dependent on always getting
 the right answers from DNS every time, and do not recover
 gracefully when delivered stale data by Optimistic DNS.
@@ -967,7 +973,7 @@ This has the effect of instructing stub resolvers to poll
 the recursive resolver once every 30 seconds
 to ascertain if newer data has become available.
 
-# Operational Considerations
+# Operational Considerations {#operational-considerations}
 
 A consequence of Optimistic DNS is that clients may continue
 to use an old IP address longer than expected.
@@ -1013,6 +1019,17 @@ that could be achieved using an in-band message on the existing connection, or
 by simply shutting down the server at the old IP address, so that clients
 re-establish their connections using the new IP address.
 
+Similarly, if a retired server or former Content Delivery Network (CDN)
+provider at the old IP address continues to accept new connections and still
+holds valid TLS credentials for the domain, Optimistic DNS clients initiating
+new connections to that expired address will pass peer authentication and use
+that connection rather than falling back to the fresh DNS answer. Operators
+migrating away from an endpoint or CDN that should no longer serve the domain
+name SHOULD ensure that it stops accepting new connections for that service
+(for example, by removing or revoking the certificate, refusing new
+connections at the old address, or returning an application-layer error such
+as HTTP 421 (Misdirected Request) {{?RFC9110}}).
+
 Moreover, Optimistic DNS gives server operators
 the freedom to use shorter DNS TTLs safely.
 One of the reasons why server operators may choose
@@ -1033,9 +1050,12 @@ can be completed in minutes, rather than hours.
 Optimistic DNS introduces a tradeoff between speed and freshness.
 Applications that use expired answers must be prepared for those answers to be
 occasionally incorrect.
-Applications using Optimistic DNS SHOULD employ application-layer
-security (e.g., using TLS or QUIC) when connecting to addresses obtained from expired answers,
-to detect cases where the address has been reassigned.
+Applications using Optimistic DNS MUST employ cryptographic peer
+authentication (e.g., using TLS {{?RFC8446}} or QUIC {{?RFC9001}}) when
+connecting to addresses obtained from Optimistic Answers, and MUST NOT
+initiate unauthenticated cleartext connections using those addresses. When
+Optimistic DNS is provided by a shared stub resolver, applications that opt in
+to receive Optimistic Answers are responsible for enforcing this requirement.
 
 Networking always entails a degree of uncertainty
 -- for example, packets may be intercepted in transit and
@@ -1047,15 +1067,28 @@ importance of application-layer security.
 
 *IP Address Reuse.*
 : When a DNS record expires, the IP address it contained may no longer be
-  associated with the previous host or service.
-  For HTTPS connections, TLS certificate
-  validation will detect this mismatch and prevent data from being sent to
-  the wrong party.  For unencrypted protocols, there is a risk of
-  connecting to an unintended server.
-  Even with the use of encrypted protocols, detecting the mismatch does
-  not prevent privacy exposure, since the unintended server learns that a
-  user was interested in a specific name (for example through the Server
-  Name Indication).
+  associated with the previous host or service (for example, in shared cloud
+  hosting or dynamic IP address pools). Cryptographic peer authentication in
+  protocols such as TLS or QUIC detects this mismatch and prevents application
+  data from being disclosed to an unintended party. This holds even when
+  encrypted 0-RTT early data is sent during the handshake, since an unrelated
+  endpoint lacks the cryptographic keys needed to decrypt it. By contrast,
+  unauthenticated cleartext protocols have no mechanism to detect IP address
+  reassignment and would expose requests or credentials to whichever host now
+  holds the address, which is why their use with Optimistic Answers is
+  prohibited. Even with the use of encrypted protocols, detecting the mismatch
+  does not prevent privacy exposure, since the unintended server learns that a
+  user was interested in a specific name (for example through the Server Name
+  Indication).
+
+*Stale Endpoints with Valid Credentials.*
+: Cryptographic peer authentication verifies identity for the target name, not
+  whether an endpoint is still the operator's currently intended server. If a
+  decommissioned server or former CDN provider retains an unexpired
+  certificate and private key (or session ticket keys) for the domain name,
+  new connections using an Optimistic Answer can still authenticate
+  successfully against that stale endpoint until those credentials expire, are
+  revoked, or are removed from service ({{operational-considerations}}).
 
 *Poisoning Amplification.*
 : If an attacker successfully poisons a cache entry, Optimistic DNS could
@@ -1143,9 +1176,11 @@ this through the following API flags:
   hint to the client about how much trust it should place in this answer.
   An expired Optimistic Negative Answer should be quickly updated with
   a fresh confirmation of the negative answer, or a new positive answer.
-  In the case of Optimistic Positive Answers, the flag has little
-  significance, since the application verifies the validity of
-  positive answers by attempting communication with those addresses.
+  In the case of Optimistic Positive Answers, applications rarely need to
+  inspect this flag directly, since positive answers are validated during
+  connection establishment through cryptographic peer authentication and
+  connection racing (though networking libraries may still use it to manage
+  fallback retries before the parallel network query completes).
   Developers should take care in how they interpret this answer property
   because, as mentioned earlier, the notion of record expiry is subjective,
   and this flag is easily misunderstood and misused by developers who
