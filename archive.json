@@ -1,6 +1,6 @@
 {
   "magic": "E!vIA5L86J2I",
-  "timestamp": "2026-11-01T05:09:41.225618+00:00",
+  "timestamp": "2026-11-05T05:50:55.524648+00:00",
   "repo": "gakiwate/draft-gakiwate-dnsop-optimistic-dns",
   "labels": [
     {
@@ -159,6 +159,38 @@
       "body": "Section 6 currently says:\n\n> When a fresh positive answer matches the previous Optimistic Positive Answer,\n> no second callback is delivered.\n\nI think \"no callback\" might be ambiguous for the application. After receiving \"Optimistic Positive Answer\", it cannot tell whether the fresh answer arrived and matched, the network query is still in flight, or the query failed.\n\nThis matters most in the window where the application is still listening. For example, the connection attempt to the stale address (203.0.113.34 in the example) is hanging or being reset, and the fresh answer returns the same address. Under the current text the application receives nothing, so it keeps waiting in case a corrected address is about to arrive. With a confirmation it would know the address is correct and the host is just down, and it could fail fast.\n\nThe confirmation could also help while the TCP/TLS handshake is still in progress. Once the application knows the address was confirmed, it can stop treating the ongoing attempt as provisional, for example by restoring the normal timeout or releasing resources reserved for retrying with a corrected address. Note that when the fresh answer changes but still contains the address in use, the application does get a callback, so it can confirm the address. Only the fully unchanged case, which confirms the address most strongly, gives the application no signal.\n\nThe draft already accepts this reasoning for the negative case.\n\n> Sending confirmations of Optimistic Negative Answers is necessary because\n> the client may be waiting for that negative answer confirmation before\n> proceeding with its next steps.\n\nThe same logic seems to apply to positive answers, so I wonder if this asymmetry is intentional.",
       "createdAt": "2026-07-16T02:44:04Z",
       "updatedAt": "2026-07-16T02:44:04Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 11,
+      "id": "I_kwDOR5L8A88AAAABcWzQnA",
+      "title": "Clarify that stopping the client's async DNS operation shouldn't abort the background cache refresh",
+      "url": "https://github.com/gakiwate/draft-gakiwate-dnsop-optimistic-dns/issues/11",
+      "state": "OPEN",
+      "author": "nidhijaju",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Section 5.2 currently says:\n\n> After the Happy Eyeballs algorithm has succeeded in establishing a connection\n> to an acceptable destination (determined by verifying the TLS certificate, or\n> otherwise, as appropriate), the asynchronous DNS operation MUST be stopped.\n\nIn a system daemon like `mDNSResponder`, closing the application's query handle just stops callbacks to that caller while the resolver finishes refreshing its cache in the background. However, for in-process resolvers (such as in browsers), \"the asynchronous DNS operation MUST be stopped\" is easy to read as cancelling the in-flight network DNS query itself once the connection succeeds.\n\nWhen connecting via an Optimistic Answer finishes faster than the DNS lookup on the network, aborting the in-flight network query means the expired cache entry never gets updated, so subsequent lookups keep serving the same expired record.\n\nCould we clarify in Sections 5.2 and 7.3 that while the application `MUST` stop its asynchronous DNS operation (e.g., unsubscribe from further callbacks) once a connection is established, the stub resolver `SHOULD` still allow an in-flight cache-refresh query to finish in the background (subject to normal DNS query timeouts) and update its cache?",
+      "createdAt": "2026-11-04T06:51:30Z",
+      "updatedAt": "2026-11-04T06:51:30Z",
+      "closedAt": null,
+      "comments": []
+    },
+    {
+      "number": 13,
+      "id": "I_kwDOR5L8A88AAAABcYKWnA",
+      "title": "Require cryptographic peer authentication and clarify 0-RTT and stale endpoints with valid credentials",
+      "url": "https://github.com/gakiwate/draft-gakiwate-dnsop-optimistic-dns/issues/13",
+      "state": "OPEN",
+      "author": "nidhijaju",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Section 10 currently says:\n\n> Applications using Optimistic DNS SHOULD employ application-layer security\n> (e.g., using TLS or QUIC) when connecting to addresses obtained from expired\n> answers, to detect cases where the address has been reassigned.\n\nBecause Optimistic DNS extends the window during which an address may have been reassigned (for example, in shared cloud hosting or dynamic IP address pools) up to a week, using unauthenticated cleartext protocols with Optimistic Answers risks sending requests or credentials to an unintended host. Could we strengthen Sections 5.2, 6, and 10 so that applications `MUST` employ cryptographic peer authentication and `MUST NOT` initiate unauthenticated cleartext connections using Optimistic Answers (with applications enforcing this when opting in at a shared stub resolver)?\n\nA couple of related details that would also be helpful to clarify at the same time:\n\n1. **0-RTT early data**: Section 10 currently notes that TLS certificate validation will \"prevent data from being sent to the wrong party.\" With TLS 1.3 or QUIC 0-RTT, encrypted early data can be sent before the handshake finishes (which is safe against an unrelated host since it lacks the keys to decrypt it), so it would be more accurate to say it prevents application data from being *disclosed* to an unintended party, and clarify in Section 5.2 that sending 0-RTT early data does not by itself establish that the destination is acceptable before peer authentication completes.\n2. **Retired servers / former CDNs with valid credentials**: Peer authentication verifies identity for the target name, not whether an endpoint is still the operator's currently intended server. If a retired server or former CDN at the old IP still holds an unexpired certificate and key for the domain name, new Optimistic DNS connections will still authenticate and succeed there unless the operator removes/revokes the credentials, refuses new connections at the old address, or returns an error such as HTTP 421 (Misdirected Request).",
+      "createdAt": "2026-11-04T08:35:29Z",
+      "updatedAt": "2026-11-04T08:35:29Z",
       "closedAt": null,
       "comments": []
     }
@@ -366,6 +398,58 @@
           "updatedAt": "2026-10-31T02:58:33Z"
         }
       ],
+      "reviews": []
+    },
+    {
+      "number": 12,
+      "id": "PR_kwDOR5L8A88AAAABMvnpdA",
+      "title": "Decouple stopping client callbacks from background cache refresh",
+      "url": "https://github.com/gakiwate/draft-gakiwate-dnsop-optimistic-dns/pull/12",
+      "state": "OPEN",
+      "author": "nidhijaju",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Fixes https://github.com/gakiwate/draft-gakiwate-dnsop-optimistic-dns/issues/11.",
+      "createdAt": "2026-11-04T06:52:02Z",
+      "updatedAt": "2026-11-04T06:52:03Z",
+      "baseRepository": "gakiwate/draft-gakiwate-dnsop-optimistic-dns",
+      "baseRefName": "main",
+      "baseRefOid": "f8ca401391ea31ce207d6b89af2af53567491852",
+      "headRepository": "nidhijaju/draft-gakiwate-dnsop-optimistic-dns",
+      "headRefName": "background-cache-refresh",
+      "headRefOid": "efa9b02751292b0deab09db7db0aefefd09acb1a",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
+      "reviews": []
+    },
+    {
+      "number": 14,
+      "id": "PR_kwDOR5L8A88AAAABMww86w",
+      "title": "Require cryptographic peer authentication and clarify 0-RTT and stale endpoints with valid credentials",
+      "url": "https://github.com/gakiwate/draft-gakiwate-dnsop-optimistic-dns/pull/14",
+      "state": "OPEN",
+      "author": "nidhijaju",
+      "authorAssociation": "CONTRIBUTOR",
+      "assignees": [],
+      "labels": [],
+      "body": "Fixes https://github.com/gakiwate/draft-gakiwate-dnsop-optimistic-dns/issues/13.",
+      "createdAt": "2026-11-04T08:36:04Z",
+      "updatedAt": "2026-11-04T08:46:44Z",
+      "baseRepository": "gakiwate/draft-gakiwate-dnsop-optimistic-dns",
+      "baseRefName": "main",
+      "baseRefOid": "f8ca401391ea31ce207d6b89af2af53567491852",
+      "headRepository": "nidhijaju/draft-gakiwate-dnsop-optimistic-dns",
+      "headRefName": "peer-authentication-security",
+      "headRefOid": "6b50d3c006d98cb8d60b57dc06d0f8213f5bc2dd",
+      "closedAt": null,
+      "mergedAt": null,
+      "mergedBy": null,
+      "mergeCommit": null,
+      "comments": [],
       "reviews": []
     }
   ]
